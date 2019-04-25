@@ -1,5 +1,6 @@
 import QtQuick 2.3
 import QtMultimedia 5.8
+import mystuffs 1.0
 
 Item {
     Camera {
@@ -12,9 +13,14 @@ Item {
              frameRate: 30
         }
     }
+    FrameHandler {
+        id: frameHandler
+    }
+
     VideoOutput {
         fillMode: VideoOutput.PreserveAspectCrop
         source: camera
         anchors.fill: parent
+        filters: [ frameHandler ]
     }
 }
