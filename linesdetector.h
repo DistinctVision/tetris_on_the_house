@@ -14,10 +14,13 @@
 #include <sonar/General/Point2.h>
 #include <sonar/General/Image.h>
 
+#include <Eigen/Eigen>
+
 class LinesDetector
 {
 public:
-    using Line = std::pair<sonar::Point2i, sonar::Point2i>;
+    using Line_i = std::pair<sonar::Point2i, sonar::Point2i>;
+    using Line_f = std::pair<sonar::Point2f, sonar::Point2f>;
 
     LinesDetector(QThreadPool * threadPool);
 
@@ -26,7 +29,7 @@ public:
 
     void setLineEpsilons(float pixelEps, float angleEps);
 
-    std::vector<Line> detect(const sonar::ImageRef<uchar> & image);
+    std::vector<Line_f> detect(const sonar::ImageRef<uchar> & image);
 
 private:
     QThreadPool * m_threadPool;
@@ -38,12 +41,16 @@ private:
     sonar::Point2i m_binWinSize;
     int m_binAdaptiveThreshold;
 
+    int m_houghThreshold;
+    sonar::Point2i m_houghWinSize;
+
     sonar::Image<int> m_integralImage;
     sonar::Image<uchar> m_binImage;
     sonar::Image<int> m_houghImage;
 
     void _computeBinaryImage(const sonar::ImageRef<uchar> & image);
     void _computeHoughImage();
+    std::vector<Line_f> _findCommonLines();
 };
 
 #endif // LINESDETECTOR_H

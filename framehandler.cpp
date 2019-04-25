@@ -6,6 +6,7 @@
 
 #include <sonar/General/Image.h>
 #include <sonar/General/ImageUtils.h>
+#include <sonar/General/Paint.h>
 
 #if defined(DEBUG_TOOLS_ENABLED)
 #include <sonar/DebugTools/debug_tools.h>
@@ -43,10 +44,15 @@ QVideoFrame FrameHandlerRunnable::run(QVideoFrame * videoFrame,
         }
 
         Image<uchar> bw_image = image_utils::convertToGrayscale(image);
+        std::vector<LinesDetector::Line_f> lines = m_linesDetector->detect(bw_image);
 
-        debug::showImage("bw", bw_image);
-        m_linesDetector->detect(bw_image);
-        debug::waitKey(33);
+        qDebug() << lines.size();
+
+        for (const auto & line: lines)
+            paint::drawLine(image, line.first, line.second, Rgba_u(255, 0, 0));
+
+        debug::showImage("bw", image);
+        //debug::waitKey(33);
     }
 
     return QVideoFrame(*videoFrame);
