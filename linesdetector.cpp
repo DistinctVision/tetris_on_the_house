@@ -18,11 +18,11 @@ LinesDetector::LinesDetector(QThreadPool * threadPool):
     m_threadPool(threadPool)
 {
     setNumberWorkThreads(min(QThread::idealThreadCount(), threadPool->maxThreadCount()));
-    setLineEpsilons(3.0f, cast<float>(M_PI / 135.0));
-    m_binWinSize = Point2i(33, 33);
+    setLineEpsilons(4.0f, cast<float>(M_PI / 135.0));
+    m_binWinSize = Point2i(15, 15);
     m_binAdaptiveThreshold = 10;
-    m_houghThreshold = 500;
-    m_houghWinSize = Point2i(21, 21);
+    m_houghThreshold = 200;
+    m_houghWinSize = Point2i(51, 21);
 }
 
 int LinesDetector::numberWorkThreads() const
@@ -156,13 +156,13 @@ vector<LinesDetector::Line_f> LinesDetector::_findCommonLines()
     vector<vector<Line_f>> lines(cast<size_t>(m_numberWorkThreads));
 
     Vector3f h_borders[2] = {
-        Vector3f(1.0f, 0.0f, 0.0f),
-        Vector3f(1.0f, 0.0f, - cast<float>(m_binImage.width())),
+        Vector3f(0.0f, 1.0f, 0.0f),
+        Vector3f(0.0f, 1.0f, - cast<float>(m_binImage.height())),
     };
 
     Vector3f v_borders[2] = {
-        Vector3f(0.0f, 1.0f, 0.0f),
-        Vector3f(0.0f, 1.0f, - cast<float>(m_binImage.height())),
+        Vector3f(1.0f, 0.0f, 0.0f),
+        Vector3f(1.0f, 0.0f, - cast<float>(m_binImage.width())),
     };
 
     Image<uchar> d_hough(m_houghImage.size());
@@ -172,7 +172,7 @@ vector<LinesDetector::Line_f> LinesDetector::_findCommonLines()
     for (int n_thread = 0; n_thread < m_numberWorkThreads; ++n_thread)
     {
         QtConcurrent::run(m_threadPool, [&, n_thread] () {
-            vector<pair<Vector2f, float>> part_workLines;
+            vector<pair<Point2f, float>> part_workLines;
 
             int begin_i = n_thread * h_step;
             int end_i = min(begin_i + h_step, m_houghImage.height());
@@ -209,8 +209,9 @@ vector<LinesDetector::Line_f> LinesDetector::_findCommonLines()
                         paint::drawCross<uchar>(d_hough, p, 10.0f, 255);
 
                         float angle = ((p.y) / cast<float>(m_houghImage.height())) * cast<float>(M_PI);
-                        part_workLines.emplace_back(Vector2f(cos(angle), sin(angle)),
-                                                    (p.x + 0.5f) * m_linePixelEps - lineRadius);
+                        Point2f dir(cos(angle), sin(angle));
+                        float d = (lineRadius - (p.x + 0.5f) * m_linePixelEps) - dir.dot(imageCenter);
+                        part_workLines.emplace_back(dir, d);
                     }
                 }
             }
@@ -219,7 +220,7 @@ vector<LinesDetector::Line_f> LinesDetector::_findCommonLines()
 
             for (auto itL = part_workLines.cbegin(); itL != part_workLines.cend(); ++itL)
             {
-                Vector3f h_l(itL->first.x(), itL->first.y(), - itL->second);
+                Vector3f h_l(itL->first.x, itL->first.y, itL->second);
                 Vector3f h_p1 = h_l.cross(h_borders[0]);
                 Vector3f h_p2 = h_l.cross(h_borders[1]);
                 Vector3f v_p1 = h_l.cross(v_borders[0]);
@@ -229,15 +230,15 @@ vector<LinesDetector::Line_f> LinesDetector::_findCommonLines()
                 if (fabs(h_p1.z()) > numeric_limits<float>::epsilon())
                 {
                     l.first.set(h_p1.x() / h_p1.z(), h_p1.y() / h_p1.z());
-                    if (l.first.y < 0.0f)
+                    if (l.first.x < 0.0f)
                         l.first.set(v_p1.x() / v_p1.z(), v_p1.y() / v_p1.z());
-                    else if (l.first.y > cast<float>(m_binImage.height() - 1))
+                    else if (l.first.x > cast<float>(m_binImage.height() - 1))
                         l.first.set(v_p2.x() / v_p2.z(), v_p2.y() / v_p2.z());
 
                     l.second.set(h_p2.x() / h_p2.z(), h_p2.y() / h_p2.z());
-                    if (l.second.y < 0.0f)
+                    if (l.second.x < 0.0f)
                         l.second.set(v_p1.x() / v_p1.z(), v_p1.y() / v_p1.z());
-                    else if (l.second.y > cast<float>(m_binImage.height() - 1))
+                    else if (l.second.x > cast<float>(m_binImage.height() - 1))
                         l.second.set(v_p2.x() / v_p2.z(), v_p2.y() / v_p2.z());
                 }
                 else
@@ -257,5 +258,6 @@ vector<LinesDetector::Line_f> LinesDetector::_findCommonLines()
     vector<Line_f> result;
     for (auto it = lines.begin(); it != lines.end(); ++it)
         result.insert(result.end(), it->begin(), it->end());
+
     return result;
 }
