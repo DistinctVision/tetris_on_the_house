@@ -3,6 +3,7 @@
 
 #include <QDebug>
 #include <QThreadPool>
+#include <QTime>
 
 #include <sonar/General/Image.h>
 #include <sonar/General/ImageUtils.h>
@@ -44,12 +45,14 @@ QVideoFrame FrameHandlerRunnable::run(QVideoFrame * videoFrame,
         }
 
         Image<uchar> bw_image = image_utils::convertToGrayscale(image);
+        QTime time;
+        time.start();
         std::vector<LinesDetector::Line_f> lines = m_linesDetector->detect(bw_image);
 
-        qDebug() << lines.size();
+        qDebug() << time.elapsed() << lines.size();
 
         for (const auto & line: lines)
-            paint::drawLine(image, line.first, line.second, Rgba_u(255, 0, 0));
+            paint::drawLine(image, line.first, line.second, Rgba_u(0, 0, 255));
 
         debug::showImage("bw", image);
         //debug::waitKey(33);

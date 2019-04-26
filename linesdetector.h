@@ -44,13 +44,16 @@ private:
     int m_houghThreshold;
     sonar::Point2i m_houghWinSize;
 
+    float m_minLineLengthSquared;
+
     sonar::Image<int> m_integralImage;
     sonar::Image<uchar> m_binImage;
     sonar::Image<int> m_houghImage;
 
     void _computeBinaryImage(const sonar::ImageRef<uchar> & image);
     void _computeHoughImage();
-    std::vector<Line_f> _findCommonLines();
+    std::vector<Line_f> _findLines();
+    void _separateLine(std::vector<Line_f> &out, Line_f line) const;
 };
 
 #endif // LINESDETECTOR_H
