@@ -14,21 +14,21 @@ windows {
             DEPENDPATH += $$(OPENCV_INCLUDE_PATH)
 
             CONFIG(debug, debug|release) {
-                OPENCV_VERSION=310d
+                OPENCV_VERSION=341d
             } else {
-                OPENCV_VERSION=310
+                OPENCV_VERSION=341
             }
-            LIBS += -L$$(OPENCV_LIB_PATH) \
-                -lopencv_core$$OPENCV_VERSION \
-                -lopencv_imgproc$$OPENCV_VERSION \
-                -lopencv_video$$OPENCV_VERSION
+#            LIBS += -L$$(OPENCV_LIB_PATH) \
+#                -lopencv_core$$OPENCV_VERSION \
+#                -lopencv_imgproc$$OPENCV_VERSION \
+#                -lopencv_video$$OPENCV_VERSION
 
-            contains(DEFINES, DEBUG_TOOLS_ENABLED) {
-                LIBS += -L$$(OPENCV_LIB_PATH) \
-                        -lopencv_highgui$$OPENCV_VERSION \
-                        -lopencv_imgcodecs$$OPENCV_VERSION
-            }
-            #LIBS += -L$$(OPENCV_LIB_PATH) -lopencv_world$$OPENCV_VERSION
+#            contains(DEFINES, DEBUG_TOOLS_ENABLED) {
+#                LIBS += -L$$(OPENCV_LIB_PATH) \
+#                        -lopencv_highgui$$OPENCV_VERSION \
+#                        -lopencv_imgcodecs$$OPENCV_VERSION
+#            }
+            LIBS += -L$$(OPENCV_LIB_PATH) -lopencv_world$$OPENCV_VERSION
         }
     }
 } else {

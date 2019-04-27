@@ -55,7 +55,7 @@ QVideoFrame FrameHandlerRunnable::run(QVideoFrame * videoFrame,
             paint::drawLine(image, line.first, line.second, Rgba_u(0, 0, 255));
 
         debug::showImage("bw", image);
-        //debug::waitKey(33);
+        debug::waitKey(33);
     }
 
     return QVideoFrame(*videoFrame);

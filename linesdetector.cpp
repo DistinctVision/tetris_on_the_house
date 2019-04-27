@@ -46,16 +46,15 @@ void LinesDetector::setLineEpsilons(float pixelEps, float angleEps)
 
 vector<LinesDetector::Line_f> LinesDetector::detect(const ImageRef<uchar> & image)
 {
-    _computeBinaryImage(image);
-    _computeHoughImage();
-
+    _computeBinaryImage(halfSample<Sampler_avg<uchar>>(image));
     computeIntegralImage<int, uchar>(m_integralImage, m_binImage);
-    erode(m_binImage, m_integralImage, 5, 0.7f);
+    erode(m_binImage, m_integralImage, 8, 0.7f);
 
     m_binImage.for_each([] (const Point2i &p, uchar & val) {
         if (val > 0)
             val = 255;
     });
+    _computeHoughImage();
 
     debug::showImage("bin", m_binImage);
 

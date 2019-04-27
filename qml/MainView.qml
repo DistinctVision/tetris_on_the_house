@@ -8,7 +8,7 @@ Item {
 
         captureMode: Camera.CaptureViewfinder
 
-        deviceId: QtMultimedia.availableCameras[0].deviceId
+        deviceId: QtMultimedia.availableCameras[1].deviceId
 
         videoRecorder {
              resolution: "640x480"
