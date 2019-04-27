@@ -19,11 +19,11 @@ LinesDetector::LinesDetector(QThreadPool * threadPool):
     m_threadPool(threadPool)
 {
     setNumberWorkThreads(min(QThread::idealThreadCount(), threadPool->maxThreadCount()));
-    setLineEpsilons(5.0f, cast<float>(M_PI / 45.0));
+    setLineEpsilons(4.0f, cast<float>(M_PI / 60.0));
     m_binWinSize = Point2i(31, 31);
     m_binAdaptiveThreshold = 10;
-    m_houghThreshold = 100;
-    m_houghWinSize = Point2i(41, 21);
+    m_houghThreshold = 50;
+    m_houghWinSize = Point2i(31, 31);
     m_minLineLengthSquared = 15.0f * 15.0f;
 }
 
@@ -48,6 +48,14 @@ vector<LinesDetector::Line_f> LinesDetector::detect(const ImageRef<uchar> & imag
 {
     _computeBinaryImage(image);
     _computeHoughImage();
+
+    computeIntegralImage<int, uchar>(m_integralImage, m_binImage);
+    erode(m_binImage, m_integralImage, 5, 0.7f);
+
+    m_binImage.for_each([] (const Point2i &p, uchar & val) {
+        if (val > 0)
+            val = 255;
+    });
 
     debug::showImage("bin", m_binImage);
 
@@ -354,6 +362,67 @@ void LinesDetector::_separateLine(vector<LinesDetector::Line_f> &out, LinesDetec
     }
     else
     {
-        return;
+        if (line.first.x > line.second.x)
+        {
+            swap(line.first, line.second);
+            d = - d;
+        }
+        float k = d.y / d.x;
+        Line_i l_i(cast<int>(line.first), cast<int>(line.second));
+        const uchar * column_data = m_binImage.pointer(l_i.first.x, 0);
+        Line_f cur_line;
+        cur_line.first.x = -1.0f;
+        Point2f sum(0.0f);
+        int n_sum = 0;
+        for (int x_ = l_i.first.x; x_ <= l_i.second.x; ++x_)
+        {
+            float y = k * (x_ - line.first.x) + line.first.y;
+            int begin_y = max(cast<int>(y - m_linePixelEps * 0.5f), 0);
+            int end_y = min(cast<int>(y + m_linePixelEps * 0.5f), m_binImage.height() - 1);
+            for (int y_ = begin_y; y_ < end_y; ++y_)
+            {
+                if (column_data[y_ * m_binImage.widthStep()] > 0)
+                {
+                    cur_line.second.set(cast<float>(x_), y);
+                    if (n_sum == 0)
+                        cur_line.first = cur_line.second;
+                    sum.x += cast<float>(x_);
+                    sum.y += cast<float>(y_);
+                    ++n_sum;
+                }
+            }
+            if (n_sum > 0)
+            {
+                if (abs(x_ - cast<int>(cur_line.second.x)) > linePixelEps_i)
+                {
+                    Point2f line_d = cur_line.second - cur_line.first;
+                    float line_lS = line_d.lengthSquared();
+                    if (line_lS > m_minLineLengthSquared)
+                    {
+                        Point2f n = Point2f(line_d.y, - line_d.x) / sqrt(line_lS);
+                        Point2f d = n * n.dot(sum / cast<float>(n_sum) - (cur_line.second + cur_line.first) * 0.5f);
+                        cur_line.first += d;
+                        cur_line.second += d;
+                        out.push_back(cur_line);
+                    }
+                    n_sum = 0;
+                    sum.setZero();
+                }
+            }
+            ++column_data;
+        }
+        if (n_sum > 0)
+        {
+            Point2f line_d = cur_line.second - cur_line.first;
+            float line_lS = line_d.lengthSquared();
+            if (line_lS > m_minLineLengthSquared)
+            {
+                Point2f n = Point2f(line_d.y, - line_d.x) / sqrt(line_lS);
+                Point2f d = n * n.dot(sum / cast<float>(n_sum) - (cur_line.second + cur_line.first) * 0.5f);
+                cur_line.first += d;
+                cur_line.second += d;
+                out.push_back(cur_line);
+            }
+        }
     }
 }
