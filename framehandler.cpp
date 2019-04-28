@@ -1,5 +1,4 @@
 #include "framehandler.h"
-#include "linesdetector.h"
 
 #include <QDebug>
 #include <QThreadPool>
@@ -9,9 +8,15 @@
 #include <sonar/General/ImageUtils.h>
 #include <sonar/General/Paint.h>
 
+#include "binaryimagegenerator.h"
+#include "distancemapgenerator.h"
+
 #if defined(DEBUG_TOOLS_ENABLED)
 #include <sonar/DebugTools/debug_tools.h>
 #endif
+
+#include <opencv2/core.hpp>
+#include <opencv2/imgproc.hpp>
 
 using namespace sonar;
 
@@ -22,7 +27,8 @@ QVideoFilterRunnable * FrameHandler::createFilterRunnable()
 
 FrameHandlerRunnable::FrameHandlerRunnable()
 {
-    m_linesDetector = std::make_shared<LinesDetector>(QThreadPool::globalInstance());
+    m_binImageGenerator = std::make_shared<BinaryImageGenerator>(QThreadPool::globalInstance());
+    m_distanceMapGenerator = std::make_shared<DistanceMapGenerator>();
 }
 
 QVideoFrame FrameHandlerRunnable::run(QVideoFrame * videoFrame,
@@ -44,18 +50,25 @@ QVideoFrame FrameHandlerRunnable::run(QVideoFrame * videoFrame,
             qFatal("Coudn't read video frame");
         }
 
-        Image<uchar> bw_image = image_utils::convertToGrayscale(image);
+        cv::Mat cvImage = image_utils::convertToCvMat(image);
+
         QTime time;
         time.start();
-        std::vector<LinesDetector::Line_f> lines = m_linesDetector->detect(bw_image);
+        cv::cvtColor(cvImage, cvImage, CV_BGR2GRAY);
+        cv::Mat tImage;
+        cv::adaptiveThreshold(cvImage, tImage, 255, CV_ADAPTIVE_THRESH_GAUSSIAN_C, CV_THRESH_BINARY, 51, 3.0);
+        cv::Mat kernel1 = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(7, 7), cv::Point(3, 3));
+        cv::dilate(tImage, tImage, kernel1, cv::Point(3, 3), 1);
 
-        qDebug() << time.elapsed() << lines.size();
+        cv::Mat d3;
+        cv::distanceTransform(tImage, d3, CV_DIST_L2, 3);
+        qDebug() << "2" << time.elapsed();
 
-        for (const auto & line: lines)
-            paint::drawLine(image, line.first, line.second, Rgba_u(0, 0, 255));
+        cv::normalize(d3, d3, 0, 1., cv::NORM_MINMAX);
+        cv::imshow("bin", tImage);
+        cv::imshow("d3", d3);
 
-        debug::showImage("bw", image);
-        debug::waitKey(33);
+        cv::waitKey(33);
     }
 
     return QVideoFrame(*videoFrame);

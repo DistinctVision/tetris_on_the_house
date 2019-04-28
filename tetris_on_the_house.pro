@@ -19,12 +19,16 @@ include(sonar/General/General.pri)
 
 HEADERS += \
     framehandler.h \
-    linesdetector.h
+    linesdetector.h \
+    binaryimagegenerator.h \
+    distancemapgenerator.h
 
 SOURCES += \
     main.cpp \
     framehandler.cpp \
-    linesdetector.cpp
+    linesdetector.cpp \
+    binaryimagegenerator.cpp \
+    distancemapgenerator.cpp
 
 RESOURCES += \
     qml.qrc

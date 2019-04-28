@@ -20,8 +20,6 @@ LinesDetector::LinesDetector(QThreadPool * threadPool):
 {
     setNumberWorkThreads(min(QThread::idealThreadCount(), threadPool->maxThreadCount()));
     setLineEpsilons(4.0f, cast<float>(M_PI / 60.0));
-    m_binWinSize = Point2i(31, 31);
-    m_binAdaptiveThreshold = 10;
     m_houghThreshold = 50;
     m_houghWinSize = Point2i(31, 31);
     m_minLineLengthSquared = 15.0f * 15.0f;
@@ -44,78 +42,19 @@ void LinesDetector::setLineEpsilons(float pixelEps, float angleEps)
     m_lineAngleEps = angleEps;
 }
 
-vector<LinesDetector::Line_f> LinesDetector::detect(const ImageRef<uchar> & image)
+vector<LinesDetector::Line_f> LinesDetector::detect(const ImageRef<uchar> & binImage)
 {
-    _computeBinaryImage(halfSample<Sampler_avg<uchar>>(image));
-    computeIntegralImage<int, uchar>(m_integralImage, m_binImage);
-    erode(m_binImage, m_integralImage, 8, 0.7f);
-
-    m_binImage.for_each([] (const Point2i &p, uchar & val) {
-        if (val > 0)
-            val = 255;
-    });
-    _computeHoughImage();
-
-    debug::showImage("bin", m_binImage);
-
-    return _findLines();
+    _computeHoughImage(binImage);
+    return _findLines(binImage);
 }
 
-void LinesDetector::_computeBinaryImage(const ImageRef<uchar> & image)
+void LinesDetector::_computeHoughImage(const ImageRef<uchar> & binImage)
 {
-    if (m_integralImage.size() != image.size())
-        m_integralImage = Image<int>(image.size());
-    computeIntegralImage<int, uchar>(m_integralImage, image);
-
-    if (m_binImage.size() != image.size())
-        m_binImage = Image<uchar>(image.size());
-
-    int h_step = cast<int>(ceil(image.height() / cast<float>(m_numberWorkThreads)));
-
-    Point2i winDeltaSize = (m_binWinSize - Point2i(1)) / 2;
-
-    QSemaphore semaphore;
-    for (int n_thread = 0; n_thread < m_numberWorkThreads; ++n_thread)
-    {
-        QtConcurrent::run(m_threadPool, [&, n_thread] () {
-            int begin_y = n_thread * h_step;
-            int end_y = min(begin_y + h_step, image.height());
-            Point2i p, w_begin, w_end, w_delta;
-
-            for (p.y = begin_y; p.y < end_y; ++p.y)
-            {
-                w_begin.y = max(p.y - winDeltaSize.y, 0);
-                w_end.y = min(p.y + winDeltaSize.y, image.height() - 1);
-                w_delta.y = w_end.y - w_begin.y;
-
-                const uchar * imageStr = image.pointer(0, p.y);
-                uchar * binStr = m_binImage.pointer(0, p.y);
-
-                for (p.x = 0; p.x < image.width(); ++p.x)
-                {
-                    w_begin.x = max(p.x - winDeltaSize.x, 0);
-                    w_end.x = min(p.x + winDeltaSize.x, image.width() - 1);
-                    w_delta.x = w_end.x - w_begin.x;
-
-                    int sum = m_integralImage(w_end) + m_integralImage(w_begin) -
-                            (m_integralImage(w_begin.x, w_end.y) + m_integralImage(w_end.x, w_begin.y));
-                    int value = imageStr[p.x] - sum / (w_delta.y * w_delta.x);
-                    binStr[p.x] = (value > m_binAdaptiveThreshold);
-                }
-            }
-            semaphore.release();
-        });
-    }
-    semaphore.acquire(m_numberWorkThreads);
-}
-
-void LinesDetector::_computeHoughImage()
-{
-    Point2f imageCenter = cast<float>(m_binImage.size()) * 0.5f;
+    Point2f imageCenter = cast<float>(binImage.size()) * 0.5f;
 
     float lineRadius = max(imageCenter.x, imageCenter.y);
 
-    Point2i houghSize(cast<int>(ceil(max(m_binImage.width(), m_binImage.height()) / m_linePixelEps)),
+    Point2i houghSize(cast<int>(ceil(max(binImage.width(), binImage.height()) / m_linePixelEps)),
                       cast<int>(ceil(cast<float>(M_PI) / m_lineAngleEps)));
     if (m_houghImage.size() != houghSize)
         m_houghImage = Image<int>(houghSize);
@@ -135,7 +74,7 @@ void LinesDetector::_computeHoughImage()
                 int * hough_str = m_houghImage.pointer(0, i);
                 float angle = ((i) / cast<float>(m_houghImage.height())) * cast<float>(M_PI);
                 float cosA = cos(angle), sinA = sin(angle);
-                m_binImage.for_each([&] (const Point2i &p, const uchar &val) {
+                binImage.for_each([&] (const Point2i &p, const uchar &val) {
                     if (val > 0)
                     {
                         Point2f delta = cast<float>(p) - imageCenter;
@@ -153,9 +92,9 @@ void LinesDetector::_computeHoughImage()
     semaphore.acquire(m_numberWorkThreads);
 }
 
-vector<LinesDetector::Line_f> LinesDetector::_findLines()
+vector<LinesDetector::Line_f> LinesDetector::_findLines(const ImageRef<uchar> & binImage)
 {
-    Point2f imageCenter = cast<float>(m_binImage.size()) * 0.5f;
+    Point2f imageCenter = cast<float>(binImage.size()) * 0.5f;
 
     float lineRadius = max(imageCenter.x, imageCenter.y);
 
@@ -167,12 +106,12 @@ vector<LinesDetector::Line_f> LinesDetector::_findLines()
 
     Vector3f h_borders[2] = {
         Vector3f(0.0f, 1.0f, 0.0f),
-        Vector3f(0.0f, 1.0f, - cast<float>(m_binImage.height())),
+        Vector3f(0.0f, 1.0f, - cast<float>(binImage.height())),
     };
 
     Vector3f v_borders[2] = {
         Vector3f(1.0f, 0.0f, 0.0f),
-        Vector3f(1.0f, 0.0f, - cast<float>(m_binImage.width())),
+        Vector3f(1.0f, 0.0f, - cast<float>(binImage.width())),
     };
 
     QSemaphore semaphore;
@@ -238,13 +177,13 @@ vector<LinesDetector::Line_f> LinesDetector::_findLines()
                     l.first.set(h_p1.x() / h_p1.z(), h_p1.y() / h_p1.z());
                     if (l.first.x < 0.0f)
                         l.first.set(v_p1.x() / v_p1.z(), v_p1.y() / v_p1.z());
-                    else if (l.first.x > cast<float>(m_binImage.width() - 1))
+                    else if (l.first.x > cast<float>(binImage.width() - 1))
                         l.first.set(v_p2.x() / v_p2.z(), v_p2.y() / v_p2.z());
 
                     l.second.set(h_p2.x() / h_p2.z(), h_p2.y() / h_p2.z());
                     if (l.second.x < 0.0f)
                         l.second.set(v_p1.x() / v_p1.z(), v_p1.y() / v_p1.z());
-                    else if (l.second.x > cast<float>(m_binImage.width() - 1))
+                    else if (l.second.x > cast<float>(binImage.width() - 1))
                         l.second.set(v_p2.x() / v_p2.z(), v_p2.y() / v_p2.z());
                 }
                 else
@@ -278,7 +217,7 @@ vector<LinesDetector::Line_f> LinesDetector::_findLines()
                 size_t begin_i = cast<size_t>(n_thread) * workPartSize;
                 size_t end_i = min(begin_i + workPartSize, commonLines.size());
                 for (size_t i = begin_i; i < end_i; ++i)
-                    _separateLine(sep_lines, commonLines[i]);
+                    _separateLine(sep_lines, binImage, commonLines[i]);
                 semaphore.release();
             });
         }
@@ -290,7 +229,9 @@ vector<LinesDetector::Line_f> LinesDetector::_findLines()
     return result;
 }
 
-void LinesDetector::_separateLine(vector<LinesDetector::Line_f> &out, LinesDetector::Line_f line) const
+void LinesDetector::_separateLine(vector<LinesDetector::Line_f> &out,
+                                  const sonar::ImageRef<uchar> & binImage,
+                                  LinesDetector::Line_f line) const
 {
     const int linePixelEps_i = cast<int>(ceil(m_linePixelEps));
     Point2f d = line.second - line.first;
@@ -303,7 +244,7 @@ void LinesDetector::_separateLine(vector<LinesDetector::Line_f> &out, LinesDetec
         }
         float k = d.x / d.y;
         Line_i l_i(cast<int>(line.first), cast<int>(line.second));
-        const uchar * str = m_binImage.pointer(0, l_i.first.y);
+        const uchar * str = binImage.pointer(0, l_i.first.y);
         Line_f cur_line;
         cur_line.first.x = -1.0f;
         Point2f sum(0.0f);
@@ -312,7 +253,7 @@ void LinesDetector::_separateLine(vector<LinesDetector::Line_f> &out, LinesDetec
         {
             float x = k * (y_ - line.first.y) + line.first.x;
             int begin_x = max(cast<int>(x - m_linePixelEps * 0.5f), 0);
-            int end_x = min(cast<int>(x + m_linePixelEps * 0.5f), m_binImage.width() - 1);
+            int end_x = min(cast<int>(x + m_linePixelEps * 0.5f), binImage.width() - 1);
             for (int x_ = begin_x; x_ < end_x; ++x_)
             {
                 if (str[x_] > 0)
@@ -343,7 +284,7 @@ void LinesDetector::_separateLine(vector<LinesDetector::Line_f> &out, LinesDetec
                     sum.setZero();
                 }
             }
-            str += m_binImage.widthStep();
+            str += binImage.widthStep();
         }
         if (n_sum > 0)
         {
@@ -368,7 +309,7 @@ void LinesDetector::_separateLine(vector<LinesDetector::Line_f> &out, LinesDetec
         }
         float k = d.y / d.x;
         Line_i l_i(cast<int>(line.first), cast<int>(line.second));
-        const uchar * column_data = m_binImage.pointer(l_i.first.x, 0);
+        const uchar * column_data = binImage.pointer(l_i.first.x, 0);
         Line_f cur_line;
         cur_line.first.x = -1.0f;
         Point2f sum(0.0f);
@@ -377,10 +318,10 @@ void LinesDetector::_separateLine(vector<LinesDetector::Line_f> &out, LinesDetec
         {
             float y = k * (x_ - line.first.x) + line.first.y;
             int begin_y = max(cast<int>(y - m_linePixelEps * 0.5f), 0);
-            int end_y = min(cast<int>(y + m_linePixelEps * 0.5f), m_binImage.height() - 1);
+            int end_y = min(cast<int>(y + m_linePixelEps * 0.5f), binImage.height() - 1);
             for (int y_ = begin_y; y_ < end_y; ++y_)
             {
-                if (column_data[y_ * m_binImage.widthStep()] > 0)
+                if (column_data[y_ * binImage.widthStep()] > 0)
                 {
                     cur_line.second.set(cast<float>(x_), y);
                     if (n_sum == 0)

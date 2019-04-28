@@ -7,7 +7,8 @@
 #include <QVideoSurfaceFormat>
 #include <QAbstractVideoFilter>
 
-class LinesDetector;
+class BinaryImageGenerator;
+class DistanceMapGenerator;
 
 class FrameHandlerRunnable;
 
@@ -27,7 +28,8 @@ public:
                     RunFlags flags) override;
 
 private:
-    std::shared_ptr<LinesDetector> m_linesDetector;
+    std::shared_ptr<BinaryImageGenerator> m_binImageGenerator;
+    std::shared_ptr<DistanceMapGenerator> m_distanceMapGenerator;
 };
 
 #endif // FRAMEHANDLER_H

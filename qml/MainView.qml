@@ -8,13 +8,20 @@ Item {
 
         captureMode: Camera.CaptureViewfinder
 
-        deviceId: QtMultimedia.availableCameras[1].deviceId
+        deviceId: QtMultimedia.availableCameras[0].deviceId
 
         videoRecorder {
              resolution: "640x480"
              frameRate: 30
         }
     }
+
+    /*MediaPlayer {
+        id: player
+        source: "D:\\1.mp4"
+        autoPlay: true
+    }*/
+
     FrameHandler {
         id: frameHandler
     }

@@ -29,7 +29,7 @@ public:
 
     void setLineEpsilons(float pixelEps, float angleEps);
 
-    std::vector<Line_f> detect(const sonar::ImageRef<uchar> & image);
+    std::vector<Line_f> detect(const sonar::ImageRef<uchar> & binImage);
 
 private:
     QThreadPool * m_threadPool;
@@ -38,22 +38,18 @@ private:
     float m_linePixelEps;
     float m_lineAngleEps;
 
-    sonar::Point2i m_binWinSize;
-    int m_binAdaptiveThreshold;
-
     int m_houghThreshold;
     sonar::Point2i m_houghWinSize;
 
     float m_minLineLengthSquared;
 
-    sonar::Image<int> m_integralImage;
-    sonar::Image<uchar> m_binImage;
     sonar::Image<int> m_houghImage;
 
-    void _computeBinaryImage(const sonar::ImageRef<uchar> & image);
-    void _computeHoughImage();
-    std::vector<Line_f> _findLines();
-    void _separateLine(std::vector<Line_f> &out, Line_f line) const;
+    void _computeHoughImage(const sonar::ImageRef<uchar> & binImage);
+    std::vector<Line_f> _findLines(const sonar::ImageRef<uchar> & binImage);
+    void _separateLine(std::vector<Line_f> & out,
+                       const sonar::ImageRef<uchar> & binImage,
+                       Line_f line) const;
 };
 
 #endif // LINESDETECTOR_H
