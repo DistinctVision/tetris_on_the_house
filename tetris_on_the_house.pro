@@ -12,13 +12,17 @@ include(opencv.pri)
 HEADERS += \
     framehandler.h \
     objectedgestracking.h \
-    objectmodel.h
+    objectmodel.h \
+    pinholecamera.h \
+    performancemonitor.h
 
 SOURCES += \
     main.cpp \
     framehandler.cpp \
     objectedgestracking.cpp \
-    objectmodel.cpp
+    objectmodel.cpp \
+    pinholecamera.cpp \
+    performancemonitor.cpp
 
 RESOURCES += \
     qml.qrc

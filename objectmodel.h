@@ -2,8 +2,11 @@
 #define OBJECTMODEL_H
 
 #include <vector>
+#include <memory>
 
 #include <Eigen/Eigen>
+
+class PinholeCamera;
 
 using VectorsXi = std::vector<Eigen::VectorXi, Eigen::aligned_allocator<Eigen::VectorXi>>;
 using Vectors2d = std::vector<Eigen::Vector2d, Eigen::aligned_allocator<Eigen::Vector2d>>;
@@ -23,6 +26,11 @@ public:
 
     const Vectors3d & vertices() const;
     const Polygons & polygons() const;
+
+    Vectors3d getControlPoints(const std::shared_ptr<PinholeCamera> & camera,
+                               float controlPixelDistance,
+                               const Eigen::Matrix3d & R,
+                               const Eigen::Vector3d & t) const;
 
 private:
     ObjectModel();

@@ -1,7 +1,12 @@
 #include "objectmodel.h"
+
 #include <cmath>
 #include <climits>
 #include <limits>
+#include <set>
+#include <utility>
+
+#include "pinholecamera.h"
 
 using namespace Eigen;
 
@@ -73,5 +78,68 @@ const Vectors3d & ObjectModel::vertices() const
 const ObjectModel::Polygons & ObjectModel::polygons() const
 {
     return m_polygons;
+}
+
+Vectors3d ObjectModel::getControlPoints(const std::shared_ptr<PinholeCamera> & camera,
+                                        float controlPixelDistance,
+                                        const Matrix3d & R, const Vector3d & t) const
+{
+    struct less_Vector2i
+    {
+        bool operator () (const Vector2i & lhs, const Vector2i & rhs) const
+        {
+            return (lhs.x() < rhs.x()) ? true : ((lhs.x() == rhs.x()) && (lhs.y() < rhs.y()));
+        }
+    };
+
+    std::set<int> setOfVertices;
+    std::set<Vector2i, less_Vector2i> setOfEdges;
+    Vector3d cam_pose = - R.inverse() * t;
+    for (const Polygon & polygon : m_polygons)
+    {
+        if (polygon.normal.dot(cam_pose - m_vertices[polygon.vertexIndices[0]]) > 0.0)
+        {
+            for (int i = 0; i < polygon.vertexIndices.size(); ++i)
+            {
+                Vector2i edge(polygon.vertexIndices[i],
+                              polygon.vertexIndices[(i + 1) % polygon.vertexIndices.size()]);
+                if (edge.x() > edge.y())
+                    std::swap(edge.x(), edge.y());
+                setOfEdges.insert(edge);
+                setOfVertices.insert(polygon.vertexIndices[i]);
+            }
+        }
+    }
+
+    Vectors3d controlPoints;
+    for (auto it = setOfVertices.cbegin(); it != setOfVertices.cend(); ++it)
+        controlPoints.push_back(m_vertices[*it]);
+    for (auto itEdge = setOfEdges.cbegin(); itEdge != setOfEdges.cend(); ++itEdge)
+    {
+        const Vector3d v1 = m_vertices[itEdge->x()];
+        const Vector3d v2 = m_vertices[itEdge->y()];
+
+        bool inViewFlag;
+        Vector2f p1 = camera->project((R * v1 + t).cast<float>(), inViewFlag);
+        if (inViewFlag)
+            continue;
+        Vector2f p2 = camera->project((R * v2 + t).cast<float>(), inViewFlag);
+        if (inViewFlag)
+            continue;
+
+        float distance = (p2 - p1).norm();
+        int n = static_cast<int>(ceil(distance / controlPixelDistance));
+        if (n <= 1)
+            continue;
+
+        Vector3d delta = v2 - v1;
+        double step = 1.0 / static_cast<double>(n);
+        for (int i = 1; i < n; ++i)
+        {
+            double t = i * step;
+            controlPoints.push_back(v1 + delta * t);
+        }
+    }
+    return controlPoints;
 }
 

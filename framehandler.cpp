@@ -39,7 +39,7 @@ QVideoFrame FrameHandlerRunnable::run(QVideoFrame * videoFrame,
             qFatal("Coudn't read video frame");
         }
 
-        cv::cvtColor(frame, frame, CV_BGR2GRAY);
+        cv::cvtColor(frame, frame, CV_BGRA2GRAY);
         m_objectEdgesTracking->compute(frame);
     }
 
