@@ -11,12 +11,14 @@ include(opencv.pri)
 
 HEADERS += \
     framehandler.h \
-    objectedgestracking.h
+    objectedgestracking.h \
+    objectmodel.h
 
 SOURCES += \
     main.cpp \
     framehandler.cpp \
-    objectedgestracking.cpp
+    objectedgestracking.cpp \
+    objectmodel.cpp
 
 RESOURCES += \
     qml.qrc

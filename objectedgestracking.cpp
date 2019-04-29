@@ -8,7 +8,8 @@
 #include <QTime>
 #include <QDebug>
 
-ObjectEdgesTracking::ObjectEdgesTracking()
+ObjectEdgesTracking::ObjectEdgesTracking():
+    m_model(ObjectModel::createBox())
 {
 
 }
