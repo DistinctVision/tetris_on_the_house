@@ -6,6 +6,8 @@
 #include <set>
 #include <utility>
 
+#include <opencv2/imgproc.hpp>
+
 #include "pinholecamera.h"
 
 using namespace Eigen;
@@ -84,16 +86,8 @@ Vectors3d ObjectModel::getControlPoints(const std::shared_ptr<PinholeCamera> & c
                                         float controlPixelDistance,
                                         const Matrix3d & R, const Vector3d & t) const
 {
-    struct less_Vector2i
-    {
-        bool operator () (const Vector2i & lhs, const Vector2i & rhs) const
-        {
-            return (lhs.x() < rhs.x()) ? true : ((lhs.x() == rhs.x()) && (lhs.y() < rhs.y()));
-        }
-    };
-
     std::set<int> setOfVertices;
-    std::set<Vector2i, less_Vector2i> setOfEdges;
+    std::set<std::pair<int, int>, less_pair_i> setOfEdges;
     Vector3d cam_pose = - R.inverse() * t;
     for (const Polygon & polygon : m_polygons)
     {
@@ -101,10 +95,10 @@ Vectors3d ObjectModel::getControlPoints(const std::shared_ptr<PinholeCamera> & c
         {
             for (int i = 0; i < polygon.vertexIndices.size(); ++i)
             {
-                Vector2i edge(polygon.vertexIndices[i],
-                              polygon.vertexIndices[(i + 1) % polygon.vertexIndices.size()]);
-                if (edge.x() > edge.y())
-                    std::swap(edge.x(), edge.y());
+                std::pair<int, int> edge(polygon.vertexIndices[i],
+                                         polygon.vertexIndices[(i + 1) % polygon.vertexIndices.size()]);
+                if (edge.first > edge.second)
+                    std::swap(edge.first, edge.second);
                 setOfEdges.insert(edge);
                 setOfVertices.insert(polygon.vertexIndices[i]);
             }
@@ -116,15 +110,15 @@ Vectors3d ObjectModel::getControlPoints(const std::shared_ptr<PinholeCamera> & c
         controlPoints.push_back(m_vertices[*it]);
     for (auto itEdge = setOfEdges.cbegin(); itEdge != setOfEdges.cend(); ++itEdge)
     {
-        const Vector3d v1 = m_vertices[itEdge->x()];
-        const Vector3d v2 = m_vertices[itEdge->y()];
+        const Vector3d & v1 = m_vertices[itEdge->first];
+        const Vector3d & v2 = m_vertices[itEdge->second];
 
         bool inViewFlag;
         Vector2f p1 = camera->project((R * v1 + t).cast<float>(), inViewFlag);
-        if (inViewFlag)
+        if (!inViewFlag)
             continue;
         Vector2f p2 = camera->project((R * v2 + t).cast<float>(), inViewFlag);
-        if (inViewFlag)
+        if (!inViewFlag)
             continue;
 
         float distance = (p2 - p1).norm();
@@ -141,5 +135,43 @@ Vectors3d ObjectModel::getControlPoints(const std::shared_ptr<PinholeCamera> & c
         }
     }
     return controlPoints;
+}
+
+void ObjectModel::draw(const cv::Mat & image,
+                       const std::shared_ptr<PinholeCamera> & camera,
+                       const Matrix3d & R, const Vector3d & t) const
+{
+    std::set<std::pair<int, int>> setOfEdges;
+    Vector3d cam_pose = - R.inverse() * t;
+    for (const Polygon & polygon : m_polygons)
+    {
+        if (polygon.normal.dot(cam_pose - m_vertices[polygon.vertexIndices[0]]) > 0.0)
+        {
+            for (int i = 0; i < polygon.vertexIndices.size(); ++i)
+            {
+                std::pair<int, int> edge(polygon.vertexIndices[i],
+                                         polygon.vertexIndices[(i + 1) % polygon.vertexIndices.size()]);
+                if (edge.first > edge.second)
+                    std::swap(edge.first, edge.second);
+                setOfEdges.insert(edge);
+            }
+        }
+    }
+
+    for (auto itEdge = setOfEdges.cbegin(); itEdge != setOfEdges.cend(); ++itEdge)
+    {
+        const Vector3d & v1 = m_vertices[itEdge->first];
+        const Vector3d & v2 = m_vertices[itEdge->second];
+
+        bool inViewFlag;
+        Vector2f p1 = camera->project((R * v1 + t).cast<float>(), inViewFlag);
+        if (!inViewFlag)
+            continue;
+        Vector2f p2 = camera->project((R * v2 + t).cast<float>(), inViewFlag);
+        if (!inViewFlag)
+            continue;
+
+        cv::line(image, cv::Point2f(p1.x(), p1.y()), cv::Point2f(p2.x(), p2.y()), cv::Scalar(255, 0, 0), 2);
+    }
 }
 

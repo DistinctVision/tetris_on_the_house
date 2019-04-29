@@ -4,10 +4,13 @@
 #include <QThreadPool>
 #include <QTime>
 
+#include "pinholecamera.h"
 #include "objectedgestracking.h"
 
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
+
+using namespace Eigen;
 
 QVideoFilterRunnable * FrameHandler::createFilterRunnable()
 {
@@ -27,11 +30,12 @@ QVideoFrame FrameHandlerRunnable::run(QVideoFrame * videoFrame,
 
     if (surfaceFormat.handleType() == QAbstractVideoBuffer::NoHandle)
     {
-        cv::Mat frame(videoFrame->height(), videoFrame->width(), CV_8UC4);
+        Vector2i imageSize(videoFrame->width(), videoFrame->height());
+        cv::Mat frame(imageSize.y(), imageSize.x(), CV_8UC4);
         if (videoFrame->map(QAbstractVideoBuffer::ReadOnly))
         {
             std::memcpy(frame.data, videoFrame->bits(),
-                        static_cast<size_t>(videoFrame->width() * videoFrame->height() * 4));
+                        static_cast<size_t>(imageSize.x() * imageSize.y() * 4));
             videoFrame->unmap();
         }
         else
@@ -40,6 +44,14 @@ QVideoFrame FrameHandlerRunnable::run(QVideoFrame * videoFrame,
         }
 
         cv::cvtColor(frame, frame, CV_BGRA2GRAY);
+        if (!m_objectEdgesTracking->camera() ||
+                (m_objectEdgesTracking->camera()->imageSize() != imageSize))
+        {
+            m_objectEdgesTracking->setCamera(std::make_shared<PinholeCamera>(imageSize,
+                                                                             Vector2f(imageSize.x(),
+                                                                                      imageSize.x()),
+                                                                             imageSize.cast<float>() * 0.5));
+        }
         m_objectEdgesTracking->compute(frame);
     }
 

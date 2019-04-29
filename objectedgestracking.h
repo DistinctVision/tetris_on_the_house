@@ -10,11 +10,15 @@
 #include "objectmodel.h"
 
 class PerformanceMonitor;
+class PinholeCamera;
 
 class ObjectEdgesTracking
 {
 public:
     ObjectEdgesTracking();
+
+    std::shared_ptr<PinholeCamera> camera() const;
+    void setCamera(const std::shared_ptr<PinholeCamera> & camera);
 
     void compute(cv::Mat image);
 
@@ -22,6 +26,7 @@ private:
     std::shared_ptr<PerformanceMonitor> m_monitor;
 
     ObjectModel m_model;
+    std::shared_ptr<PinholeCamera> m_camera;
 
     Eigen::Matrix3d m_R;
     Eigen::Vector3d m_t;

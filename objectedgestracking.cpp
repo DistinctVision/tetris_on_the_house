@@ -19,9 +19,20 @@ ObjectEdgesTracking::ObjectEdgesTracking():
     m_t = Vector3d(0.0, 0.0, 2.0);
 }
 
+std::shared_ptr<PinholeCamera> ObjectEdgesTracking::camera() const
+{
+    return m_camera;
+}
+
+void ObjectEdgesTracking::setCamera(const std::shared_ptr<PinholeCamera> & camera)
+{
+    m_camera = camera;
+}
+
 void ObjectEdgesTracking::compute(cv::Mat image)
 {
     assert(image.channels() == 1);
+    assert(m_camera);
 
     m_monitor->start();
 
@@ -59,6 +70,8 @@ void ObjectEdgesTracking::compute(cv::Mat image)
     m_monitor->end();
 
     qDebug().noquote() << QString::fromStdString(m_monitor->report());
+
+    m_model.draw(image, m_camera, m_R, m_t);
 
     cv::Point2i center(image.cols / 2, image.rows / 2);
 

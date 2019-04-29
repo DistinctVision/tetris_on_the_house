@@ -134,6 +134,6 @@ string PerformanceMonitor::report() const
 {
     string str = "Common time: " + to_string(commonTime().count()) + "\n";
     for (const Timer & timer : m_timers)
-        str += "\r" + timer.name + " : " + to_string(timer.duration);
+        str += "    " + timer.name + " : " + to_string(timer.duration) + "\n";
     return str;
 }
