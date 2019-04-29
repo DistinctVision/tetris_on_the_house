@@ -7,28 +7,16 @@ TARGET = App
 TEMPLATE = app
 
 include(eigen3.pri)
-
-TEST_DEBUG_TOOLS_ENABLED = $$(DEBUG_TOOLS_ENABLED)
-!isEmpty(TEST_DEBUG_TOOLS_ENABLED) {
-    DEFINES += DEBUG_TOOLS_ENABLED
-    include(opencv.pri)
-    include(sonar/DebugTools/DebugTools.pri)
-}
-
-include(sonar/General/General.pri)
+include(opencv.pri)
 
 HEADERS += \
     framehandler.h \
-    linesdetector.h \
-    binaryimagegenerator.h \
-    distancemapgenerator.h
+    objectedgestracking.h
 
 SOURCES += \
     main.cpp \
     framehandler.cpp \
-    linesdetector.cpp \
-    binaryimagegenerator.cpp \
-    distancemapgenerator.cpp
+    objectedgestracking.cpp
 
 RESOURCES += \
     qml.qrc

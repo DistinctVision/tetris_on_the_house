@@ -4,21 +4,10 @@
 #include <QThreadPool>
 #include <QTime>
 
-#include <sonar/General/Image.h>
-#include <sonar/General/ImageUtils.h>
-#include <sonar/General/Paint.h>
-
-#include "binaryimagegenerator.h"
-#include "distancemapgenerator.h"
-
-#if defined(DEBUG_TOOLS_ENABLED)
-#include <sonar/DebugTools/debug_tools.h>
-#endif
+#include "objectedgestracking.h"
 
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
-
-using namespace sonar;
 
 QVideoFilterRunnable * FrameHandler::createFilterRunnable()
 {
@@ -27,8 +16,7 @@ QVideoFilterRunnable * FrameHandler::createFilterRunnable()
 
 FrameHandlerRunnable::FrameHandlerRunnable()
 {
-    m_binImageGenerator = std::make_shared<BinaryImageGenerator>(QThreadPool::globalInstance());
-    m_distanceMapGenerator = std::make_shared<DistanceMapGenerator>();
+    m_objectEdgesTracking = std::make_shared<ObjectEdgesTracking>();
 }
 
 QVideoFrame FrameHandlerRunnable::run(QVideoFrame * videoFrame,
@@ -39,10 +27,11 @@ QVideoFrame FrameHandlerRunnable::run(QVideoFrame * videoFrame,
 
     if (surfaceFormat.handleType() == QAbstractVideoBuffer::NoHandle)
     {
-        Image<Rgba_u> image(videoFrame->width(), videoFrame->height());
+        cv::Mat frame(videoFrame->height(), videoFrame->width(), CV_8UC4);
         if (videoFrame->map(QAbstractVideoBuffer::ReadOnly))
         {
-            std::memcpy(image.data(), videoFrame->bits(), static_cast<size_t>(image.area() * 4));
+            std::memcpy(frame.data, videoFrame->bits(),
+                        static_cast<size_t>(videoFrame->width() * videoFrame->height() * 4));
             videoFrame->unmap();
         }
         else
@@ -50,25 +39,8 @@ QVideoFrame FrameHandlerRunnable::run(QVideoFrame * videoFrame,
             qFatal("Coudn't read video frame");
         }
 
-        cv::Mat cvImage = image_utils::convertToCvMat(image);
-
-        QTime time;
-        time.start();
-        cv::cvtColor(cvImage, cvImage, CV_BGR2GRAY);
-        cv::Mat tImage;
-        cv::adaptiveThreshold(cvImage, tImage, 255, CV_ADAPTIVE_THRESH_GAUSSIAN_C, CV_THRESH_BINARY, 51, 3.0);
-        cv::Mat kernel1 = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(7, 7), cv::Point(3, 3));
-        cv::dilate(tImage, tImage, kernel1, cv::Point(3, 3), 1);
-
-        cv::Mat d3;
-        cv::distanceTransform(tImage, d3, CV_DIST_L2, 3);
-        qDebug() << "2" << time.elapsed();
-
-        cv::normalize(d3, d3, 0, 1., cv::NORM_MINMAX);
-        cv::imshow("bin", tImage);
-        cv::imshow("d3", d3);
-
-        cv::waitKey(33);
+        cv::cvtColor(frame, frame, CV_BGR2GRAY);
+        m_objectEdgesTracking->compute(frame);
     }
 
     return QVideoFrame(*videoFrame);
