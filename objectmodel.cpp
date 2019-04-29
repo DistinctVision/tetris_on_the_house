@@ -171,7 +171,8 @@ void ObjectModel::draw(const cv::Mat & image,
         if (!inViewFlag)
             continue;
 
-        cv::line(image, cv::Point2f(p1.x(), p1.y()), cv::Point2f(p2.x(), p2.y()), cv::Scalar(255, 0, 0), 2);
+        cv::line(image, cv::Point2f(p1.x(), p1.y()), cv::Point2f(p2.x(), p2.y()),
+                 cv::Scalar(255, 0, 0), 2);
     }
 }
 

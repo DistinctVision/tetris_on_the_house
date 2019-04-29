@@ -42,8 +42,10 @@ QVideoFrame FrameHandlerRunnable::run(QVideoFrame * videoFrame,
         {
             qFatal("Coudn't read video frame");
         }
+        imageSize /= 2;
 
         cv::cvtColor(frame, frame, CV_BGRA2GRAY);
+        cv::resize(frame, frame, cv::Size(imageSize.x(), imageSize.y()));
         if (!m_objectEdgesTracking->camera() ||
                 (m_objectEdgesTracking->camera()->imageSize() != imageSize))
         {

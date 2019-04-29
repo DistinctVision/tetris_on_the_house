@@ -1,6 +1,7 @@
 #include "objectedgestracking.h"
 #include <cassert>
 #include <map>
+#include <unordered_map>
 
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
@@ -16,7 +17,7 @@ ObjectEdgesTracking::ObjectEdgesTracking():
 {
     m_monitor = std::make_shared<PerformanceMonitor>();
     m_R = Matrix3d::Identity();
-    m_t = Vector3d(0.0, 0.0, 2.0);
+    m_t = Vector3d(0.0, 0.0, 5.0);
 }
 
 std::shared_ptr<PinholeCamera> ObjectEdgesTracking::camera() const
@@ -38,7 +39,7 @@ void ObjectEdgesTracking::compute(cv::Mat image)
 
     m_monitor->startTimer("Canny");
     cv::Mat edges;
-    cv::Canny(image, edges, 100.0, 200.0);
+    cv::Canny(image, edges, 150.0, 200.0);
     m_monitor->endTimer("Canny");
 
     m_monitor->startTimer("Inverting");
@@ -53,7 +54,7 @@ void ObjectEdgesTracking::compute(cv::Mat image)
     m_monitor->endTimer("Distance transfrom");
 
     m_monitor->startTimer("Label process");
-    std::map<int, cv::Point2i> index2point;
+    std::unordered_map<int, cv::Point2i> index2point;
     cv::Point2i p;
     for (p.y = 0; p.y < edges.rows; ++p.y)
     {
@@ -71,11 +72,11 @@ void ObjectEdgesTracking::compute(cv::Mat image)
 
     qDebug().noquote() << QString::fromStdString(m_monitor->report());
 
-    m_model.draw(image, m_camera, m_R, m_t);
+    cv::cvtColor(edges, edges, CV_GRAY2BGR);
+
+    m_model.draw(edges, m_camera, m_R, m_t);
 
     cv::Point2i center(image.cols / 2, image.rows / 2);
-
-    cv::cvtColor(edges, edges, CV_GRAY2BGR);
 
     cv::line(edges, center, index2point[labels.at<int>(center)], cv::Scalar(255, 0, 0), 2);
 
