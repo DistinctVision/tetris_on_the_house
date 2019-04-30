@@ -38,8 +38,8 @@ bool PinholeCamera::imagePointInView(const Vector2f & imagePoint) const
 {
     return ((imagePoint.x() >= 0.0f) &&
             (imagePoint.y() >= 0.0f) &&
-            (imagePoint.x() <= (m_imageSize.x() - 1.0f)) &&
-            (imagePoint.y() <= (m_imageSize.y() - 1.0f)));
+            (imagePoint.x() < (m_imageSize.x() - 1.0f)) &&
+            (imagePoint.y() < (m_imageSize.y() - 1.0f)));
 }
 
 Vector2f PinholeCamera::project(const Vector3f & v, bool & inViewFlag) const

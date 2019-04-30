@@ -44,6 +44,7 @@ QVideoFrame FrameHandlerRunnable::run(QVideoFrame * videoFrame,
         }
         imageSize /= 2;
 
+        cv::flip(frame, frame, -1);
         cv::cvtColor(frame, frame, CV_BGRA2GRAY);
         cv::resize(frame, frame, cv::Size(imageSize.x(), imageSize.y()));
         if (!m_objectEdgesTracking->camera() ||

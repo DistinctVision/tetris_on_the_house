@@ -2,6 +2,8 @@
 #define OBJECTEDGESTRACKING_H
 
 #include <memory>
+#include <unordered_map>
+#include <tuple>
 
 #include <Eigen/Eigen>
 
@@ -23,6 +25,8 @@ public:
     void compute(cv::Mat image);
 
 private:
+    float m_controlPixelDistance;
+
     std::shared_ptr<PerformanceMonitor> m_monitor;
 
     ObjectModel m_model;
@@ -30,6 +34,13 @@ private:
 
     Eigen::Matrix3d m_R;
     Eigen::Vector3d m_t;
+
+    std::tuple<Vectors3d, Vectors2f>
+    _getCurrentResiduals(const cv::Mat & labels,
+                         const std::unordered_map<int, cv::Point2i> & index2point) const;
+    void _drawCurrentResiduals(const cv::Mat & image,
+                               const Vectors3d & controlModelPoints,
+                               const Vectors2f & controlImagePoints) const;
 };
 
 #endif // OBJECTEDGESTRACKING_H
