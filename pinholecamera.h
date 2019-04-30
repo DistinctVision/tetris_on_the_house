@@ -18,6 +18,8 @@ public:
     bool imagePointInView(const Eigen::Vector2f & imagePoint) const;
     Eigen::Vector2f project(const Eigen::Vector3f & v, bool & inViewFlag) const;
 
+    Eigen::Vector3f unproject(const Eigen::Vector2f & imagePoint) const;
+
 private:
     Eigen::Vector2i m_imageSize;
     Eigen::Vector2f m_focalLength;

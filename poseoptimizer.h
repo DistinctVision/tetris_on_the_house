@@ -1,9 +1,13 @@
 #ifndef POSEOPTIMIZER_H
 #define POSEOPTIMIZER_H
 
+#include <memory>
+
 #include <Eigen/Eigen>
 
 #include "objectmodel.h"
+
+class PinholeCamera;
 
 Eigen::Matrix3d exp_rodrigues(const Eigen::Vector3d & w, double A, double B);
 
@@ -13,6 +17,7 @@ void exp_transform(Eigen::Matrix3d & outRotationMatrix, Eigen::Vector3d & outTra
                    const Eigen::Matrix<double, 6, 1> & mu);
 
 void optimize_pose(Eigen::Matrix3d & R, Eigen::Vector3d & t,
+                   const std::shared_ptr<const PinholeCamera> & camera,
                    const Vectors3d & controlModelPoints,
                    const Vectors2f & controlImagePoints);
 

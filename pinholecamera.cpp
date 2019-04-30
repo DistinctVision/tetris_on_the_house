@@ -58,3 +58,9 @@ Vector2f PinholeCamera::project(const Vector3f & v, bool & inViewFlag) const
     inViewFlag = true;
     return p;
 }
+
+Vector3f PinholeCamera::unproject(const Vector2f & imagePoint) const
+{
+    Vector2f d = imagePoint - m_opticalCenter;
+    return Vector3f(d.x() / m_focalLength.x(), d.y() / m_focalLength.y(), 1.0f);
+}

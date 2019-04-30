@@ -6,6 +6,8 @@
 #include <climits>
 #include <limits>
 
+#include "pinholecamera.h"
+
 using namespace std;
 using namespace Eigen;
 
@@ -209,10 +211,19 @@ Matrix<double, 6, 1> ln_transform(const Matrix3d & rotationMatrix,
 }
 
 void optimize_pose(Matrix3d & R, Vector3d & t,
+                   const shared_ptr<const PinholeCamera> & camera,
                    const Vectors3d & controlModelPoints,
                    const Vectors2f & controlImagePoints)
 {
     static const int numberIterations = 30;
+
+    size_t numberPoints = controlModelPoints.size();
+
+    Vector2d uv_points(controlImagePoints.size());
+    for (size_t i = 0; i < numberPoints; ++i)
+    {
+        uv_points[i] = camera->unproject(controlImagePoints[i]).segment<2>(0).cast<double>();
+    }
 
     Matrix<double, 6, 1> x;
 
@@ -220,8 +231,6 @@ void optimize_pose(Matrix3d & R, Vector3d & t,
             () -> tuple<Matrix<double, 6, 2>, Vector2d>
     {
     };
-
-    size_t numberPoints = controlModelPoints.size();
 
     double firstError = -1.0;
 
