@@ -10,6 +10,7 @@
 
 #include "performancemonitor.h"
 #include "pinholecamera.h"
+#include "poseoptimizer.h"
 
 using namespace Eigen;
 
@@ -76,16 +77,15 @@ void ObjectEdgesTracking::compute(cv::Mat image)
 
     cv::cvtColor(edges, edges, CV_GRAY2BGR);
 
-    m_model.draw(edges, m_camera, m_R, m_t);
-
+    m_R = Matrix3d::Identity();
+    m_t = Vector3d(0.0, 0.0, 5.0);
     Vectors3d controlModelPoints;
     Vectors2f controlImagePoints;
     std::tie(controlModelPoints, controlImagePoints) = _getCurrentResiduals(labels, index2point);
+    optimize_pose(m_R, m_t, m_camera, controlModelPoints, controlImagePoints);
+
+    m_model.draw(edges, m_camera, m_R, m_t);
     _drawCurrentResiduals(edges, controlModelPoints, controlImagePoints);
-
-    cv::Point2i center(image.cols / 2, image.rows / 2);
-
-    cv::line(edges, center, index2point[labels.at<int>(center)], cv::Scalar(255, 0, 0), 2);
 
     cv::normalize(distancesMap, distancesMap, 0.0, 1.0, cv::NORM_MINMAX);
     cv::imshow("dis", distancesMap);

@@ -219,24 +219,53 @@ void optimize_pose(Matrix3d & R, Vector3d & t,
 
     size_t numberPoints = controlModelPoints.size();
 
-    Vector2d uv_points(controlImagePoints.size());
+    Vectors2d uv_points(controlImagePoints.size());
     for (size_t i = 0; i < numberPoints; ++i)
     {
         uv_points[i] = camera->unproject(controlImagePoints[i]).segment<2>(0).cast<double>();
     }
 
-    Matrix<double, 6, 1> x;
+    Matrix<double, 6, 1> x = ln_transform(R, t);
 
-    auto getJacobianAndResiduals = []
-            () -> tuple<Matrix<double, 6, 2>, Vector2d>
+    auto getJacobianAndResiduals = [&]
+            (const Vector3d & point, const Vector2d & uv) -> tuple<Matrix<double, 2, 6>, Vector2d>
     {
+        Vector3d v = R * point + t;
+        double z_inv = 1.0 / v.z();
+        double z_inv_squared = z_inv * z_inv;
+
+        Matrix<double, 2, 6> J;
+
+        J(0, 0) = z_inv;                      // - 1 / z
+        J(0, 1) = 0.0;                        // 0
+        J(0, 2) = - v.x() * z_inv_squared;    // x / z^2
+        J(0, 3) = - v.y() * J(0, 2);          // x * y / z^2
+        J(0, 4) = 1.0 + v.x() * J(0, 2);      // -(1.0 + x^2 / z^2)
+        J(0, 5) = - v.y() * z_inv;            // y / z
+
+        J(1, 0) = 0.0;                        // 0
+        J(1, 1) = z_inv;                      // - 1 / z
+        J(1, 2) = - v.y() * z_inv_squared;    // y / z^2
+        J(1, 3) = - (1.0 + v.y() * J(1, 2));  // 1.0 + y^2 / z^2
+        J(1, 4) = J(0, 3);                    // -x * y / z^2
+        J(1, 5) = v.x() * z_inv;              // - x / z
+
+        Vector2d e = Vector2d(v.x() / v.z(), v.y() / v.z()) - uv;
+
+        return make_tuple(J, e);
+    };
+
+    auto toUV = [&] (const Vector3d & point)
+    {
+        Vector3d v = R * point + t;
+        return Vector2d(v.x() / v.z(), v.y() / v.z());
     };
 
     double firstError = -1.0;
 
     double Fsq = numeric_limits<double>::max();
     double factor = 1e-5;
-    Matrix<double, 2, Dynamic> J_i;
+    Matrix<double, 2, 6> J_i;
     Vector2d e_i;
 
     for (int iter = 0; iter < numberIterations; ++iter)
@@ -247,9 +276,7 @@ void optimize_pose(Matrix3d & R, Vector3d & t,
 
         for (size_t i = 0; i < numberPoints; ++i)
         {
-            tie(J_i, e_i) = getJacobianAndResiduals(cast<int>(j), c_uv_points[i], c_points3d[i],
-                                                    opticalCenter, focalLength, distCoeffs,
-                                                    t, r, R);
+            tie(J_i, e_i) = getJacobianAndResiduals(controlModelPoints[i], uv_points[i]);
             JtJ += J_i.row(0).transpose() * J_i.row(0);
             Je += J_i.row(0).transpose() * e_i.x();
             JtJ += J_i.row(1).transpose() * J_i.row(1);
@@ -262,19 +289,22 @@ void optimize_pose(Matrix3d & R, Vector3d & t,
         for (int n_try = 0; n_try < 100; ++n_try)
         {
             JtJ.diagonal() += Matrix<double, 6, 1>::Ones() * factor;
-            VectorXd dx = JtJ.ldlt().solve(Je).eval();
-            VectorXd x_next = x - dx;
+            Matrix<double, 6, 1> dx = JtJ.ldlt().solve(Je).eval();
+            Matrix<double, 6, 1> x_next = x - dx;
+
+            exp_transform(R, t, x_next);
 
             Fsq_next = 0.0;
             for (size_t i = 0; i < numberPoints; ++i)
             {
-                e_i = toUV(, R, t) - c_uv_points.at(i);
+                e_i = toUV(controlModelPoints[i]) - uv_points[i];
                 Fsq_next += e_i.dot(e_i);
             }
 
             if (Fsq_next < Fsq)
             {
                 x = x_next;
+                exp_transform(R, t, x);
                 break;
             }
             else
