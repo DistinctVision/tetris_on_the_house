@@ -14,7 +14,8 @@ HEADERS += \
     objectedgestracking.h \
     objectmodel.h \
     pinholecamera.h \
-    performancemonitor.h
+    performancemonitor.h \
+    poseoptimizer.h
 
 SOURCES += \
     main.cpp \
@@ -22,7 +23,8 @@ SOURCES += \
     objectedgestracking.cpp \
     objectmodel.cpp \
     pinholecamera.cpp \
-    performancemonitor.cpp
+    performancemonitor.cpp \
+    poseoptimizer.cpp
 
 RESOURCES += \
     qml.qrc
