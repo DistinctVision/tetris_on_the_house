@@ -71,18 +71,25 @@ void ObjectEdgesTracking::compute(cv::Mat image)
     }
     m_monitor->endTimer("Label process");
 
+    m_monitor->startTimer("Optimization");
+
+    m_R = Matrix3d::Identity();
+    m_t = Vector3d(0.0, 0.0, 5.0);
+
+    Vectors3d controlModelPoints;
+    Vectors2f controlImagePoints;
+    for (int i = 0; i < 30; ++i)
+    {
+        std::tie(controlModelPoints, controlImagePoints) = _getCurrentResiduals(labels, index2point);
+        optimize_pose(m_R, m_t, m_camera, controlModelPoints, controlImagePoints, 1);
+    }
+    m_monitor->endTimer("Optimization");
+
     m_monitor->end();
 
     qDebug().noquote() << QString::fromStdString(m_monitor->report());
 
     cv::cvtColor(edges, edges, CV_GRAY2BGR);
-
-    m_R = Matrix3d::Identity();
-    m_t = Vector3d(0.0, 0.0, 5.0);
-    Vectors3d controlModelPoints;
-    Vectors2f controlImagePoints;
-    std::tie(controlModelPoints, controlImagePoints) = _getCurrentResiduals(labels, index2point);
-    optimize_pose(m_R, m_t, m_camera, controlModelPoints, controlImagePoints);
 
     m_model.draw(edges, m_camera, m_R, m_t);
     _drawCurrentResiduals(edges, controlModelPoints, controlImagePoints);

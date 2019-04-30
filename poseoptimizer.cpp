@@ -75,45 +75,6 @@ Matrix3d exp_rotationMatrix(const Vector3d & w)
     return exp_rodrigues(w, A, B);
 }
 
-void exp_transform(Matrix3d & outRotationMatrix, Vector3d & outTranslation,
-                   const Matrix<double, 6, 1> & mu)
-{
-    static const double one_6th = 1.0 / 6.0;
-    static const double one_20th = 1.0 / 20.0;
-    const Vector3d mu_3(mu(0), mu(1), mu(2));
-    const Vector3d w(mu(3), mu(4), mu(5));
-    const double theta_square = w.dot(w);
-    const double theta = sqrt(theta_square);
-    double A, B;
-
-    const Vector3d crossVector = w.cross(mu_3);
-    if (theta_square < (1e-8))
-    {
-        A = 1.0 - one_6th * theta_square;
-        B = 0.5;
-        outTranslation = mu_3 + 0.5 * crossVector;
-    }
-    else
-    {
-        double C;
-        if (theta_square < (1e-6))
-        {
-            C = one_6th * (1.0 - one_20th * theta_square);
-            A = 1.0 - theta_square * C;
-            B = 0.5 - 0.25 * one_6th * theta_square;
-        }
-        else
-        {
-            const double inv_theta = 1.0 / theta;
-            A = sin(theta) * inv_theta;
-            B = (1.0 - cos(theta)) * (inv_theta * inv_theta);
-            C = (1.0 - A) * (inv_theta * inv_theta);
-        }
-        outTranslation = mu_3 + B * crossVector + C * w.cross(crossVector);
-    }
-    outRotationMatrix = exp_rodrigues(w, A, B);
-}
-
 Vector3d ln_rotationMatrix(const Matrix3d & rotationMatrix)
 {
     static const double m_sqrt1_2 = 0.707106781186547524401;
@@ -172,51 +133,54 @@ Vector3d ln_rotationMatrix(const Matrix3d & rotationMatrix)
     return result;
 }
 
-Matrix<double, 6, 1> ln_transform(const Matrix3d & rotationMatrix,
-                                  const Vector3d & translation)
+Matrix3d skewMatrix(const Vector3d & a)
 {
-    Vector3d rot = ln_rotationMatrix(rotationMatrix);
-    const double square_theta = rot.dot(rot);
-    const double theta = std::sqrt(square_theta);
+    Matrix3d A;
+    A << 0.0, - a(2), a(1),
+         a(2), 0.0, - a(0),
+         - a(1), a(0), 0.0;
+    return A;
+}
 
-    double shtot = 0.5;
-    if (theta > 0.00001)
+Matrix3d exp_jacobian(const Vector3d & w,
+                      const Vector3d & point)
+{
+    double l = w.dot(w);
+    if (l < 1e-5)
     {
-        shtot = sin(theta * 0.5) / theta;
+        return - skewMatrix(point);
     }
+    Matrix3d R = exp_rotationMatrix(w);
+    return - R * skewMatrix(point) *
+            ((w * w.transpose() +
+              (R.transpose() - Matrix3d::Identity()) * skewMatrix(w)) / l);
+}
 
-    // now do the rotation
-    const Matrix3d halfrotator = exp_rotationMatrix(rot * (-0.5));
-    Vector3d rottrans = halfrotator * translation;
-
-    if (theta > (0.001))
+void test_exp()
+{
+    auto generate_random_unit_vector_3d = [] () -> Vector3d
     {
-        rottrans -= (rot * ((translation.dot(rot) * (1.0 - 2.0 * shtot) / (square_theta))));
-    }
-    else
+        return Vector3d((rand() % 2000) / 1000.0 - 1.0,
+                        (rand() % 2000) / 1000.0 - 1.0,
+                        (rand() % 2000) / 1000.0 - 1.0).normalized();
+    };
+
+    for (int i = 0; i < 100; ++i)
     {
-        rottrans -= (rot * ((translation.dot(rot) / 24.0)));
+        Vector3d x = generate_random_unit_vector_3d();
+        Matrix3d R = exp_rotationMatrix(x);
+        Vector3d x1 = ln_rotationMatrix(R);
+        double s1 = (x1 - x).array().abs().sum();
+        assert(static_cast<float>(s1) < numeric_limits<float>::epsilon());
     }
-
-    rottrans /= (2.0 * shtot);
-
-    Matrix<double, 6, 1> result;
-    result(0) = rottrans(0);
-    result(1) = rottrans(1);
-    result(2) = rottrans(2);
-    result(3) = rot(0);
-    result(4) = rot(1);
-    result(5) = rot(2);
-    return result;
 }
 
 void optimize_pose(Matrix3d & R, Vector3d & t,
                    const shared_ptr<const PinholeCamera> & camera,
                    const Vectors3d & controlModelPoints,
-                   const Vectors2f & controlImagePoints)
+                   const Vectors2f & controlImagePoints,
+                   int numberIterations)
 {
-    static const int numberIterations = 30;
-
     size_t numberPoints = controlModelPoints.size();
 
     Vectors2d uv_points(controlImagePoints.size());
@@ -225,32 +189,39 @@ void optimize_pose(Matrix3d & R, Vector3d & t,
         uv_points[i] = camera->unproject(controlImagePoints[i]).segment<2>(0).cast<double>();
     }
 
-    Matrix<double, 6, 1> x = ln_transform(R, t);
+    Vector3d w = ln_rotationMatrix(R);
+    Matrix3d rW;
+
+    Matrix<double, 6, 1> x;
+    x.segment<3>(0) = t;
+    x.segment<3>(3) = w;
 
     auto getJacobianAndResiduals = [&]
             (const Vector3d & point, const Vector2d & uv) -> tuple<Matrix<double, 2, 6>, Vector2d>
     {
+        Matrix3d rJ = R * skewMatrix(point) * rW;
+
         Vector3d v = R * point + t;
         double z_inv = 1.0 / v.z();
         double z_inv_squared = z_inv * z_inv;
 
         Matrix<double, 2, 6> J;
 
-        J(0, 0) = z_inv;                      // - 1 / z
-        J(0, 1) = 0.0;                        // 0
-        J(0, 2) = - v.x() * z_inv_squared;    // x / z^2
-        J(0, 3) = - v.y() * J(0, 2);          // x * y / z^2
-        J(0, 4) = 1.0 + v.x() * J(0, 2);      // -(1.0 + x^2 / z^2)
-        J(0, 5) = - v.y() * z_inv;            // y / z
+        J(0, 0) = z_inv;
+        J(0, 1) = 0.0;
+        J(0, 2) = - v.x() * z_inv_squared;
+        J(0, 3) = (rJ(0, 0) * v.z() - v.x() * rJ(2, 0)) * z_inv_squared;
+        J(0, 4) = (rJ(0, 1) * v.z() - v.x() * rJ(2, 1)) * z_inv_squared;
+        J(0, 5) = (rJ(0, 2) * v.z() - v.x() * rJ(2, 2)) * z_inv_squared;
 
-        J(1, 0) = 0.0;                        // 0
-        J(1, 1) = z_inv;                      // - 1 / z
-        J(1, 2) = - v.y() * z_inv_squared;    // y / z^2
-        J(1, 3) = - (1.0 + v.y() * J(1, 2));  // 1.0 + y^2 / z^2
-        J(1, 4) = J(0, 3);                    // -x * y / z^2
-        J(1, 5) = v.x() * z_inv;              // - x / z
+        J(1, 0) = 0.0;
+        J(1, 1) = z_inv;
+        J(1, 2) = - v.y() * z_inv_squared;
+        J(1, 3) = (rJ(1, 0) * v.z() - v.y() * rJ(2, 0)) * z_inv_squared;
+        J(1, 4) = (rJ(1, 1) * v.z() - v.y() * rJ(2, 1)) * z_inv_squared;
+        J(1, 5) = (rJ(1, 2) * v.z() - v.y() * rJ(2, 2)) * z_inv_squared;
 
-        Vector2d e = Vector2d(v.x() / v.z(), v.y() / v.z()) - uv;
+        Vector2d e = v.segment<2>(0) * z_inv - uv;
 
         return make_tuple(J, e);
     };
@@ -261,7 +232,7 @@ void optimize_pose(Matrix3d & R, Vector3d & t,
         return Vector2d(v.x() / v.z(), v.y() / v.z());
     };
 
-    double firstError = -1.0;
+    double firstError = - 1.0;
 
     double Fsq = numeric_limits<double>::max();
     double factor = 1e-5;
@@ -270,10 +241,23 @@ void optimize_pose(Matrix3d & R, Vector3d & t,
 
     for (int iter = 0; iter < numberIterations; ++iter)
     {
+        t = x.segment<3>(0);
+        w = x.segment<3>(3);
+        R = exp_rotationMatrix(w);
+        double lw = w.dot(w);
+        if (lw < 1e-5)
+        {
+            R = Matrix3d::Identity();
+            rW = - Matrix3d::Identity();
+        }
+        else
+        {
+            rW = (- ((w * w.transpose() + (R.transpose() - Matrix3d::Identity()) * skewMatrix(w)) / lw));
+        }
+
         Matrix<double, 6, 6> JtJ = Matrix<double, 6, 6>::Zero();
         Matrix<double, 6, 1> Je = Matrix<double, 6, 1>::Zero();
         Fsq = 0.0;
-
         for (size_t i = 0; i < numberPoints; ++i)
         {
             tie(J_i, e_i) = getJacobianAndResiduals(controlModelPoints[i], uv_points[i]);
@@ -292,7 +276,8 @@ void optimize_pose(Matrix3d & R, Vector3d & t,
             Matrix<double, 6, 1> dx = JtJ.ldlt().solve(Je).eval();
             Matrix<double, 6, 1> x_next = x - dx;
 
-            exp_transform(R, t, x_next);
+            t = x_next.segment<3>(0);
+            R = exp_rotationMatrix(x_next.segment<3>(3));
 
             Fsq_next = 0.0;
             for (size_t i = 0; i < numberPoints; ++i)
@@ -304,7 +289,6 @@ void optimize_pose(Matrix3d & R, Vector3d & t,
             if (Fsq_next < Fsq)
             {
                 x = x_next;
-                exp_transform(R, t, x);
                 break;
             }
             else
@@ -319,4 +303,6 @@ void optimize_pose(Matrix3d & R, Vector3d & t,
             break;
         }
     }
+    t = x.segment<3>(0);
+    R = exp_rotationMatrix(x.segment<3>(3));
 }

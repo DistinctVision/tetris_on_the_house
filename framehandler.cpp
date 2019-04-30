@@ -51,8 +51,7 @@ QVideoFrame FrameHandlerRunnable::run(QVideoFrame * videoFrame,
                 (m_objectEdgesTracking->camera()->imageSize() != imageSize))
         {
             m_objectEdgesTracking->setCamera(std::make_shared<PinholeCamera>(imageSize,
-                                                                             Vector2f(imageSize.x(),
-                                                                                      imageSize.x()),
+                                                                             Vector2f(imageSize.x(), imageSize.x()) * 1.2f,
                                                                              imageSize.cast<float>() * 0.5));
         }
         m_objectEdgesTracking->compute(frame);
