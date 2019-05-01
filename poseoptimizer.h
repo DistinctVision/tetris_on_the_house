@@ -25,10 +25,11 @@ void optimize_pose(Eigen::Matrix3d & R, Eigen::Vector3d & t,
                    const Vectors2f & controlImagePoints,
                    int numberIterations);
 
-void optimize_pose(Eigen::Matrix3d & R, Eigen::Vector3d & t,
-                   const cv::Mat & distanceMap,
-                   const std::shared_ptr<const PinholeCamera> & camera,
-                   const Vectors3d & modelPoints,
-                   int numberIterations);
+double optimize_pose(Eigen::Matrix3d & R, Eigen::Vector3d & t,
+                     const cv::Mat & distanceMap,
+                     const std::shared_ptr<const PinholeCamera> & camera,
+                     const Vectors3d & modelPoints,
+                     float maxDistance,
+                     int numberIterations);
 
 #endif // POSEOPTIMIZER_H

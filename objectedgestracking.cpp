@@ -66,15 +66,18 @@ void ObjectEdgesTracking::compute(cv::Mat image)
     m_t = Vector3d(0.0, 0.0, 5.0);
     Vectors3d controlModelPoints;
     Vectors2f controlViewPoints;
+    double E = 0.0;
     for (int i = 0; i < 6; ++i)
     {
         tie(controlModelPoints, controlViewPoints) =
             m_model.getControlPoints(m_camera, m_controlPixelDistance, m_R, m_t);
-        optimize_pose(m_R, m_t, distancesMap, m_camera, controlModelPoints, 5);
+        E = optimize_pose(m_R, m_t, distancesMap, m_camera, controlModelPoints, 15.0f, 5);
     }
     m_monitor->endTimer("Tracking");
 
     m_monitor->end();
+
+    qDebug() << "Error =" << E;
 
     cv::cvtColor(edges, edges, CV_GRAY2BGR);
     m_model.draw(edges, m_camera, m_R, m_t);

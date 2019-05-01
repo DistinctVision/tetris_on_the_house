@@ -307,12 +307,26 @@ void optimize_pose(Matrix3d & R, Vector3d & t,
     R = exp_rotationMatrix(x.segment<3>(3));
 }
 
-void optimize_pose(Matrix3d & R, Vector3d & t,
-                   const cv::Mat & distanceMap,
-                   const shared_ptr<const PinholeCamera> & camera,
-                   const Vectors3d & modelPoints,
-                   int numberIterations)
+double optimize_pose(Matrix3d & R, Vector3d & t,
+                     const cv::Mat & distanceMap,
+                     const shared_ptr<const PinholeCamera> & camera,
+                     const Vectors3d & modelPoints,
+                     float maxDistance,
+                     int numberIterations)
 {
+    float weightFunction_k1 = 1.0f / (maxDistance * (1.0f - maxDistance / 3.0f));
+    float weightFunction_k2 = 1.0f / (3.0f * maxDistance * maxDistance);
+
+    auto weightFunction = [&] (float x) -> float
+    {
+        return (x > maxDistance) ? 1.0f : (weightFunction_k1 * x * (1.0f - (x * x) * weightFunction_k2)) ;
+    };
+
+    auto div_weightFunction = [&] (float x) -> float
+    {
+        return (x > maxDistance) ? 0.0f : (weightFunction_k1 - 3.0f * weightFunction_k1 * weightFunction_k2 * x * x);
+    };
+
     size_t numberPoints = modelPoints.size();
 
     Vector2f focalLength = camera->focalLength();
@@ -391,8 +405,10 @@ void optimize_pose(Matrix3d & R, Vector3d & t,
         float dis, dis_dx, dis_dy;
         getResidualAndDiffs(dis, dis_dx, dis_dy, imagePoint);
 
-        J = (J_x * (focalLength.x() * dis_dx) + J_y * (focalLength.y() * dis_dy)).cast<double>();
-        e = static_cast<double>(dis);
+        float div_w = div_weightFunction(dis);
+
+        J = (J_x * (focalLength.x() * dis_dx * div_w) + J_y * (focalLength.y() * dis_dy * div_w)).cast<double>();
+        e = static_cast<double>(weightFunction(dis));
 
         return true;
     };
@@ -427,7 +443,7 @@ void optimize_pose(Matrix3d & R, Vector3d & t,
         const float * d_ptr_next = distanceMap.ptr<float>(imagePoint_i.y() + 1, imagePoint_i.x());
         float dis = d_ptr[0] * w1 + d_ptr[1] * w2 + d_ptr_next[0] * w3 + d_ptr_next[1] * w4;
 
-        e = static_cast<double>(dis);
+        e = static_cast<double>(weightFunction(dis));
 
         return true;
     };
@@ -511,4 +527,6 @@ void optimize_pose(Matrix3d & R, Vector3d & t,
     }
     t = x.segment<3>(0);
     R = exp_rotationMatrix(x.segment<3>(3));
+
+    return Fsq;
 }
