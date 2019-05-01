@@ -306,3 +306,209 @@ void optimize_pose(Matrix3d & R, Vector3d & t,
     t = x.segment<3>(0);
     R = exp_rotationMatrix(x.segment<3>(3));
 }
+
+void optimize_pose(Matrix3d & R, Vector3d & t,
+                   const cv::Mat & distanceMap,
+                   const shared_ptr<const PinholeCamera> & camera,
+                   const Vectors3d & modelPoints,
+                   int numberIterations)
+{
+    size_t numberPoints = modelPoints.size();
+
+    Vector2f focalLength = camera->focalLength();
+    Vector2f opticalCenter = camera->opticalCenter();
+    Vector2f imageCorner(static_cast<float>(distanceMap.cols - 2), static_cast<float>(distanceMap.rows - 2));
+
+    Vector3d w = ln_rotationMatrix(R);
+    Matrix3d rW;
+
+    Matrix<double, 6, 1> x;
+    x.segment<3>(0) = t;
+    x.segment<3>(3) = w;
+
+    auto getResidualAndDiffs = [&]
+            (float & dis, float & dis_dx, float & dis_dy, const Vector2f & imagePoint)
+    {
+        Vector2i imagePoint_i = imagePoint.cast<int>();
+        Vector2f sp(imagePoint.x() - static_cast<float>(imagePoint_i.x()),
+                    imagePoint.y() - static_cast<float>(imagePoint_i.y()));
+        Vector2f i_sp(1.0f - sp.x(), 1.0f - sp.y());
+
+        float w1 = i_sp.x() * i_sp.y();
+        float w2 = sp.x() * i_sp.y();
+        float w3 = i_sp.x() * sp.y();
+        float w4 = sp.x() * sp.y();
+
+        const float * d_ptr = distanceMap.ptr<float>(imagePoint_i.y(), imagePoint_i.x());
+        const float * d_ptr_next = distanceMap.ptr<float>(imagePoint_i.y() + 1, imagePoint_i.x());
+        dis = d_ptr[0] * w1 + d_ptr[1] * w2 + d_ptr_next[0] * w3 + d_ptr_next[1] * w4;
+
+        const float * d_ptr_prev = distanceMap.ptr<float>(imagePoint_i.y() - 1, imagePoint_i.x());
+        dis_dx = ((d_ptr[0] - d_ptr[-1]) * w1 + (d_ptr[1] - d_ptr[0]) * w2 +
+                  (d_ptr_next[0] - d_ptr_next[-1]) * w3 + (d_ptr_next[1] - d_ptr_next[0]) * w4);
+        dis_dy = ((d_ptr[0] - d_ptr_prev[0]) * w1 + (d_ptr[1] - d_ptr_prev[1]) * w2 +
+                  (d_ptr_next[0] - d_ptr[0]) * w3 + (d_ptr_next[1] - d_ptr[1]) * w4);
+    };
+
+    auto getJacobianAndResidual = [&]
+            (Matrix<double, 1, 6> & J, double & e, const Vector3d & point) -> bool
+    {
+        Matrix3d rJ = R * skewMatrix(point) * rW;
+
+        Vector3d v = R * point + t;
+        if (v.z() < 1e-5)
+            return false;
+
+        double z_inv = 1.0 / v.z();
+        double z_inv_squared = z_inv * z_inv;
+
+        Matrix<double, 1, 6> J_x, J_y;
+
+        J_x(0) = z_inv;
+        J_x(1) = 0.0;
+        J_x(2) = - v.x() * z_inv_squared;
+        J_x(3) = (rJ(0, 0) * v.z() - v.x() * rJ(2, 0)) * z_inv_squared;
+        J_x(4) = (rJ(0, 1) * v.z() - v.x() * rJ(2, 1)) * z_inv_squared;
+        J_x(5) = (rJ(0, 2) * v.z() - v.x() * rJ(2, 2)) * z_inv_squared;
+
+        J_y(0) = 0.0;
+        J_y(1) = z_inv;
+        J_y(2) = - v.y() * z_inv_squared;
+        J_y(3) = (rJ(1, 0) * v.z() - v.y() * rJ(2, 0)) * z_inv_squared;
+        J_y(4) = (rJ(1, 1) * v.z() - v.y() * rJ(2, 1)) * z_inv_squared;
+        J_y(5) = (rJ(1, 2) * v.z() - v.y() * rJ(2, 2)) * z_inv_squared;
+
+        Vector2f uv = (v.segment<2>(0) * z_inv).cast<float>();
+        Vector2f imagePoint(uv.x() * focalLength.x() + opticalCenter.x(),
+                            uv.y() * focalLength.y() + opticalCenter.y());
+
+        if ((imagePoint.x() < 1.0f) || (imagePoint.y() < 1.0f) ||
+                (imagePoint.x() >= imageCorner.x()) || (imagePoint.y() >= imageCorner.y()))
+        {
+            return false;
+        }
+
+        float dis, dis_dx, dis_dy;
+        getResidualAndDiffs(dis, dis_dx, dis_dy, imagePoint);
+
+        J = (J_x * (focalLength.x() * dis_dx) + J_y * (focalLength.y() * dis_dy)).cast<double>();
+        e = static_cast<double>(dis);
+
+        return true;
+    };
+
+    auto getResidual = [&] (double & e, const Vector3d & point) -> bool
+    {
+        Vector3d v = R * point + t;
+        if (v.z() < 1e-5)
+            return false;
+
+        Vector2f uv = (v.segment<2>(0) / v.z()).cast<float>();
+        Vector2f imagePoint(uv.x() * focalLength.x() + opticalCenter.x(),
+                            uv.y() * focalLength.y() + opticalCenter.y());
+
+        if ((imagePoint.x() < 1.0f) || (imagePoint.y() < 1.0f) ||
+                (imagePoint.x() >= imageCorner.x()) || (imagePoint.y() >= imageCorner.y()))
+        {
+            return false;
+        }
+
+        Vector2i imagePoint_i = imagePoint.cast<int>();
+        Vector2f sp(imagePoint.x() - static_cast<float>(imagePoint_i.x()),
+                    imagePoint.y() - static_cast<float>(imagePoint_i.y()));
+        Vector2f i_sp(1.0f - sp.x(), 1.0f - sp.y());
+
+        float w1 = i_sp.x() * i_sp.y();
+        float w2 = sp.x() * i_sp.y();
+        float w3 = i_sp.x() * sp.y();
+        float w4 = sp.x() * sp.y();
+
+        const float * d_ptr = distanceMap.ptr<float>(imagePoint_i.y(), imagePoint_i.x());
+        const float * d_ptr_next = distanceMap.ptr<float>(imagePoint_i.y() + 1, imagePoint_i.x());
+        float dis = d_ptr[0] * w1 + d_ptr[1] * w2 + d_ptr_next[0] * w3 + d_ptr_next[1] * w4;
+
+        e = static_cast<double>(dis);
+
+        return true;
+    };
+
+    double firstError = - 1.0;
+
+    double Fsq = numeric_limits<double>::max();
+    double factor = 1e-5;
+    Matrix<double, 1, 6> J_i;
+    double e;
+
+    for (int iter = 0; iter < numberIterations; ++iter)
+    {
+        t = x.segment<3>(0);
+        w = x.segment<3>(3);
+        R = exp_rotationMatrix(w);
+        double lw = w.dot(w);
+        if (lw < 1e-5)
+        {
+            R = Matrix3d::Identity();
+            rW = - Matrix3d::Identity();
+        }
+        else
+        {
+            rW = (- ((w * w.transpose() + (R.transpose() - Matrix3d::Identity()) * skewMatrix(w)) / lw));
+        }
+
+        size_t count = 0;
+        Matrix<double, 6, 6> JtJ = Matrix<double, 6, 6>::Zero();
+        Matrix<double, 6, 1> Je = Matrix<double, 6, 1>::Zero();
+        Fsq = 0.0;
+        for (size_t i = 0; i < numberPoints; ++i)
+        {
+            if (!getJacobianAndResidual(J_i, e, modelPoints[i]))
+                continue;
+            JtJ += J_i.transpose() * J_i;
+            Je += J_i.transpose() * e;
+            Fsq += e * e;
+            ++count;
+        }
+        Fsq /= static_cast<double>(count);
+        if (firstError < 0.0)
+            firstError = Fsq;
+        double Fsq_next = Fsq;
+        for (int n_try = 0; n_try < 100; ++n_try)
+        {
+            JtJ.diagonal() += Matrix<double, 6, 1>::Ones() * factor;
+            Matrix<double, 6, 1> dx = JtJ.ldlt().solve(Je).eval();
+            Matrix<double, 6, 1> x_next = x - dx;
+
+            t = x_next.segment<3>(0);
+            R = exp_rotationMatrix(x_next.segment<3>(3));
+
+            count = 0;
+            Fsq_next = 0.0;
+            for (size_t i = 0; i < numberPoints; ++i)
+            {
+                if (!getResidual(e, modelPoints[i]))
+                    continue;
+                Fsq_next += e * e;
+                ++count;
+            }
+            Fsq_next /= static_cast<double>(count);
+
+            if (Fsq_next < Fsq)
+            {
+                x = x_next;
+                break;
+            }
+            else
+            {
+                factor *= 2.0;
+            }
+        }
+        double deltaFsq = Fsq - Fsq_next;
+        Fsq = Fsq_next;
+        if (deltaFsq < numeric_limits<double>::epsilon())
+        {
+            break;
+        }
+    }
+    t = x.segment<3>(0);
+    R = exp_rotationMatrix(x.segment<3>(3));
+}

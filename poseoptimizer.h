@@ -5,6 +5,8 @@
 
 #include <Eigen/Eigen>
 
+#include <opencv2/core.hpp>
+
 #include "objectmodel.h"
 
 class PinholeCamera;
@@ -21,6 +23,12 @@ void optimize_pose(Eigen::Matrix3d & R, Eigen::Vector3d & t,
                    const std::shared_ptr<const PinholeCamera> & camera,
                    const Vectors3d & controlModelPoints,
                    const Vectors2f & controlImagePoints,
+                   int numberIterations);
+
+void optimize_pose(Eigen::Matrix3d & R, Eigen::Vector3d & t,
+                   const cv::Mat & distanceMap,
+                   const std::shared_ptr<const PinholeCamera> & camera,
+                   const Vectors3d & modelPoints,
                    int numberIterations);
 
 #endif // POSEOPTIMIZER_H
