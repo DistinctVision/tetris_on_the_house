@@ -314,17 +314,33 @@ double optimize_pose(Matrix3d & R, Vector3d & t,
                      float maxDistance,
                      int numberIterations)
 {
+    Matrix<double, 6, 1> x;
+    x.segment<3>(0) = t;
+    x.segment<3>(3) = ln_rotationMatrix(R);
+    double E = optimize_pose(x, distanceMap, camera, modelPoints, maxDistance, numberIterations);
+    t = x.segment<3>(0);
+    R = exp_rotationMatrix(x.segment<3>(3));
+    return E;
+}
+
+double optimize_pose(Matrix<double, 6, 1> & x,
+                     const cv::Mat & distanceMap,
+                     const shared_ptr<const PinholeCamera> & camera,
+                     const Vectors3d & modelPoints,
+                     float maxDistance,
+                     int numberIterations)
+{
     float weightFunction_k2 = 1.0f / (3.0f * maxDistance * maxDistance);
     float weightFunction_k1 = 1.0f / (maxDistance * (1.0f - weightFunction_k2 * maxDistance * maxDistance));
 
     auto weightFunction = [&] (float x) -> float
     {
-        return (x > maxDistance) ? 1.0f : (weightFunction_k1 * x * (1.0f - (x * x) * weightFunction_k2));
+        return (x >= maxDistance) ? 0.0f : (weightFunction_k1 * x * (1.0f - (x * x) * weightFunction_k2));
     };
 
     auto div_weightFunction = [&] (float x) -> float
     {
-        return (x > maxDistance) ? 0.0f : (weightFunction_k1 - 3.0f * weightFunction_k1 * weightFunction_k2 * x * x);
+        return (x >= maxDistance) ? 0.0f : (weightFunction_k1 - 3.0f * weightFunction_k1 * weightFunction_k2 * x * x);
     };
 
     auto get_x_weightFunction = [&] (double y) -> double
@@ -346,12 +362,10 @@ double optimize_pose(Matrix3d & R, Vector3d & t,
     Vector2f opticalCenter = camera->opticalCenter();
     Vector2f imageCorner(static_cast<float>(distanceMap.cols - 2), static_cast<float>(distanceMap.rows - 2));
 
-    Vector3d w = ln_rotationMatrix(R);
+    Vector3d w;
+    Matrix3d R;
+    Vector3d t;
     Matrix3d rW;
-
-    Matrix<double, 6, 1> x;
-    x.segment<3>(0) = t;
-    x.segment<3>(3) = w;
 
     auto getResidualAndDiffs = [&]
             (float & dis, float & dis_dx, float & dis_dy, const Vector2f & imagePoint)
@@ -418,10 +432,14 @@ double optimize_pose(Matrix3d & R, Vector3d & t,
         float dis, dis_dx, dis_dy;
         getResidualAndDiffs(dis, dis_dx, dis_dy, imagePoint);
 
+        float w = weightFunction(dis);
+        if (w == 0.0f)
+            return false;
+
         float div_w = div_weightFunction(dis);
 
         J = (J_x * (focalLength.x() * dis_dx * div_w) + J_y * (focalLength.y() * dis_dy * div_w)).cast<double>();
-        e = static_cast<double>(weightFunction(dis));
+        e = static_cast<double>(w);
 
         return true;
     };
@@ -456,7 +474,10 @@ double optimize_pose(Matrix3d & R, Vector3d & t,
         const float * d_ptr_next = distanceMap.ptr<float>(imagePoint_i.y() + 1, imagePoint_i.x());
         float dis = d_ptr[0] * w1 + d_ptr[1] * w2 + d_ptr_next[0] * w3 + d_ptr_next[1] * w4;
 
-        e = static_cast<double>(weightFunction(dis));
+        float w = weightFunction(dis);
+        if (w == 0.0f)
+            return false;
+        e = static_cast<double>(w);
 
         return true;
     };
@@ -501,7 +522,7 @@ double optimize_pose(Matrix3d & R, Vector3d & t,
         if (firstError < 0.0)
             firstError = Fsq;
         double Fsq_next = Fsq;
-        for (int n_try = 0; n_try < 100; ++n_try)
+        for (int n_try = 0; n_try < 10; ++n_try)
         {
             JtJ.diagonal() += Matrix<double, 6, 1>::Ones() * factor;
             Matrix<double, 6, 1> dx = JtJ.ldlt().solve(Je).eval();
@@ -538,8 +559,5 @@ double optimize_pose(Matrix3d & R, Vector3d & t,
             break;
         }
     }
-    t = x.segment<3>(0);
-    R = exp_rotationMatrix(x.segment<3>(3));
-
     return get_x_weightFunction(sqrt(Fsq));
 }

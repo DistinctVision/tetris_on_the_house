@@ -32,4 +32,11 @@ double optimize_pose(Eigen::Matrix3d & R, Eigen::Vector3d & t,
                      float maxDistance,
                      int numberIterations);
 
+double optimize_pose(Eigen::Matrix<double, 6, 1> & x,
+                     const cv::Mat & distanceMap,
+                     const std::shared_ptr<const PinholeCamera> & camera,
+                     const Vectors3d & modelPoints,
+                     float maxDistance,
+                     int numberIterations);
+
 #endif // POSEOPTIMIZER_H

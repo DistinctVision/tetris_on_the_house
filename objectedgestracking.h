@@ -34,6 +34,8 @@ private:
 
     Eigen::Matrix3d m_R;
     Eigen::Vector3d m_t;
+
+    double _tracking(const cv::Mat & distanceMap);
 };
 
 #endif // OBJECTEDGESTRACKING_H
