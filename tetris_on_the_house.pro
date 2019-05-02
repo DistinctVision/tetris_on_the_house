@@ -8,6 +8,7 @@ TEMPLATE = app
 
 include(eigen3.pri)
 include(opencv.pri)
+include(gl/gl.pri)
 
 HEADERS += \
     framehandler.h \

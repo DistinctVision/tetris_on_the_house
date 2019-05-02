@@ -14,9 +14,9 @@ windows {
             DEPENDPATH += $$(OPENCV_INCLUDE_PATH)
 
             CONFIG(debug, debug|release) {
-                OPENCV_VERSION=341d
+                OPENCV_VERSION=400d
             } else {
-                OPENCV_VERSION=341
+                OPENCV_VERSION=400
             }
 #            LIBS += -L$$(OPENCV_LIB_PATH) \
 #                -lopencv_core$$OPENCV_VERSION \
