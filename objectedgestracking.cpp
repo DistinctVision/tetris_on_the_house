@@ -71,7 +71,7 @@ void ObjectEdgesTracking::compute(cv::Mat image)
     {
         tie(controlModelPoints, controlViewPoints) =
             m_model.getControlPoints(m_camera, m_controlPixelDistance, m_R, m_t);
-        E = optimize_pose(m_R, m_t, distancesMap, m_camera, controlModelPoints, 15.0f, 5);
+        E = optimize_pose(m_R, m_t, distancesMap, m_camera, controlModelPoints, 20.0f, 5);
     }
     m_monitor->endTimer("Tracking");
 
@@ -84,7 +84,7 @@ void ObjectEdgesTracking::compute(cv::Mat image)
     cv::normalize(distancesMap, distancesMap, 0.0, 1.0, cv::NORM_MINMAX);
     cv::imshow("dis", distancesMap);
 
-    qDebug().noquote() << QString::fromStdString(m_monitor->report());
+    //qDebug().noquote() << QString::fromStdString(m_monitor->report());
 
     cv::imshow("edges", edges);
     cv::waitKey(33);

@@ -314,17 +314,30 @@ double optimize_pose(Matrix3d & R, Vector3d & t,
                      float maxDistance,
                      int numberIterations)
 {
-    float weightFunction_k1 = 1.0f / (maxDistance * (1.0f - maxDistance / 3.0f));
     float weightFunction_k2 = 1.0f / (3.0f * maxDistance * maxDistance);
+    float weightFunction_k1 = 1.0f / (maxDistance * (1.0f - weightFunction_k2 * maxDistance * maxDistance));
 
     auto weightFunction = [&] (float x) -> float
     {
-        return (x > maxDistance) ? 1.0f : (weightFunction_k1 * x * (1.0f - (x * x) * weightFunction_k2)) ;
+        return (x > maxDistance) ? 1.0f : (weightFunction_k1 * x * (1.0f - (x * x) * weightFunction_k2));
     };
 
     auto div_weightFunction = [&] (float x) -> float
     {
         return (x > maxDistance) ? 0.0f : (weightFunction_k1 - 3.0f * weightFunction_k1 * weightFunction_k2 * x * x);
+    };
+
+    auto get_x_weightFunction = [&] (double y) -> double
+    {
+        double b = - 1.0 / static_cast<double>(weightFunction_k2);
+        double c = y / static_cast<double>(weightFunction_k1 * weightFunction_k2);
+        double Q = ( - 3.0 * b) / 9.0;
+        double R = (27.0 * c) / 54.0;
+
+        double t = acos(R / sqrt(Q * Q * Q)) / 3.0;
+        double x = - 2.0 * sqrt(Q) * cos(t - (2.0 / 3.0) * M_PI);
+
+        return x;
     };
 
     size_t numberPoints = modelPoints.size();
@@ -528,5 +541,5 @@ double optimize_pose(Matrix3d & R, Vector3d & t,
     t = x.segment<3>(0);
     R = exp_rotationMatrix(x.segment<3>(3));
 
-    return Fsq;
+    return get_x_weightFunction(sqrt(Fsq));
 }
