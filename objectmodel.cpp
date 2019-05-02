@@ -147,10 +147,9 @@ const ObjectModel::Polygons & ObjectModel::polygons() const
     return m_polygons;
 }
 
-std::tuple<Vectors3d, Vectors2f>
-ObjectModel::getControlPoints(const std::shared_ptr<PinholeCamera> & camera,
-                              float controlPixelDistance,
-                              const Matrix3d & R, const Vector3d & t) const
+Vectors3d ObjectModel::getControlPoints(const std::shared_ptr<PinholeCamera> & camera,
+                                        float controlPixelDistance,
+                                        const Matrix3d & R, const Vector3d & t) const
 {
     std::set<int> setOfVertices;
     std::set<std::pair<int, int>, less_pair_i> setOfEdges;
@@ -172,7 +171,6 @@ ObjectModel::getControlPoints(const std::shared_ptr<PinholeCamera> & camera,
     }
 
     Vectors3d controlModelPoints;
-    Vectors2f controlViewPoints;
     for (auto it = setOfVertices.cbegin(); it != setOfVertices.cend(); ++it)
     {
         const Vector3d & v = m_vertices[*it];
@@ -181,7 +179,6 @@ ObjectModel::getControlPoints(const std::shared_ptr<PinholeCamera> & camera,
         if (!inViewFlag)
             continue;
         controlModelPoints.push_back(v);
-        controlViewPoints.push_back(p);
     }
     for (auto itEdge = setOfEdges.cbegin(); itEdge != setOfEdges.cend(); ++itEdge)
     {
@@ -209,10 +206,9 @@ ObjectModel::getControlPoints(const std::shared_ptr<PinholeCamera> & camera,
             Vector3d v = v1 + delta * k;
             Vector2f p = camera->project((R * v + t).cast<float>());
             controlModelPoints.push_back(v);
-            controlViewPoints.push_back(p);
         }
     }
-    return std::make_tuple(controlModelPoints, controlViewPoints);
+    return controlModelPoints;
 }
 
 void ObjectModel::draw(const cv::Mat & image,

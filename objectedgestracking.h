@@ -26,9 +26,6 @@ public:
 
 private:
     float m_controlPixelDistance;
-    float m_pixelRadiusA;
-    float m_pixelRadiusB;
-
 
     std::shared_ptr<PerformanceMonitor> m_monitor;
 

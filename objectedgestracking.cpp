@@ -21,8 +21,6 @@ using namespace Eigen;
 
 ObjectEdgesTracking::ObjectEdgesTracking():
     m_controlPixelDistance(10.0f),
-    m_pixelRadiusA(10.0f),
-    m_pixelRadiusB(5.0f),
     m_model(ObjectModel::createCubikRurbik())
 {
     m_monitor = make_shared<PerformanceMonitor>();
@@ -62,17 +60,24 @@ void ObjectEdgesTracking::compute(cv::Mat image)
     m_monitor->endTimer("Distance transfrom");
 
     m_monitor->startTimer("Tracking");
-    m_R = Matrix3d::Identity();
-    m_t = Vector3d(0.0, 0.0, 5.0);
     Vectors3d controlModelPoints;
-    Vectors2f controlViewPoints;
     double E = 0.0;
     for (int i = 0; i < 6; ++i)
     {
-        tie(controlModelPoints, controlViewPoints) =
-            m_model.getControlPoints(m_camera, m_controlPixelDistance, m_R, m_t);
+        controlModelPoints = m_model.getControlPoints(m_camera, m_controlPixelDistance, m_R, m_t);
+        if (controlModelPoints.size() < 4)
+        {
+            E = numeric_limits<double>::max();
+            break;
+        }
         E = optimize_pose(m_R, m_t, distancesMap, m_camera, controlModelPoints, 20.0f, 5);
     }
+    if (E > 2.5)
+    {
+        m_R = Matrix3d::Identity();
+        m_t = Vector3d(0.0, 0.0, 5.0);
+    }
+
     m_monitor->endTimer("Tracking");
 
     m_monitor->end();

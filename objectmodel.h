@@ -42,11 +42,10 @@ public:
     const Vectors3d & vertices() const;
     const Polygons & polygons() const;
 
-    std::tuple<Vectors3d, Vectors2f>
-    getControlPoints(const std::shared_ptr<PinholeCamera> & camera,
-                     float controlPixelDistance,
-                     const Eigen::Matrix3d & R,
-                     const Eigen::Vector3d & t) const;
+    Vectors3d getControlPoints(const std::shared_ptr<PinholeCamera> & camera,
+                               float controlPixelDistance,
+                               const Eigen::Matrix3d & R,
+                               const Eigen::Vector3d & t) const;
 
     void draw(const cv::Mat & image,
               const std::shared_ptr<PinholeCamera> & camera,
