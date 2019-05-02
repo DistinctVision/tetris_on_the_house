@@ -79,7 +79,12 @@ void ObjectEdgesTracking::compute(cv::Mat image)
     qDebug().noquote() << QString::fromStdString(m_monitor->report());
 
     cv::imshow("edges", edges);
-    cv::waitKey(33);
+    int key = cv::waitKey(33);
+    if (key == 32)
+    {
+        m_R = Matrix3d::Identity();
+        m_t = Vector3d(0.0, 0.0, 5.0);
+    }
 }
 
 double ObjectEdgesTracking::_tracking(const cv::Mat & distancesMap)
@@ -122,12 +127,12 @@ double ObjectEdgesTracking::_tracking(const cv::Mat & distancesMap)
         }
 
         Matrix<double, 6, 1> x1 = x;
-        double E1 = optimize_pose(x1, distancesMap, m_camera, controlModelPoints, 30.0f, 6);
+        double E1 = optimize_pose(x1, distancesMap, m_camera, controlModelPoints, 20.0f, 6);
 
         for (int j = 0; j < 0; ++j)
         {
             Matrix<double, 6, 1> x2 = x;
-            x2.segment<3>(0) += getRandomUnitVector() * r_delta_image * (x.z() / focalLength.x());
+            x2.segment<3>(0) += getRandomUnitVector() * getRandomUnitScalar() * r_delta_image * (x.z() / focalLength.x());
             x2.segment<3>(3) += getRandomUnitVector() * getRandomUnitScalar() * r_delta_angle;
 
             controlModelPoints = m_model.getControlPoints(m_camera, m_controlPixelDistance,
@@ -137,7 +142,7 @@ double ObjectEdgesTracking::_tracking(const cv::Mat & distancesMap)
                 continue;
             }
 
-            double E2 = optimize_pose(x2, distancesMap, m_camera, controlModelPoints, 30.0f, 6);
+            double E2 = optimize_pose(x2, distancesMap, m_camera, controlModelPoints, 20.0f, 6);
             if (E2 < E1)
             {
                 E1 = E2;
@@ -154,11 +159,11 @@ double ObjectEdgesTracking::_tracking(const cv::Mat & distancesMap)
         m_R = exp_rotationMatrix(x.segment<3>(3));
     }
 
-    if (E > 2.5)
+    /*if (E > 2.5)
     {
         m_R = Matrix3d::Identity();
         m_t = Vector3d(0.0, 0.0, 5.0);
-    }
+    }*/
 
     return E;
 }
