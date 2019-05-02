@@ -1,29 +1,47 @@
 #include "gl_view.h"
 #include <QQuickWindow>
+#include <QDebug>
 
 #include "gl_scene.h"
 
 GL_View::GL_View():
-    m_renderer(nullptr),
-    m_scene(nullptr)
+    m_renderer(nullptr)
 {
     connect(this, &QQuickItem::windowChanged, this, &GL_View::handleWindowChanged);
 }
 
 GL_View::~GL_View()
 {
-    //cleanup();
+    cleanup();
 }
 
-GL_Scene * GL_View::scene() const
+QList<QObject*> GL_View::scenes() const
 {
-    return m_scene;
+    QList<QObject*> l;
+    for (const QPair<GL_Scene*, bool> & s : m_scenes)
+        l.push_back(s.first);
+    return l;
 }
 
-void GL_View::setScene(GL_Scene * scene)
+void GL_View::setScenes(const QList<QObject*> & scenes)
 {
-    m_scene = scene;
-    emit sceneChanged();
+    for (const QPair<GL_Scene*, bool> & s : m_scenes)
+    {
+        if (s.second)
+            s.first->destroy();
+    }
+    m_scenes.clear();
+    for (QObject * o : scenes)
+    {
+        GL_Scene * scene = dynamic_cast<GL_Scene*>(o);
+        if (scene == nullptr)
+        {
+            qFatal((QString(Q_FUNC_INFO) + ":Inavlid scene").toStdString().c_str());
+            continue;
+        }
+        m_scenes.push_back(qMakePair(scene, false));
+    }
+    emit scenesChanged();
 }
 
 void GL_View::sync()
@@ -39,8 +57,13 @@ void GL_View::cleanup()
 {
     if (m_renderer)
     {
-        if (m_scene)
-            m_scene->destroy();
+        for (QPair<GL_Scene*, bool> & s : m_scenes)
+        {
+            if (!s.second)
+                continue;
+            s.first->destroy();
+            s.second = false;
+        }
         delete m_renderer;
         m_renderer = nullptr;
     }
@@ -74,10 +97,17 @@ void GL_ViewRenderer::paint()
     glClearColor(0, 0, 0, 1);
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
-    GL_Scene * scene = m_parent->scene();
-    if (scene)
+    QList<QPair<GL_Scene*, bool>> & scenes = m_parent->m_scenes;
+    for (QPair<GL_Scene*, bool> & s : scenes)
     {
-        scene->draw();
+        if (!s.second)
+        {
+            s.first->init();
+            s.second = true;
+        }
     }
+    for (QPair<GL_Scene*, bool> & s : scenes)
+        s.first->draw();
+
     window->resetOpenGLState();
 }

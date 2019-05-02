@@ -6,6 +6,10 @@
 #include <QQuickItem>
 #include <QQuickItem>
 
+#include <QPair>
+#include <QList>
+#include <QVariantList>
+
 class GL_Scene;
 class GL_ViewRenderer;
 
@@ -13,12 +17,14 @@ class GL_View:
         public QQuickItem
 {
     Q_OBJECT
+
+    Q_PROPERTY(QList<QObject*> scenes READ scenes WRITE setScenes NOTIFY scenesChanged)
 public:
     GL_View();
     ~GL_View();
 
-    GL_Scene * scene() const;
-    void setScene(GL_Scene * scene);
+    QList<QObject*> scenes() const;
+    void setScenes(const QList<QObject*> & scenes);
 
 public slots:
     void sync();
@@ -28,11 +34,13 @@ private slots:
     void handleWindowChanged(QQuickWindow *win);
 
 signals:
-    void sceneChanged();
+    void scenesChanged();
 
 private:
+    friend class GL_ViewRenderer;
+
     GL_ViewRenderer * m_renderer;
-    GL_Scene * m_scene;
+    QList<QPair<GL_Scene*, bool>> m_scenes;
 };
 
 class GL_ViewRenderer:
