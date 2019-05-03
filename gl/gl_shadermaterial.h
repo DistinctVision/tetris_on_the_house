@@ -29,4 +29,6 @@ private:
     bool _setUniformValue(const QString & key, const QVariant & value) const;
 };
 
+using GL_ShaderMaterialPtr = QSharedPointer<GL_ShaderMaterial>;
+
 #endif // GL_SHADERMATERIAL_H

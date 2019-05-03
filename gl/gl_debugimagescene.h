@@ -12,7 +12,7 @@ class GL_DebugImageScene:
 {
     Q_OBJECT
 
-    Q_PROPERTY(QObject* frameHandler READ frameHandler WRITE setFrameHandler NOTIDY frameHandlerChanged)
+    Q_PROPERTY(QObject* frameHandler READ frameHandler WRITE setFrameHandler NOTIFY frameHandlerChanged)
 public:
     GL_DebugImageScene();
     ~GL_DebugImageScene() override;
