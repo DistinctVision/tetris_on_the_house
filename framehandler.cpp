@@ -12,9 +12,10 @@
 
 using namespace Eigen;
 
-FrameHandler::FrameHandler()
+FrameHandler::FrameHandler():
+    m_frameSize(-1, -1)
 {
-    m_objectEdgesTracker = std::make_shared<ObjectEdgesTracker>();
+    m_objectEdgesTracker = QSharedPointer<ObjectEdgesTracker>::create();
 }
 
 QVideoFilterRunnable * FrameHandler::createFilterRunnable()
@@ -25,6 +26,19 @@ QVideoFilterRunnable * FrameHandler::createFilterRunnable()
 ObjectEdgesTracker * FrameHandler::objectEdgesTracker() const
 {
     return m_objectEdgesTracker.get();
+}
+
+QSize FrameHandler::frameSize() const
+{
+    return m_frameSize;
+}
+
+void FrameHandler::_setFrameSize(const QSize & frameSize)
+{
+    if (frameSize == m_frameSize)
+        return;
+    m_frameSize = frameSize;
+    emit frameSizeChanged();
 }
 
 FrameHandlerRunnable::FrameHandlerRunnable(FrameHandler * parent):
@@ -43,6 +57,7 @@ QVideoFrame FrameHandlerRunnable::run(QVideoFrame * videoFrame,
     if (surfaceFormat.handleType() == QAbstractVideoBuffer::NoHandle)
     {
         Vector2i imageSize(videoFrame->width(), videoFrame->height());
+        m_parent->_setFrameSize(videoFrame->size());
         cv::Mat frame(imageSize.y(), imageSize.x(), CV_8UC4);
         if (videoFrame->map(QAbstractVideoBuffer::ReadOnly))
         {

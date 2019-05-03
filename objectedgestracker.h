@@ -5,6 +5,8 @@
 #include <unordered_map>
 #include <tuple>
 
+#include <QMatrix4x4>
+
 #include <Eigen/Eigen>
 
 #include <opencv2/core.hpp>
@@ -24,6 +26,8 @@ public:
 
     std::shared_ptr<PinholeCamera> camera() const;
     void setCamera(const std::shared_ptr<PinholeCamera> & camera);
+
+    QMatrix4x4 viewMatrix() const;
 
     void compute(cv::Mat image);
 

@@ -1,8 +1,8 @@
 #ifndef FRAMEHANDLER_H
 #define FRAMEHANDLER_H
 
-#include <memory>
-
+#include <QSize>
+#include <QSharedPointer>
 #include <QVideoFrame>
 #include <QVideoSurfaceFormat>
 #include <QAbstractVideoFilter>
@@ -23,8 +23,18 @@ public:
 
     ObjectEdgesTracker * objectEdgesTracker() const;
 
+    QSize frameSize() const;
+
+signals:
+    void frameSizeChanged();
+
 private:
-    std::shared_ptr<ObjectEdgesTracker> m_objectEdgesTracker;
+    friend class FrameHandlerRunnable;
+
+    QSharedPointer<ObjectEdgesTracker> m_objectEdgesTracker;
+    QSize m_frameSize;
+
+    void _setFrameSize(const QSize & frameSize);
 };
 
 class FrameHandlerRunnable: public QVideoFilterRunnable

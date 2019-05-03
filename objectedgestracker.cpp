@@ -42,6 +42,18 @@ void ObjectEdgesTracker::setCamera(const shared_ptr<PinholeCamera> & camera)
     m_camera = camera;
 }
 
+QMatrix4x4 ObjectEdgesTracker::viewMatrix() const
+{
+    QMatrix4x4 M;
+    for (int i = 0; i < 3; ++i)
+    {
+        for (int j = 0; j < 3; ++j)
+            M(i, j) = static_cast<float>(m_R(i, j));
+        M(i, 3) = static_cast<float>(m_t(i));
+    }
+    return M;
+}
+
 void ObjectEdgesTracker::compute(cv::Mat image)
 {
     assert(image.channels() == 1);

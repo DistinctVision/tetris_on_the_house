@@ -3,9 +3,9 @@
 
 using namespace Eigen;
 
-GL_ScreenObject::GL_ScreenObject(const GL_MeshPtr & mesh, const GL_ShaderMaterialPtr & materialPtr):
+GL_ScreenObject::GL_ScreenObject(const GL_MeshPtr & mesh, const GL_ShaderMaterialPtr & material):
     m_mesh(mesh),
-    m_material(materialPtr),
+    m_material(material),
     m_origin(Vector2f::Zero()),
     m_size(Vector2f::Ones()),
     m_fillMode(FillMode::PreserveAspectCrop)
@@ -83,22 +83,30 @@ QMatrix4x4 GL_ScreenObject::getMatrixMVP(const QSize & viewportSize) const
         float viewAspect = viewportSize.height() / static_cast<float>(viewportSize.width());
 
         float width = size.y() * viewAspect, height = static_cast<float>(viewportSize.height());
-        if (width > static_cast<float>(viewportSize.width()))
+        if (width < static_cast<float>(viewportSize.width()))
         {
             width = static_cast<float>(viewportSize.width());
             height = width / viewAspect;
         }
+        size.x() = width;
+        size.y() = height;
+        origin.x() = (width - viewportSize.width()) * 0.5f;
+        origin.y() = (height - viewportSize.height()) * 0.5f;
     } break;
     case FillMode::PreserveAspectCrop:
     {
         float viewAspect = viewportSize.height() / static_cast<float>(viewportSize.width());
 
         float width = size.y() * viewAspect, height = static_cast<float>(viewportSize.height());
-        if (width < static_cast<float>(viewportSize.width()))
+        if (width > static_cast<float>(viewportSize.width()))
         {
             width = static_cast<float>(viewportSize.width());
             height = width / viewAspect;
         }
+        size.x() = width;
+        size.y() = height;
+        origin.x() = (viewportSize.width() - width) * 0.5f;
+        origin.y() = (viewportSize.height() - height) * 0.5f;
     } break;
     default:
         break;

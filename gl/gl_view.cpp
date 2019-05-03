@@ -6,7 +6,13 @@
 #include "gl_scene.h"
 
 GL_View::GL_View():
-    m_renderer(nullptr)
+    m_renderer(nullptr),
+    m_focalLength(1.2f, 1.2f),
+    m_opticalCenter(0.5f, 0.5f),
+    m_nearPlane(0.1f),
+    m_farPlane(100.0f),
+    m_inputeFrameSize(-1, -1),
+    m_fillFrameMode(FillMode::PreserveAspectCrop)
 {
     connect(this, &QQuickItem::windowChanged, this, &GL_View::handleWindowChanged);
 }
@@ -48,11 +54,89 @@ void GL_View::setScenes(const QList<QObject*> & scenes)
     emit scenesChanged();
 }
 
-GL_ShaderMaterialPtr GL_View::createMaterial(GL_View::MaterialType type) const
+GL_ShaderMaterialPtr GL_View::createMaterial(MaterialType::Enum type) const
 {
     if (!m_renderer)
         return GL_ShaderMaterialPtr();
     return m_renderer->createMaterial(type);
+}
+
+QVector2D GL_View::focalLength() const
+{
+    return m_focalLength;
+}
+
+void GL_View::setFocalLength(const QVector2D & focalLength)
+{
+    if (focalLength == focalLength)
+        return;
+    m_focalLength = focalLength;
+    emit focalLengthChanged();
+}
+
+QVector2D GL_View::opticalCenter() const
+{
+    return m_opticalCenter;
+}
+
+void GL_View::setOpticalCenter(const QVector2D & opticalCenter)
+{
+    if (m_opticalCenter == opticalCenter)
+        return;
+    m_opticalCenter = opticalCenter;
+    emit opticalCenterChanged();
+}
+
+float GL_View::nearPlane() const
+{
+    return m_nearPlane;
+}
+
+void GL_View::setNearPlane(float nearPlane)
+{
+    if (m_nearPlane == nearPlane)
+        return;
+    m_nearPlane = nearPlane;
+    emit nearPlaneChanged();
+}
+
+float GL_View::farPlane() const
+{
+    return m_farPlane;
+}
+
+void GL_View::setFarPlane(float farPlane)
+{
+    if (m_farPlane == farPlane)
+        return;
+    m_farPlane = farPlane;
+    emit farPlaneChanged();
+}
+
+QSize GL_View::inputeFrameSize() const
+{
+    return m_inputeFrameSize;
+}
+
+void GL_View::setInputeFrameSize(const QSize & inputeFrameSize)
+{
+    if (m_inputeFrameSize == inputeFrameSize)
+        return;
+    m_inputeFrameSize = inputeFrameSize;
+    emit inputFrameSizeChanged();
+}
+
+FillMode::Enum GL_View::fillFrameMode() const
+{
+    return m_fillFrameMode;
+}
+
+void GL_View::setFillFrameMode(FillMode::Enum fillFrameMode)
+{
+    if (fillFrameMode == m_fillFrameMode)
+        return;
+    m_fillFrameMode = fillFrameMode;
+    emit fillFrameModeChanged();
 }
 
 void GL_View::sync()
@@ -113,6 +197,97 @@ QSize GL_ViewRenderer::viewportSize() const
     return m_parent->window()->size();
 }
 
+QMatrix4x4 GL_ViewRenderer::projectionMatrix() const
+{
+    return m_projectionMatrix;
+}
+
+QMatrix4x4 GL_ViewRenderer::_computeProjectionMatrix() const
+{
+    QVector2D focalLength = m_parent->focalLength();
+    QVector2D opticalCenter = m_parent->opticalCenter();
+    float nearPlane = m_parent->nearPlane(), farPlane = m_parent->farPlane();
+
+    QSize viewportSize = this->viewportSize();
+    QSize inputFrameSize = m_parent->inputeFrameSize();
+    if (inputFrameSize == QSize(-1, -1))
+        inputFrameSize = viewportSize;
+    QMatrix4x4 M;
+    float clip = farPlane - nearPlane;
+    M(0, 0) = focalLength.x() * inputFrameSize.width();
+    M(0, 1) = 0.0f;
+    M(0, 2) = 0.0f;
+    M(0, 3) = 0.0f;
+    M(1, 0) = opticalCenter.x() * inputFrameSize.width();
+    M(1, 1) = focalLength.y() * inputFrameSize.height();
+    M(1, 2) = 0.0f;
+    M(1, 3) = 0.0f;
+    M(2, 0) = 0.0f;
+    M(2, 1) = opticalCenter.y() * inputFrameSize.height();
+    M(2, 2) = -(nearPlane + farPlane) / clip;
+    M(2, 3) = -(2.0f * nearPlane * farPlane) / clip;
+    M(3, 0) = 0.0f;
+    M(3, 1) = 0.0f;
+    M(3, 2) = -1.0f;
+    M(3, 3) = 0.0f;
+
+    QVector2D origin(0.0f, 0.0f);
+    QVector2D size(1.0f, 1.0f);
+
+    switch (m_parent->fillFrameMode())
+    {
+    case FillMode::Stretch:
+    {
+        origin = QVector2D(0.0f, 0.0f);
+        size = QVector2D(viewportSize.width() / static_cast<float>(inputFrameSize.width()),
+                         viewportSize.height() / static_cast<float>(inputFrameSize.height()));
+    } break;
+    case FillMode::PreserveAspectFit:
+    {
+        float viewAspect = viewportSize.height() / static_cast<float>(viewportSize.width());
+
+        float width = size.y() * viewAspect, height = static_cast<float>(viewportSize.height());
+        if (width < static_cast<float>(viewportSize.width()))
+        {
+            width = static_cast<float>(viewportSize.width());
+            height = width / viewAspect;
+        }
+        size.setX(width / static_cast<float>(inputFrameSize.width()));
+        size.setY(height / static_cast<float>(inputFrameSize.height()));
+        origin.setX((width - viewportSize.width()) / (2.0f * static_cast<float>(viewportSize.width())));
+        origin.setY((height - viewportSize.height()) * (2.0f * static_cast<float>(viewportSize.height())));
+    } break;
+    case FillMode::PreserveAspectCrop:
+    {
+        float viewAspect = viewportSize.height() / static_cast<float>(viewportSize.width());
+
+        float width = size.y() * viewAspect, height = static_cast<float>(viewportSize.height());
+        if (width > static_cast<float>(viewportSize.width()))
+        {
+            width = static_cast<float>(viewportSize.width());
+            height = width / viewAspect;
+        }
+        size.setX(width / static_cast<float>(inputFrameSize.width()));
+        size.setY(height / static_cast<float>(inputFrameSize.height()));
+        origin.setX((width - viewportSize.width()) / (2.0f * static_cast<float>(viewportSize.width())));
+        origin.setY((height - viewportSize.height()) * (2.0f * static_cast<float>(viewportSize.height())));
+    } break;
+    default:
+        break;
+    }
+    QMatrix4x4 imageTransform;
+    imageTransform(0, 0) = size.x();
+    imageTransform(0, 3) = origin.x();
+    imageTransform(1, 1) = size.y();
+    imageTransform(1, 3) = origin.y();
+    QMatrix4x4 viewportTransform;
+    viewportTransform(0, 0) = 2.0f;
+    viewportTransform(0, 3) = - 1.0f;
+    viewportTransform(1, 1) = 2.0f;
+    viewportTransform(1, 3) = - 1.0f;
+    return viewportTransform * imageTransform * M;
+}
+
 void GL_ViewRenderer::_initEmptyTexture()
 {
     const uchar bytes[] = { 255, 255, 255, 255 };
@@ -143,14 +318,14 @@ void GL_ViewRenderer::_loadShaders()
 
 void GL_ViewRenderer::_draw()
 {
+    m_projectionMatrix = _computeProjectionMatrix();
+
     QQuickWindow * window = m_parent->window();
 
     QSize viewportSize = this->viewportSize();
     glViewport(0, 0, viewportSize.width(), viewportSize.height());
 
-    glEnable(GL_DEPTH_TEST);
-
-    glClearColor(0, 0, 0, 1);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
     QList<QPair<GL_Scene*, bool>> & scenes = m_parent->m_scenes;

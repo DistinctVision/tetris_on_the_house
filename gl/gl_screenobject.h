@@ -14,7 +14,7 @@
 class GL_ScreenObject
 {
 public:
-    GL_ScreenObject(const GL_MeshPtr & mesh, const GL_ShaderMaterialPtr & materialPtr);
+    GL_ScreenObject(const GL_MeshPtr & mesh, const GL_ShaderMaterialPtr & material);
 
     GL_MeshPtr mesh() const;
     void setMesh(const GL_MeshPtr & mesh);
