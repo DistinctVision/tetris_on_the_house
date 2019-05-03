@@ -1,6 +1,8 @@
 #include "gl_debugimagescene.h"
 #include <cassert>
 
+#include "framehandler.h"
+
 GL_DebugImageScene::GL_DebugImageScene():
     m_gl(nullptr),
     m_debugTextureId(0),

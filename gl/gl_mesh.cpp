@@ -6,6 +6,7 @@
 
 GL_Mesh::GL_Mesh():
     m_vertexBuffer(QOpenGLBuffer::VertexBuffer),
+    m_textureCoordsBuffer(QOpenGLBuffer::VertexBuffer),
     m_normalsBuffer(QOpenGLBuffer::VertexBuffer),
     m_indicesBuffer(QOpenGLBuffer::IndexBuffer)
 {
@@ -43,12 +44,20 @@ GL_Mesh GL_Mesh::createQuad(const QVector2D & size)
         QVector3D(halfSize.x(), halfSize.y(), 0.0f),
         QVector3D(- halfSize.x(), halfSize.y(), 0.0f)
     };
-    mesh.m_vertexBuffer.bind();
-    mesh.m_vertexBuffer.allocate(vertices.data(), static_cast<int>(sizeof(QVector3D)) * vertices.size());
+    QVector<QVector2D> textureCoords = {
+        QVector2D(0.0f, 0.0),
+        QVector2D(1.0f, 0.0f),
+        QVector2D(1.0f, 1.0f),
+        QVector2D(0.0f, 1.0f)
+    };
     QVector<int> indices = {
         0, 1, 2,
         0, 2, 3
     };
+    mesh.m_vertexBuffer.bind();
+    mesh.m_vertexBuffer.allocate(vertices.data(), static_cast<int>(sizeof(QVector3D)) * vertices.size());
+    mesh.m_textureCoordsBuffer.bind();
+    mesh.m_textureCoordsBuffer.allocate(textureCoords.data(), static_cast<int>(sizeof(QVector2D)) * textureCoords.size());
     mesh.m_indicesBuffer.bind();
     mesh.m_indicesBuffer.allocate(vertices.data(), static_cast<int>(sizeof(int)) * indices.size());
     QVector<QVector3D> normals = computeNormals(vertices, indices);
@@ -63,35 +72,52 @@ GL_Mesh GL_Mesh::createCube(const QVector3D & size)
     QVector3D halfSize = size * 0.5f;
 
     GL_Mesh mesh;
-    QVector<QVector3D> vertices = {
-        QVector3D(- halfSize.x(), - halfSize.y(), halfSize.z()),
-        QVector3D(halfSize.x(), - halfSize.y(), halfSize.z()),
-        QVector3D(halfSize.x(), halfSize.y(), halfSize.z()),
-        QVector3D(- halfSize.x(), halfSize.y(), halfSize.z()),
-        QVector3D(- halfSize.x(), - halfSize.y(), - halfSize.z()),
-        QVector3D(halfSize.x(), - halfSize.y(), - halfSize.z()),
-        QVector3D(halfSize.x(), halfSize.y(), - halfSize.z()),
-        QVector3D(- halfSize.x(), halfSize.y(), - halfSize.z())
+    QVector<QVector3D> vertices;
+    QVector<QVector2D> textureCoords;
+    QVector<int> indices;
+    vertices.reserve(4 * 6);
+    textureCoords.resize(vertices.size());
+    indices.reserve(6 * 2 * 3);
+
+    QVector3D axisX(1.0f, 0.0f, 0.0f),
+              axisY(0.0f, 1.0f, 0.0f),
+              axisZ(0.0f, 0.0f, 1.0f);
+
+    auto addSide = [&] ()
+    {
+        int i_o = static_cast<int>(vertices.size());
+        vertices.push_back((- halfSize.x()) * axisX + (- halfSize.y()) * axisY + halfSize.z() * axisZ);
+        vertices.push_back((halfSize.x()) * axisX + (- halfSize.y()) * axisY + halfSize.z() * axisZ);
+        vertices.push_back((halfSize.x()) * axisX + (halfSize.y()) * axisY + halfSize.z() * axisZ);
+        vertices.push_back((- halfSize.x()) * axisX + (halfSize.y()) * axisY + halfSize.z() * axisZ);
+        textureCoords.push_back(QVector2D(0.0f, 0.0f));
+        textureCoords.push_back(QVector2D(1.0f, 0.0f));
+        textureCoords.push_back(QVector2D(1.0f, 1.0f));
+        textureCoords.push_back(QVector2D(0.0f, 1.0f));
+        indices.append({ i_o + 0, i_o + 1, i_o + 2 });
+        indices.append({ i_o + 0, i_o + 2, i_o + 3 });
     };
-    mesh.m_vertexBuffer.bind();
-    mesh.m_vertexBuffer.allocate(vertices.data(), static_cast<int>(sizeof(QVector3D)) * vertices.size());
-    QVector<int> indices = {
-        0, 1, 2,
-        0, 2, 3,
-        7, 6, 5,
-        7, 5, 4,
-        1, 5, 6,
-        1, 6, 2,
-        0, 3, 7,
-        0, 7, 4,
-        2, 6, 7,
-        2, 7, 3,
-        0, 4, 5,
-        0, 5, 1
-    };
+
+    for (int k = 0; k < 4; ++k)
+    {
+        addSide();
+        std::swap(axisZ, axisY);
+        axisZ = - axisZ;
+    }
+
+    axisX = QVector3D(0.0f, 0.0f, 1.0f);
+    axisY = QVector3D(0.0f, 1.0f, 0.0f);
+    axisZ = QVector3D(-1.0f, 0.0f, 0.0f);
+    addSide();
+
+    axisX = - axisX;
+    axisZ = - axisZ;
+    addSide();
+
+    QVector<QVector3D> normals = computeNormals(vertices, indices);
+
     mesh.m_indicesBuffer.bind();
     mesh.m_indicesBuffer.allocate(vertices.data(), static_cast<int>(sizeof(int)) * indices.size());
-    QVector<QVector3D> normals = computeNormals(vertices, indices);
     mesh.m_normalsBuffer.bind();
     mesh.m_normalsBuffer.allocate(normals.data(), static_cast<int>(sizeof(QVector3D)) * normals.size());
     mesh.m_normalsBuffer.release();
@@ -104,14 +130,21 @@ void GL_Mesh::draw(QOpenGLFunctions * gl, const GL_ShaderMaterial & shaderMateri
 
     m_indicesBuffer.bind();
 
-    int vertexLocation = shaderMaterial.attributeLocation("vertex");
-    int normalLocation = shaderMaterial.attributeLocation("normal");
+    int vertexLocation = shaderMaterial.attributeLocation("vertex_position");
+    int textureCoordLocation = shaderMaterial.attributeLocation("vertex_textureCoord");
+    int normalLocation = shaderMaterial.attributeLocation("vertex_normal");
 
     if (vertexLocation >= 0)
     {
         shaderMaterial.enableAttribute(vertexLocation);
         m_vertexBuffer.bind();
         shaderMaterial.setAttributeBuffer(vertexLocation, GL_FLOAT, 0, 3, sizeof(QVector3D));
+    }
+    if (textureCoordLocation >= 0)
+    {
+        shaderMaterial.enableAttribute(textureCoordLocation);
+        m_textureCoordsBuffer.bind();
+        shaderMaterial.setAttributeBuffer(textureCoordLocation, GL_FLOAT, 0, 2, sizeof(QVector2D));
     }
     if (normalLocation >= 0)
     {
@@ -124,6 +157,8 @@ void GL_Mesh::draw(QOpenGLFunctions * gl, const GL_ShaderMaterial & shaderMateri
 
     if (vertexLocation >= 0)
         shaderMaterial.disableAttribute(vertexLocation);
+    if (textureCoordLocation >= 0)
+        shaderMaterial.disableAttribute(textureCoordLocation);
     if (normalLocation >= 0)
         shaderMaterial.disableAttribute(normalLocation);
 

@@ -28,4 +28,5 @@ SOURCES += \
     poseoptimizer.cpp
 
 RESOURCES += \
-    qml.qrc
+    qml.qrc \
+    shaders.qrc

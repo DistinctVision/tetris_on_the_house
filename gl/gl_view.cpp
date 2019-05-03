@@ -1,4 +1,5 @@
 #include "gl_view.h"
+#include <QOpenGLShaderProgram>
 #include <QQuickWindow>
 #include <QDebug>
 
@@ -44,6 +45,13 @@ void GL_View::setScenes(const QList<QObject*> & scenes)
     emit scenesChanged();
 }
 
+GL_ShaderMaterialPtr GL_View::createMaterial(GL_View::MaterialType type) const
+{
+    if (!m_renderer)
+        return GL_ShaderMaterialPtr();
+    return m_renderer->createMaterial(type);
+}
+
 void GL_View::sync()
 {
     if (!m_renderer)
@@ -83,6 +91,29 @@ GL_ViewRenderer::GL_ViewRenderer(GL_View * parent):
     m_parent(parent)
 {
     initializeOpenGLFunctions();
+    _loadShaders();
+}
+
+GL_ShaderMaterialPtr GL_ViewRenderer::createMaterial(GL_View::MaterialType type) const
+{
+    auto it = m_shaderMaterials.find(type);
+    if (it == m_shaderMaterials.cend())
+    {
+        qFatal("Coudn't find shader material");
+    }
+    return GL_ShaderMaterialPtr::create(it.value());
+}
+
+void GL_ViewRenderer::_loadShaders()
+{
+    QSharedPointer<QOpenGLShaderProgram> programPtr = QSharedPointer<QOpenGLShaderProgram>::create();
+    programPtr->addShaderFromSourceFile(QOpenGLShader::Vertex, ":/shaders/texture.vsh");
+    programPtr->addShaderFromSourceFile(QOpenGLShader::Fragment, ":/shaders/texture.fsh");
+    programPtr->link();
+    m_shaderMaterials.insert(GL_View::MT_Texture, GL_ShaderMaterialPtr::create(programPtr, QVariantMap {
+                                                                                                { "matrixMVP", QMatrix4x4() },
+                                                                                                { "main_texture", 0 }
+                                                                                            }));
 }
 
 void GL_ViewRenderer::paint()
@@ -107,7 +138,11 @@ void GL_ViewRenderer::paint()
         }
     }
     for (QPair<GL_Scene*, bool> & s : scenes)
+    {
+        if (!s.first->enabled())
+            continue;
         s.first->draw();
+    }
 
     window->resetOpenGLState();
 }

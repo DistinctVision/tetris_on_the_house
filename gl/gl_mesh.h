@@ -25,6 +25,7 @@ private:
     GL_Mesh();
 
     QOpenGLBuffer m_vertexBuffer;
+    QOpenGLBuffer m_textureCoordsBuffer;
     QOpenGLBuffer m_normalsBuffer;
     QOpenGLBuffer m_indicesBuffer;
 
