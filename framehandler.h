@@ -7,27 +7,37 @@
 #include <QVideoSurfaceFormat>
 #include <QAbstractVideoFilter>
 
-class ObjectEdgesTracking;
+class ObjectEdgesTracker;
 
 class FrameHandlerRunnable;
 
 class FrameHandler: public QAbstractVideoFilter
 {
+    Q_OBJECT
+
+    Q_PROPERTY(QObject* READ objectEdgesTracker CONSTANT)
 public:
+    FrameHandler();
+
     QVideoFilterRunnable * createFilterRunnable() override;
+
+    ObjectEdgesTracker * objectEdgesTracker() const;
+
+private:
+    std::shared_ptr<ObjectEdgesTracker> m_objectEdgesTracker;
 };
 
 class FrameHandlerRunnable: public QVideoFilterRunnable
 {
 public:
-    FrameHandlerRunnable();
+    FrameHandlerRunnable(FrameHandler * parent);
 
     QVideoFrame run(QVideoFrame * videoFrame,
                     const QVideoSurfaceFormat &surfaceFormat,
                     RunFlags flags) override;
 
 private:
-    std::shared_ptr<ObjectEdgesTracking> m_objectEdgesTracking;
+    FrameHandler * m_parent;
 };
 
 #endif // FRAMEHANDLER_H

@@ -14,10 +14,13 @@ public:
                       const QVariantMap & values,
                       const QMap<QString, GLuint> & textures = {});
 
-    void setValue(const QString & name, const QVariant & value);
-    QVariant value(const QString & name) const;
-
     bool containsValue(const QString & name) const;
+    QVariant value(const QString & name) const;
+    void setValue(const QString & name, const QVariant & value);
+
+    bool containsTexture(const QString & name) const;
+    GLuint texture(const QString & name) const;
+    void setTexture(const QString & name, GLuint textureId);
 
     int attributeLocation(const QString & name) const;
     void enableAttribute(int location) const;

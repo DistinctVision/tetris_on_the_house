@@ -16,6 +16,21 @@ GL_ShaderMaterial::GL_ShaderMaterial(const QSharedPointer<QOpenGLShaderProgram> 
 {
 }
 
+bool GL_ShaderMaterial::containsValue(const QString & name) const
+{
+    return m_values.contains(name);
+}
+
+QVariant GL_ShaderMaterial::value(const QString & name) const
+{
+    auto it = m_values.find(name);
+    if (it == m_values.cend())
+    {
+        qFatal(QString("Coudn't find value : %1").arg(name).toStdString().c_str());
+    }
+    return it.value();
+}
+
 void GL_ShaderMaterial::setValue(const QString & name, const QVariant & value)
 {
     auto it = m_values.find(name);
@@ -30,19 +45,29 @@ void GL_ShaderMaterial::setValue(const QString & name, const QVariant & value)
     it.value() = value;
 }
 
-QVariant GL_ShaderMaterial::value(const QString & name) const
+bool GL_ShaderMaterial::containsTexture(const QString & name) const
 {
-    auto it = m_values.find(name);
-    if (it == m_values.cend())
+    return m_textures.contains(name);
+}
+
+GLuint GL_ShaderMaterial::texture(const QString & name) const
+{
+    auto it = m_textures.find(name);
+    if (it == m_textures.cend())
     {
-        qFatal(QString("Coudn't find value : %1").arg(name).toStdString().c_str());
+        qFatal(QString("Coudn't find texture : %1").arg(name).toStdString().c_str());
     }
     return it.value();
 }
 
-bool GL_ShaderMaterial::containsValue(const QString & name) const
+void GL_ShaderMaterial::setTexture(const QString & name, GLuint textureId)
 {
-    return m_values.contains(name);
+    auto it = m_values.find(name);
+    if (it == m_values.end())
+    {
+        qFatal(QString("Coudn't find texture : %1").arg(name).toStdString().c_str());
+    }
+    it.value() = textureId;
 }
 
 void GL_ShaderMaterial::bind(QOpenGLFunctions * gl) const

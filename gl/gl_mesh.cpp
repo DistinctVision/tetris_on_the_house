@@ -44,9 +44,9 @@ GL_Mesh GL_Mesh::createQuad(const QVector2D & size)
     };
     QVector<QVector2D> textureCoords = {
         QVector2D(0.0f, 0.0),
-        QVector2D(1.0f, 0.0f),
-        QVector2D(1.0f, 1.0f),
-        QVector2D(0.0f, 1.0f)
+        QVector2D(size.x(), 0.0f),
+        QVector2D(size.x(), size.y()),
+        QVector2D(0.0f, size.y())
     };
     QVector<int> indices = {
         0, 1, 2,

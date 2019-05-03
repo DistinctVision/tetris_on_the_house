@@ -5,21 +5,31 @@
 #include <QTime>
 
 #include "pinholecamera.h"
-#include "objectedgestracking.h"
+#include "objectedgestracker.h"
 
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
 
 using namespace Eigen;
 
-QVideoFilterRunnable * FrameHandler::createFilterRunnable()
+FrameHandler::FrameHandler()
 {
-    return new FrameHandlerRunnable();
+    m_objectEdgesTracker = std::make_shared<ObjectEdgesTracker>();
 }
 
-FrameHandlerRunnable::FrameHandlerRunnable()
+QVideoFilterRunnable * FrameHandler::createFilterRunnable()
 {
-    m_objectEdgesTracking = std::make_shared<ObjectEdgesTracking>();
+    return new FrameHandlerRunnable(this);
+}
+
+ObjectEdgesTracker * FrameHandler::objectEdgesTracker() const
+{
+    return m_objectEdgesTracker.get();
+}
+
+FrameHandlerRunnable::FrameHandlerRunnable(FrameHandler * parent):
+    m_parent(parent)
+{
 }
 
 QVideoFrame FrameHandlerRunnable::run(QVideoFrame * videoFrame,
@@ -27,6 +37,8 @@ QVideoFrame FrameHandlerRunnable::run(QVideoFrame * videoFrame,
                                       QVideoFilterRunnable::RunFlags flags)
 {
     Q_UNUSED(flags);
+
+    ObjectEdgesTracker * objectEdgesTracking = m_parent->objectEdgesTracker();
 
     if (surfaceFormat.handleType() == QAbstractVideoBuffer::NoHandle)
     {
@@ -42,20 +54,19 @@ QVideoFrame FrameHandlerRunnable::run(QVideoFrame * videoFrame,
         {
             qFatal("Coudn't read video frame");
         }
-        //imageSize /= 2;
 
         cv::flip(frame, frame, -1);
         cv::flip(frame, frame, 1);
         cv::cvtColor(frame, frame, cv::COLOR_BGRA2GRAY);
         cv::resize(frame, frame, cv::Size(imageSize.x(), imageSize.y()));
-        if (!m_objectEdgesTracking->camera() ||
-                (m_objectEdgesTracking->camera()->imageSize() != imageSize))
+        if (!objectEdgesTracking->camera() ||
+                (objectEdgesTracking->camera()->imageSize() != imageSize))
         {
-            m_objectEdgesTracking->setCamera(std::make_shared<PinholeCamera>(imageSize,
-                                                                             Vector2f(imageSize.x(), imageSize.x()) * 1.2f,
-                                                                             imageSize.cast<float>() * 0.5));
+            objectEdgesTracking->setCamera(std::make_shared<PinholeCamera>(imageSize,
+                                                                           Vector2f(imageSize.x(), imageSize.x()) * 1.2f,
+                                                                           imageSize.cast<float>() * 0.5));
         }
-        m_objectEdgesTracking->compute(frame);
+        objectEdgesTracking->compute(frame);
     }
 
     return QVideoFrame(*videoFrame);

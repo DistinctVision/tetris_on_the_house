@@ -19,9 +19,9 @@ public:
     bool enabled() const;
     void setEnabled(bool enabled);
 
-    virtual void init(QOpenGLFunctions * gl) = 0;
+    virtual void init(GL_ViewRenderer * view) = 0;
     virtual void draw(GL_ViewRenderer * view) = 0;
-    virtual void destroy(QOpenGLFunctions * gl) = 0;
+    virtual void destroy(GL_ViewRenderer * view) = 0;
 
 signals:
     void enabledChanged();

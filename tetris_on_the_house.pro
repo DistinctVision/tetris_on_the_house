@@ -11,17 +11,19 @@ include(opencv.pri)
 include(gl/gl.pri)
 
 HEADERS += \
+    debugimageobject.h \
     framehandler.h \
-    objectedgestracking.h \
+    objectedgestracker.h \
     objectmodel.h \
     pinholecamera.h \
     performancemonitor.h \
     poseoptimizer.h
 
 SOURCES += \
+    debugimageobject.cpp \
     main.cpp \
     framehandler.cpp \
-    objectedgestracking.cpp \
+    objectedgestracker.cpp \
     objectmodel.cpp \
     pinholecamera.cpp \
     performancemonitor.cpp \

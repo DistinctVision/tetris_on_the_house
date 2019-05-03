@@ -1,4 +1,4 @@
-#include "objectedgestracking.h"
+#include "objectedgestracker.h"
 #include <cassert>
 #include <algorithm>
 #include <vector>
@@ -23,7 +23,7 @@ using namespace std;
 using namespace std::chrono;
 using namespace Eigen;
 
-ObjectEdgesTracking::ObjectEdgesTracking():
+ObjectEdgesTracker::ObjectEdgesTracker():
     m_controlPixelDistance(15.0f),
     m_model(ObjectModel::createCubikRubik())
 {
@@ -32,17 +32,17 @@ ObjectEdgesTracking::ObjectEdgesTracking():
     m_t = Vector3d(0.0, 0.0, 5.0);
 }
 
-shared_ptr<PinholeCamera> ObjectEdgesTracking::camera() const
+shared_ptr<PinholeCamera> ObjectEdgesTracker::camera() const
 {
     return m_camera;
 }
 
-void ObjectEdgesTracking::setCamera(const shared_ptr<PinholeCamera> & camera)
+void ObjectEdgesTracker::setCamera(const shared_ptr<PinholeCamera> & camera)
 {
     m_camera = camera;
 }
 
-void ObjectEdgesTracking::compute(cv::Mat image)
+void ObjectEdgesTracker::compute(cv::Mat image)
 {
     assert(image.channels() == 1);
     assert(m_camera);
@@ -71,23 +71,22 @@ void ObjectEdgesTracking::compute(cv::Mat image)
 
     qDebug() << "Error =" << E;
 
-    cv::cvtColor(edges, edges, cv::COLOR_GRAY2BGR);
-    m_model.draw(edges, m_camera, m_R, m_t);
-    cv::normalize(distancesMap, distancesMap, 0.0, 1.0, cv::NORM_MINMAX);
-    //cv::imshow("dis", distancesMap);
-
-    qDebug().noquote() << QString::fromStdString(m_monitor->report());
-
-    cv::imshow("edges", edges);
-    /*int key = cv::waitKey(33);
-    if (key == 32)
+    if (debugEnabled())
     {
-        m_R = Matrix3d::Identity();
-        m_t = Vector3d(0.0, 0.0, 5.0);
-    }*/
+        cv::cvtColor(edges, edges, cv::COLOR_GRAY2BGR);
+        m_model.draw(edges, m_camera, m_R, m_t);
+
+        qDebug().noquote() << QString::fromStdString(m_monitor->report());
+    }
+    m_debugImage = edges;
 }
 
-double ObjectEdgesTracking::_tracking(const cv::Mat & distancesMap)
+cv::Mat ObjectEdgesTracker::debugImage() const
+{
+    return m_debugImage;
+}
+
+double ObjectEdgesTracker::_tracking(const cv::Mat & distancesMap)
 {
     mt19937 rnd_gen;
     uniform_int_distribution<int> rnd(0, 1000);

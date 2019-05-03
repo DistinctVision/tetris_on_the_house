@@ -18,8 +18,8 @@ public:
     static QVector<QVector3D> computeNormals(const QVector<QVector3D> & vertices,
                                              const QVector<int> & indices);
 
-    static GL_Mesh createQuad(const QVector2D & size);
-    static GL_Mesh createCube(const QVector3D & size);
+    static GL_Mesh createQuad(const QVector2D & size = QVector2D(1.0f, 1.0f));
+    static GL_Mesh createCube(const QVector3D & size = QVector3D(1.0f, 1.0f, 1.0f));
 
     void draw(QOpenGLFunctions * gl, const GL_ShaderMaterial & shaderMaterial);
 

@@ -2,6 +2,7 @@
 #define GL_SCREENOBJECT_H
 
 #include <QSize>
+#include <QSharedPointer>
 
 #include <Eigen/Eigen>
 
@@ -30,9 +31,9 @@ public:
     Eigen::Vector2f size() const;
     void setSize(const Eigen::Vector2f & size);
 
-    void draw(GL_ViewRenderer * view);
-
     QMatrix4x4 getMatrixMVP(const QSize & viewportSize) const;
+
+    void draw(GL_ViewRenderer * view);
 
 private:
     GL_MeshPtr m_mesh;
@@ -43,5 +44,7 @@ private:
 
     FillMode::Enum m_fillMode;
 };
+
+using GL_ScreenObjectPtr = QSharedPointer<GL_ScreenObject>;
 
 #endif // GL_SCREENOBJECT_H

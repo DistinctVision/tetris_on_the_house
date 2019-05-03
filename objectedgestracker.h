@@ -1,5 +1,5 @@
-#ifndef OBJECTEDGESTRACKING_H
-#define OBJECTEDGESTRACKING_H
+#ifndef OBJECTEDGESTRACKER_H
+#define OBJECTEDGESTRACKER_H
 
 #include <memory>
 #include <unordered_map>
@@ -10,19 +10,24 @@
 #include <opencv2/core.hpp>
 
 #include "objectmodel.h"
+#include "debugimageobject.h"
 
 class PerformanceMonitor;
 class PinholeCamera;
 
-class ObjectEdgesTracking
+class ObjectEdgesTracker:
+        public DebugImageObject
 {
+    Q_OBJECT
 public:
-    ObjectEdgesTracking();
+    ObjectEdgesTracker();
 
     std::shared_ptr<PinholeCamera> camera() const;
     void setCamera(const std::shared_ptr<PinholeCamera> & camera);
 
     void compute(cv::Mat image);
+
+    cv::Mat debugImage() const override;
 
 private:
     float m_controlPixelDistance;
@@ -35,7 +40,9 @@ private:
     Eigen::Matrix3d m_R;
     Eigen::Vector3d m_t;
 
+    cv::Mat m_debugImage;
+
     double _tracking(const cv::Mat & distanceMap);
 };
 
-#endif // OBJECTEDGESTRACKING_H
+#endif // OBJECTEDGESTRACKER_H
