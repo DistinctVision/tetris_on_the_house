@@ -8,9 +8,11 @@
 #include <QMatrix4x4>
 
 GL_ShaderMaterial::GL_ShaderMaterial(const QSharedPointer<QOpenGLShaderProgram> & program,
-                                     const QVariantMap & values):
+                                     const QVariantMap & values,
+                                     const QMap<QString, GLuint> & textures):
     m_program(program),
-    m_values(values)
+    m_values(values),
+    m_textures(textures)
 {
 }
 
@@ -38,22 +40,46 @@ QVariant GL_ShaderMaterial::value(const QString & name) const
     return it.value();
 }
 
-void GL_ShaderMaterial::bind() const
+bool GL_ShaderMaterial::containsValue(const QString & name) const
+{
+    return m_values.contains(name);
+}
+
+void GL_ShaderMaterial::bind(QOpenGLFunctions * gl) const
 {
     m_program->bind();
-    QMapIterator<QString, QVariant> it(m_values);
-    while (it.hasNext())
+
     {
-        it.next();
-        if (!_setUniformValue(it.key(), it.value()))
+        QMapIterator<QString, QVariant> it(m_values);
+        while (it.hasNext())
         {
-            qFatal(QString("Coudn't set uniform value: %1").arg(it.key()).toStdString().c_str());
+            it.next();
+            if (!_setUniformValue(it.key(), it.value()))
+            {
+                qFatal(QString("Coudn't set uniform value: %1").arg(it.key()).toStdString().c_str());
+            }
+        }
+    }
+
+    {
+        int index = 0;
+        QMapIterator<QString, GLuint> it(m_textures);
+        while (it.hasNext())
+        {
+            it.next();
+            if (!_setUniformValue(it.key(), index))
+            {
+                qFatal(QString("Coudn't set texture: %1").arg(it.key()).toStdString().c_str());
+            }
+            gl->glActiveTexture(static_cast<GLenum>(GL_TEXTURE0 + index));
+            gl->glBindTexture(GL_TEXTURE_2D, it.value());
         }
     }
 }
 
-void GL_ShaderMaterial::release() const
+void GL_ShaderMaterial::release(QOpenGLFunctions * gl) const
 {
+    Q_UNUSED(gl);
     m_program->release();
 }
 

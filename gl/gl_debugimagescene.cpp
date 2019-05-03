@@ -4,7 +4,6 @@
 #include "framehandler.h"
 
 GL_DebugImageScene::GL_DebugImageScene():
-    m_gl(nullptr),
     m_debugTextureId(0),
     m_frameHandler(nullptr)
 {
@@ -12,7 +11,7 @@ GL_DebugImageScene::GL_DebugImageScene():
 
 GL_DebugImageScene::~GL_DebugImageScene()
 {
-    destroy();
+    assert(m_debugTextureId == 0);
 }
 
 FrameHandler * GL_DebugImageScene::frameHandler() const
@@ -26,35 +25,25 @@ void GL_DebugImageScene::setFrameHandler(FrameHandler * frameHandler)
     emit frameHandlerChanged();
 }
 
-void GL_DebugImageScene::init()
+void GL_DebugImageScene::init(QOpenGLFunctions * gl)
 {
-    if (!m_gl)
+    if (m_debugTextureId == 0)
     {
-        m_gl = new QOpenGLFunctions();
-        m_gl->initializeOpenGLFunctions();
-
-        m_gl->glGenTextures(1, &m_debugTextureId);
+        gl->glGenTextures(1, &m_debugTextureId);
     }
 }
 
-void GL_DebugImageScene::destroy()
+void GL_DebugImageScene::destroy(QOpenGLFunctions * gl)
 {
-    if (m_gl)
+    if (m_debugTextureId != 0)
     {
-        if (m_debugTextureId != 0)
-        {
-            m_gl->glDeleteTextures(1, &m_debugTextureId);
-            m_debugTextureId = 0;
-        }
-
-        delete m_gl;
-        m_gl = nullptr;
+        gl->glDeleteTextures(1, &m_debugTextureId);
+        m_debugTextureId = 0;
     }
 }
 
-void GL_DebugImageScene::draw()
+void GL_DebugImageScene::draw(GL_ViewRenderer * view)
 {
-    assert(m_gl);
     if (m_frameHandler == nullptr)
         return;
 }

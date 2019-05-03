@@ -1,6 +1,8 @@
 #ifndef GL_MESH_H
 #define GL_MESH_H
 
+#include <QSharedPointer>
+
 #include <QOpenGLFunctions>
 #include <QOpenGLBuffer>
 
@@ -30,5 +32,7 @@ private:
     QOpenGLBuffer m_indicesBuffer;
 
 };
+
+using GL_MeshPtr = QSharedPointer<GL_Mesh>;
 
 #endif // GL_MESH_H

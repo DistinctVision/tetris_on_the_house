@@ -20,17 +20,15 @@ public:
     FrameHandler * frameHandler() const;
     void setFrameHandler(FrameHandler * frameHandler);
 
-    void init() override;
-    void destroy() override;
+    void init(QOpenGLFunctions * gl) override;
+    void destroy(QOpenGLFunctions * gl) override;
 
-    void draw() override;
+    void draw(GL_ViewRenderer * view) override;
 
 signals:
     void frameHandlerChanged();
 
 private:
-    QOpenGLFunctions * m_gl;
-
     GLuint m_debugTextureId;
 
     FrameHandler * m_frameHandler;

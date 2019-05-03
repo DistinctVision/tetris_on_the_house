@@ -35,14 +35,12 @@ QVector<QVector3D> GL_Mesh::computeNormals(const QVector<QVector3D> & vertices, 
 
 GL_Mesh GL_Mesh::createQuad(const QVector2D & size)
 {
-    QVector2D halfSize = size * 0.5f;
-
     GL_Mesh mesh;
     QVector<QVector3D> vertices = {
-        QVector3D(- halfSize.x(), - halfSize.y(), 0.0f),
-        QVector3D(halfSize.x(), - halfSize.y(), 0.0f),
-        QVector3D(halfSize.x(), halfSize.y(), 0.0f),
-        QVector3D(- halfSize.x(), halfSize.y(), 0.0f)
+        QVector3D(0.0f, 0.0f, 0.0f),
+        QVector3D(1.0f, 0.0f, 0.0f),
+        QVector3D(1.0f, 1.0f, 0.0f),
+        QVector3D(0.0f, 1.0f, 0.0f)
     };
     QVector<QVector2D> textureCoords = {
         QVector2D(0.0f, 0.0),
@@ -126,7 +124,7 @@ GL_Mesh GL_Mesh::createCube(const QVector3D & size)
 
 void GL_Mesh::draw(QOpenGLFunctions * gl, const GL_ShaderMaterial & shaderMaterial)
 {
-    shaderMaterial.bind();
+    shaderMaterial.bind(gl);
 
     m_indicesBuffer.bind();
 
@@ -165,5 +163,5 @@ void GL_Mesh::draw(QOpenGLFunctions * gl, const GL_ShaderMaterial & shaderMateri
     m_vertexBuffer.release();
     m_indicesBuffer.release();
 
-    shaderMaterial.release();
+    shaderMaterial.release(gl);
 }

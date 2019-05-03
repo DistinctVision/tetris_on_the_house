@@ -25,7 +25,7 @@ using namespace Eigen;
 
 ObjectEdgesTracking::ObjectEdgesTracking():
     m_controlPixelDistance(15.0f),
-    m_model(ObjectModel::createCubikRurbik())
+    m_model(ObjectModel::createCubikRubik())
 {
     m_monitor = make_shared<PerformanceMonitor>();
     m_R = Matrix3d::Identity();

@@ -15,6 +15,31 @@
 class GL_Scene;
 class GL_ViewRenderer;
 
+struct MaterialType
+{
+    Q_GADGET
+public:
+    enum Enum
+    {
+        MT_Texture
+    };
+    Q_ENUM(Enum)
+};
+
+struct FillMode
+{
+    Q_GADGET
+public:
+    enum Enum
+    {
+        NoFill,
+        Stretch,
+        PreserveAspectFit,
+        PreserveAspectCrop
+    };
+    Q_ENUM(Enum)
+};
+
 class GL_View:
         public QQuickItem
 {
@@ -22,10 +47,6 @@ class GL_View:
 
     Q_PROPERTY(QList<QObject*> scenes READ scenes WRITE setScenes NOTIFY scenesChanged)
 public:
-    enum MaterialType
-    {
-        MT_Texture
-    };
 
     GL_View();
     ~GL_View();
@@ -53,22 +74,26 @@ private:
 };
 
 class GL_ViewRenderer:
-        public QObject, protected QOpenGLFunctions
+        public QObject, public QOpenGLFunctions
 {
     Q_OBJECT
 public:
     GL_ViewRenderer(GL_View * parent);
 
-    GL_ShaderMaterialPtr createMaterial(GL_View::MaterialType type) const;
+    GL_ShaderMaterialPtr createMaterial(MaterialType::Enum type) const;
 
-public slots:
-    void paint();
+    QSize viewportSize() const;
+
+private slots:
+    void _draw();
 
 private:
     GL_View * m_parent;
 
+    GLuint m_emptyTextureId;
     QMap<int, GL_ShaderMaterialPtr> m_shaderMaterials;
 
+    void _initEmptyTexture();
     void _loadShaders();
 };
 

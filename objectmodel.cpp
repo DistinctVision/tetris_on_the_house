@@ -72,8 +72,10 @@ ObjectModel ObjectModel::createBox(const Vector3d & size)
     return box;
 }
 
-ObjectModel ObjectModel::createCubikRurbik()
+ObjectModel ObjectModel::createCubikRubik(double border)
 {
+    double i_border = 1.0 - border;
+
     ObjectModel model;
 
     Vector3d axisX(1.0, 0.0, 0.0),
@@ -88,17 +90,17 @@ ObjectModel ObjectModel::createCubikRurbik()
             {
                 Vector2d v(i * (1.0 / 3.0), j * (1.0 / 3.0));
                 int i_o = static_cast<int>(model.m_vertices.size());
-                model.m_vertices.push_back((v.x() + (0.1 / 3.0) - 0.5) * axisX +
-                                           (v.y() + (0.1 / 3.0) - 0.5) * axisY +
+                model.m_vertices.push_back((v.x() + (border / 3.0) - 0.5) * axisX +
+                                           (v.y() + (border / 3.0) - 0.5) * axisY +
                                            axisZ * 0.5);
-                model.m_vertices.push_back((v.x() + (0.9 / 3.0) - 0.5) * axisX +
-                                           (v.y() + (0.1 / 3.0) - 0.5) * axisY +
+                model.m_vertices.push_back((v.x() + (i_border / 3.0) - 0.5) * axisX +
+                                           (v.y() + (border / 3.0) - 0.5) * axisY +
                                            axisZ * 0.5);
-                model.m_vertices.push_back((v.x() + (0.9 / 3.0) - 0.5) * axisX +
-                                           (v.y() + (0.9 / 3.0) - 0.5) * axisY +
+                model.m_vertices.push_back((v.x() + (i_border / 3.0) - 0.5) * axisX +
+                                           (v.y() + (i_border / 3.0) - 0.5) * axisY +
                                            axisZ * 0.5);
-                model.m_vertices.push_back((v.x() + (0.1 / 3.0) - 0.5) * axisX +
-                                           (v.y() + (0.9 / 3.0) - 0.5) * axisY +
+                model.m_vertices.push_back((v.x() + (border / 3.0) - 0.5) * axisX +
+                                           (v.y() + (i_border / 3.0) - 0.5) * axisY +
                                            axisZ * 0.5);
                 model.m_polygons.push_back(Polygon { (VectorXi(4) << i_o + 0, i_o + 1, i_o + 2, i_o + 3).finished(),
                                                      axisZ });

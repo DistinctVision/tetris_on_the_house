@@ -1,5 +1,7 @@
 #include "gl_scene.h"
 
+#include "gl_view.h"
+
 GL_Scene::GL_Scene():
     m_enabled(true)
 {}

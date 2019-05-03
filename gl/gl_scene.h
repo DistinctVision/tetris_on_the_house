@@ -2,6 +2,9 @@
 #define GL_SCENE_H
 
 #include <QObject>
+#include <QOpenGLFunctions>
+
+class GL_ViewRenderer;
 
 class GL_Scene:
         public QObject
@@ -16,9 +19,9 @@ public:
     bool enabled() const;
     void setEnabled(bool enabled);
 
-    virtual void init() = 0;
-    virtual void draw() = 0;
-    virtual void destroy() = 0;
+    virtual void init(QOpenGLFunctions * gl) = 0;
+    virtual void draw(GL_ViewRenderer * view) = 0;
+    virtual void destroy(QOpenGLFunctions * gl) = 0;
 
 signals:
     void enabledChanged();
