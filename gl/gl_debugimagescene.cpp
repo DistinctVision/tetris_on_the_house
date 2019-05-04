@@ -28,14 +28,11 @@ DebugImageObject * GL_DebugImageScene::debugImageObject() const
     return m_debugImageObject;
 }
 
-void GL_DebugImageScene::setDebugImageObject(QObject * debugImageObject)
+void GL_DebugImageScene::setDebugImageObject(DebugImageObject * debugImageObject)
 {
-    DebugImageObject * d_object = dynamic_cast<DebugImageObject*>(debugImageObject);
-    if (d_object != debugImageObject)
-        qFatal((QString(Q_FUNC_INFO) + "Wrong debug image object").toStdString().c_str());
-    if (d_object == m_debugImageObject)
+    if (debugImageObject == m_debugImageObject)
         return;
-    m_debugImageObject = d_object;
+    m_debugImageObject = debugImageObject;
     emit debugImageObjectChanged();
 }
 
@@ -50,6 +47,11 @@ void GL_DebugImageScene::setFillMode(FillMode::Enum mode)
         return;
     m_fillMode = mode;
     emit fillModeChanged();
+}
+
+void GL_DebugImageScene::setFillMode(int mode)
+{
+    setFillMode(static_cast<FillMode::Enum>(mode));
 }
 
 void GL_DebugImageScene::init(GL_ViewRenderer * view)
@@ -109,8 +111,11 @@ void GL_DebugImageScene::draw(GL_ViewRenderer * view)
 
     view->glDisable(GL_DEPTH_TEST);
     view->glDepthMask(GL_FALSE);
+    view->glClearColor(0.0f, 1.0f, 0.0f, 1.0f);
+    view->glClear(GL_COLOR_BUFFER_BIT);
     m_screenQuad->setOrigin(Vector2f(0.0f, 0.0f));
     m_screenQuad->setSize(Vector2f(image.cols, image.rows));
     m_screenQuad->setFillMode(m_fillMode);
+    m_screenQuad->setFillMode(FillMode::Stretch);
     m_screenQuad->draw(view);
 }

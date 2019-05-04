@@ -13,14 +13,11 @@ ObjectEdgesTracker * TestCubeScene::objectEdgesTracker() const
     return m_tracker;
 }
 
-void TestCubeScene::setObjectEdgesTracker(QObject * tracker)
+void TestCubeScene::setObjectEdgesTracker(ObjectEdgesTracker * tracker)
 {
-    ObjectEdgesTracker * d_object = dynamic_cast<ObjectEdgesTracker*>(tracker);
-    if (d_object != tracker)
-        qFatal((QString(Q_FUNC_INFO) + "Wrong object edges tracker").toStdString().c_str());
-    if (d_object == m_tracker)
+    if (tracker == m_tracker)
         return;
-    m_tracker = d_object;
+    m_tracker = tracker;
     emit objectEdgesTrackerChanged();
 }
 

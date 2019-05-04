@@ -24,6 +24,8 @@ Item {
 
     FrameHandler {
         id: frameHandler
+        objectEdgesTracker {
+        }
     }
 
     VideoOutput {
@@ -31,5 +33,19 @@ Item {
         source: camera
         anchors.fill: parent
         filters: [ frameHandler ]
+    }
+
+    GL_View {
+        id: gl_view
+        anchors.fill: parent
+        fillFrameMode: FillMode.PreserveAspectCrop
+
+        scenes: [ debugImageScene ]
+    }
+
+    GL_DebugImageScene {
+        id: debugImageScene
+        fillMode: gl_view.fillFrameMode
+        debugImageObject: frameHandler.objectEdgesTracker
     }
 }

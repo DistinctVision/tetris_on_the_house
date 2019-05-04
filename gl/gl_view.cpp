@@ -1,4 +1,5 @@
 #include "gl_view.h"
+#include <QFile>
 #include <QOpenGLShaderProgram>
 #include <QQuickWindow>
 #include <QDebug>
@@ -139,6 +140,11 @@ void GL_View::setFillFrameMode(FillMode::Enum fillFrameMode)
     emit fillFrameModeChanged();
 }
 
+void GL_View::setFillFrameMode(int fillFrameMode)
+{
+    setFillFrameMode(static_cast<FillMode::Enum>(fillFrameMode));
+}
+
 void GL_View::sync()
 {
     if (!m_renderer)
@@ -176,7 +182,7 @@ void GL_View::handleWindowChanged(QQuickWindow * win)
 GL_ViewRenderer::GL_ViewRenderer(GL_View * parent):
     m_parent(parent)
 {
-    connect(m_parent->window(), &QQuickWindow::beforeRendering, this, &GL_ViewRenderer::_draw, Qt::DirectConnection);
+    connect(m_parent->window(), &QQuickWindow::afterRendering, this, &GL_ViewRenderer::_draw, Qt::DirectConnection);
     initializeOpenGLFunctions();
     _initEmptyTexture();
     _loadShaders();
@@ -189,7 +195,7 @@ GL_ShaderMaterialPtr GL_ViewRenderer::createMaterial(MaterialType::Enum type) co
     {
         qFatal("Coudn't find shader material");
     }
-    return GL_ShaderMaterialPtr::create(it.value());
+    return GL_ShaderMaterialPtr::create(*it.value());
 }
 
 QSize GL_ViewRenderer::viewportSize() const
@@ -300,12 +306,56 @@ void GL_ViewRenderer::_initEmptyTexture()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 }
 
+QSharedPointer<QOpenGLShaderProgram> GL_ViewRenderer::_loadShader(const QString & vertexPath,
+                                                                  const QString & fragmentPath) const
+{
+    QString vertexSource, fragmentSource;
+    {
+        QFile file(vertexPath);
+        if (!file.open(QFile::ReadOnly | QFile::Text))
+        {
+            qFatal(QString("Coudn't open file: %1").arg(vertexPath).toStdString().c_str());
+        }
+        vertexSource = file.readAll();
+    }
+    {
+        QFile file(fragmentPath);
+        if (!file.open(QFile::ReadOnly | QFile::Text))
+        {
+            qFatal(QString("Coudn't open file: %1").arg(fragmentPath).toStdString().c_str());
+        }
+        fragmentSource = file.readAll();
+    }
+    if (QOpenGLContext::currentContext()->isOpenGLES())
+    {
+        vertexSource.push_front(QByteArrayLiteral("#version 300 es\n"));
+        fragmentSource.push_front(QByteArrayLiteral("#version 300 es\n"));
+    }
+    else
+    {
+        vertexSource.push_front(QByteArrayLiteral("#version 330\n"));
+        fragmentSource.push_front(QByteArrayLiteral("#version 330\n"));
+    }
+    QSharedPointer<QOpenGLShaderProgram> program = QSharedPointer<QOpenGLShaderProgram>::create();
+    if (!program->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexSource))
+    {
+        qFatal(program->log().toStdString().c_str());
+    }
+    if (!program->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentSource))
+    {
+        qFatal(program->log().toStdString().c_str());
+    }
+    if (!program->link())
+    {
+        qFatal(program->log().toStdString().c_str());
+    }
+    return program;
+}
+
 void GL_ViewRenderer::_loadShaders()
 {
-    QSharedPointer<QOpenGLShaderProgram> programPtr = QSharedPointer<QOpenGLShaderProgram>::create();
-    programPtr->addShaderFromSourceFile(QOpenGLShader::Vertex, ":/shaders/texture.vsh");
-    programPtr->addShaderFromSourceFile(QOpenGLShader::Fragment, ":/shaders/texture.fsh");
-    programPtr->link();
+    QSharedPointer<QOpenGLShaderProgram> programPtr = _loadShader(":/shaders/texture.vsh",
+                                                                  ":/shaders/texture.fsh");
     m_shaderMaterials.insert(MaterialType::MT_Texture,
                              GL_ShaderMaterialPtr::create(programPtr,
                                                           QVariantMap {

@@ -62,8 +62,8 @@ GLuint GL_ShaderMaterial::texture(const QString & name) const
 
 void GL_ShaderMaterial::setTexture(const QString & name, GLuint textureId)
 {
-    auto it = m_values.find(name);
-    if (it == m_values.end())
+    auto it = m_textures.find(name);
+    if (it == m_textures.end())
     {
         qFatal(QString("Coudn't find texture : %1").arg(name).toStdString().c_str());
     }

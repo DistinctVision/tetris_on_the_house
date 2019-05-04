@@ -80,6 +80,7 @@ public:
 
     FillMode::Enum fillFrameMode() const;
     void setFillFrameMode(FillMode::Enum fillFrameMode);
+    void setFillFrameMode(int fillFrameMode);
 
 public slots:
     void sync();
@@ -136,6 +137,7 @@ private:
 
     void _initEmptyTexture();
     void _loadShaders();
+    QSharedPointer<QOpenGLShaderProgram> _loadShader(const QString & vertexPath, const QString & fragmentPath) const;
     QMatrix4x4 _computeProjectionMatrix() const;
 };
 

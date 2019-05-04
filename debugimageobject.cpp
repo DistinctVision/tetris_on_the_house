@@ -15,5 +15,5 @@ void DebugImageObject::setDebugEnabled(bool debugEnabled)
     if (debugEnabled == m_debugEnabled)
         return;
     m_debugEnabled = debugEnabled;
-    emit debugEnabledChangled();
+    emit debugEnabledChanged();
 }

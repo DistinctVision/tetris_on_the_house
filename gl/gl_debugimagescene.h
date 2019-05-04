@@ -16,17 +16,18 @@ class GL_DebugImageScene:
 {
     Q_OBJECT
 
-    Q_PROPERTY(QObject* debugImageObject READ debugImageObject WRITE setDebugImageObject NOTIFY debugImageObjectChanged)
+    Q_PROPERTY(DebugImageObject* debugImageObject READ debugImageObject WRITE setDebugImageObject NOTIFY debugImageObjectChanged)
     Q_PROPERTY(int fillMode READ fillMode WRITE setFillMode NOTIFY fillModeChanged)
 public:
     GL_DebugImageScene();
     ~GL_DebugImageScene() override;
 
     DebugImageObject * debugImageObject() const;
-    void setDebugImageObject(QObject * debugImageObject);
+    void setDebugImageObject(DebugImageObject * debugImageObject);
 
     FillMode::Enum fillMode() const;
     void setFillMode(FillMode::Enum mode);
+    void setFillMode(int mode);
 
     void init(GL_ViewRenderer * view) override;
     void destroy(GL_ViewRenderer * view) override;

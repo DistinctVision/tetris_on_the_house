@@ -11,6 +11,7 @@ GL_Mesh::GL_Mesh():
     m_indicesBuffer(QOpenGLBuffer::IndexBuffer)
 {
     m_vertexBuffer.create();
+    m_textureCoordsBuffer.create();
     m_normalsBuffer.create();
     m_indicesBuffer.create();
 }

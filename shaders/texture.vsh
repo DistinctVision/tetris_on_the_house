@@ -3,7 +3,7 @@ layout(location = 1) in highp vec2 vertex_textureCoord;
 
 uniform highp mat4 matrixMVP;
 
-varying highp vec4 textureCoord;
+out highp vec2 textureCoord;
 
 void main(void)
 {

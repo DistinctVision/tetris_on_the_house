@@ -65,6 +65,8 @@ void GL_ScreenObject::setSize(const Vector2f & size)
 
 QMatrix4x4 GL_ScreenObject::getMatrixMVP(const QSize & viewportSize) const
 {
+    return QMatrix4x4();
+
     if ((viewportSize.width() == 0) || (viewportSize.height() == 0))
         return QMatrix4x4();
 

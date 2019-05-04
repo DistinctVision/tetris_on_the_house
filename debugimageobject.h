@@ -20,7 +20,7 @@ public:
     virtual cv::Mat debugImage() const = 0;
 
 signals:
-    void debugEnabledChangled();
+    void debugEnabledChanged();
 
 private:
     bool m_debugEnabled;

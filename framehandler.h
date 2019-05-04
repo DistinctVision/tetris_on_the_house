@@ -15,7 +15,7 @@ class FrameHandler: public QAbstractVideoFilter
 {
     Q_OBJECT
 
-    Q_PROPERTY(QObject* READ objectEdgesTracker CONSTANT)
+    Q_PROPERTY(ObjectEdgesTracker* objectEdgesTracker READ objectEdgesTracker CONSTANT)
 public:
     FrameHandler();
 
