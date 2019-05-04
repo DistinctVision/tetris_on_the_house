@@ -114,16 +114,16 @@ void GL_View::setFarPlane(float farPlane)
     emit farPlaneChanged();
 }
 
-QSize GL_View::inputeFrameSize() const
+QSize GL_View::inputFrameSize() const
 {
     return m_inputeFrameSize;
 }
 
-void GL_View::setInputeFrameSize(const QSize & inputeFrameSize)
+void GL_View::setInputFrameSize(const QSize & inputFrameSize)
 {
-    if (m_inputeFrameSize == inputeFrameSize)
+    if (m_inputeFrameSize == inputFrameSize)
         return;
-    m_inputeFrameSize = inputeFrameSize;
+    m_inputeFrameSize = inputFrameSize;
     emit inputFrameSizeChanged();
 }
 
@@ -203,6 +203,11 @@ QSize GL_ViewRenderer::viewportSize() const
     return m_parent->window()->size();
 }
 
+GLuint GL_ViewRenderer::emptyTextureId() const
+{
+    return m_emptyTextureId;
+}
+
 QMatrix4x4 GL_ViewRenderer::projectionMatrix() const
 {
     return m_projectionMatrix;
@@ -215,82 +220,86 @@ QMatrix4x4 GL_ViewRenderer::_computeProjectionMatrix() const
     float nearPlane = m_parent->nearPlane(), farPlane = m_parent->farPlane();
 
     QSize viewportSize = this->viewportSize();
-    QSize inputFrameSize = m_parent->inputeFrameSize();
+    QSize inputFrameSize = m_parent->inputFrameSize();
     if (inputFrameSize == QSize(-1, -1))
         inputFrameSize = viewportSize;
     QMatrix4x4 M;
     float clip = farPlane - nearPlane;
     M(0, 0) = focalLength.x() * inputFrameSize.width();
     M(0, 1) = 0.0f;
-    M(0, 2) = 0.0f;
+    M(0, 2) = opticalCenter.x() * inputFrameSize.width();
     M(0, 3) = 0.0f;
-    M(1, 0) = opticalCenter.x() * inputFrameSize.width();
-    M(1, 1) = focalLength.y() * inputFrameSize.height();
-    M(1, 2) = 0.0f;
+    M(1, 0) = 0.0f;
+    M(1, 1) = focalLength.y() * inputFrameSize.width();
+    M(1, 2) = opticalCenter.y() * inputFrameSize.height();
     M(1, 3) = 0.0f;
     M(2, 0) = 0.0f;
-    M(2, 1) = opticalCenter.y() * inputFrameSize.height();
-    M(2, 2) = -(nearPlane + farPlane) / clip;
-    M(2, 3) = -(2.0f * nearPlane * farPlane) / clip;
+    M(2, 1) = 0.0f;
+    M(2, 2) = (nearPlane + farPlane) / clip;
+    M(2, 3) = - (2.0f * nearPlane * farPlane) / clip;
     M(3, 0) = 0.0f;
     M(3, 1) = 0.0f;
-    M(3, 2) = -1.0f;
+    M(3, 2) = 1.0f;
     M(3, 3) = 0.0f;
 
     QVector2D origin(0.0f, 0.0f);
-    QVector2D size(1.0f, 1.0f);
+    QVector2D size(static_cast<float>(inputFrameSize.width()),
+                   static_cast<float>(inputFrameSize.height()));
 
     switch (m_parent->fillFrameMode())
     {
     case FillMode::Stretch:
     {
         origin = QVector2D(0.0f, 0.0f);
-        size = QVector2D(viewportSize.width() / static_cast<float>(inputFrameSize.width()),
-                         viewportSize.height() / static_cast<float>(inputFrameSize.height()));
+        size = QVector2D(static_cast<float>(viewportSize.width()),
+                         static_cast<float>(viewportSize.height()));
     } break;
     case FillMode::PreserveAspectFit:
     {
-        float viewAspect = viewportSize.height() / static_cast<float>(viewportSize.width());
+        float aspect = size.x() / size.y();
 
-        float width = size.y() * viewAspect, height = static_cast<float>(viewportSize.height());
-        if (width < static_cast<float>(viewportSize.width()))
-        {
-            width = static_cast<float>(viewportSize.width());
-            height = width / viewAspect;
-        }
-        size.setX(width / static_cast<float>(inputFrameSize.width()));
-        size.setY(height / static_cast<float>(inputFrameSize.height()));
-        origin.setX((width - viewportSize.width()) / (2.0f * static_cast<float>(viewportSize.width())));
-        origin.setY((height - viewportSize.height()) * (2.0f * static_cast<float>(viewportSize.height())));
-    } break;
-    case FillMode::PreserveAspectCrop:
-    {
-        float viewAspect = viewportSize.height() / static_cast<float>(viewportSize.width());
-
-        float width = size.y() * viewAspect, height = static_cast<float>(viewportSize.height());
+        float width = viewportSize.height() * aspect, height = static_cast<float>(viewportSize.height());
         if (width > static_cast<float>(viewportSize.width()))
         {
             width = static_cast<float>(viewportSize.width());
-            height = width / viewAspect;
+            height = viewportSize.width() / aspect;
         }
-        size.setX(width / static_cast<float>(inputFrameSize.width()));
-        size.setY(height / static_cast<float>(inputFrameSize.height()));
-        origin.setX((width - viewportSize.width()) / (2.0f * static_cast<float>(viewportSize.width())));
-        origin.setY((height - viewportSize.height()) * (2.0f * static_cast<float>(viewportSize.height())));
+        size.setX(width);
+        size.setY(height);
+        origin.setX((viewportSize.width() - width) * 0.5f);
+        origin.setY((viewportSize.height() - height) * 0.5f);
+    } break;
+    case FillMode::PreserveAspectCrop:
+    {
+        float aspect = size.x() / size.y();
+
+        float width = viewportSize.height() * aspect, height = static_cast<float>(viewportSize.height());
+        if (width < static_cast<float>(viewportSize.width()))
+        {
+            width = static_cast<float>(viewportSize.width());
+            height = viewportSize.width() / aspect;
+        }
+        size.setX(width);
+        size.setY(height);
+        origin.setX((viewportSize.width() - width) * 0.5f);
+        origin.setY((viewportSize.height() - height) * 0.5f);
     } break;
     default:
         break;
     }
+    size.setX(size.x() / static_cast<float>(inputFrameSize.width()));
+    size.setY(size.y() / static_cast<float>(inputFrameSize.height()));
     QMatrix4x4 imageTransform;
     imageTransform(0, 0) = size.x();
     imageTransform(0, 3) = origin.x();
     imageTransform(1, 1) = size.y();
     imageTransform(1, 3) = origin.y();
     QMatrix4x4 viewportTransform;
-    viewportTransform(0, 0) = 2.0f;
+    viewportTransform(0, 0) = 2.0f / static_cast<float>(viewportSize.width());
     viewportTransform(0, 3) = - 1.0f;
-    viewportTransform(1, 1) = 2.0f;
-    viewportTransform(1, 3) = - 1.0f;
+    viewportTransform(1, 1) = - 2.0f / static_cast<float>(viewportSize.height());
+    viewportTransform(1, 3) = 1.0f;
+
     return viewportTransform * imageTransform * M;
 }
 
@@ -304,6 +313,7 @@ void GL_ViewRenderer::_initEmptyTexture()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glGenerateMipmap(GL_TEXTURE_2D);
 }
 
 QSharedPointer<QOpenGLShaderProgram> GL_ViewRenderer::_loadShader(const QString & vertexPath,
@@ -383,13 +393,13 @@ void GL_ViewRenderer::_draw()
     QSize viewportSize = this->viewportSize();
     glViewport(0, 0, viewportSize.width(), viewportSize.height());
 
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+    //glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    //glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
     QList<QPair<GL_Scene*, bool>> & scenes = m_parent->m_scenes;
     for (QPair<GL_Scene*, bool> & s : scenes)
     {
-        if (!s.second)
+        if (s.first->enabled() && !s.second)
         {
             s.first->init(this);
             s.second = true;

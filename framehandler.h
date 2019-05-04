@@ -16,6 +16,7 @@ class FrameHandler: public QAbstractVideoFilter
     Q_OBJECT
 
     Q_PROPERTY(ObjectEdgesTracker* objectEdgesTracker READ objectEdgesTracker CONSTANT)
+    Q_PROPERTY(QSize frameSize READ frameSize NOTIFY frameSizeChanged)
 public:
     FrameHandler();
 

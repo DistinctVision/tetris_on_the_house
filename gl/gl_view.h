@@ -35,7 +35,7 @@ struct FillMode
 public:
     enum Enum
     {
-        NoFillMode,
+        NoFill,
         Stretch,
         PreserveAspectFit,
         PreserveAspectCrop
@@ -53,6 +53,7 @@ class GL_View:
     Q_PROPERTY(QVector2D opticalCenter READ opticalCenter WRITE setOpticalCenter NOTIFY opticalCenterChanged)
     Q_PROPERTY(float nearPlane READ nearPlane WRITE setNearPlane NOTIFY nearPlaneChanged)
     Q_PROPERTY(float farPlane READ farPlane WRITE setFarPlane NOTIFY farPlaneChanged)
+    Q_PROPERTY(QSize inputFrameSize READ inputFrameSize WRITE setInputFrameSize NOTIFY inputFrameSizeChanged)
     Q_PROPERTY(int fillFrameMode READ fillFrameMode WRITE setFillFrameMode NOTIFY fillFrameModeChanged)
 
 public:
@@ -76,8 +77,8 @@ public:
     float farPlane() const;
     void setFarPlane(float farPlane);
 
-    QSize inputeFrameSize() const;
-    void setInputeFrameSize(const QSize & inputeFrameSize);
+    QSize inputFrameSize() const;
+    void setInputFrameSize(const QSize & inputFrameSize);
 
     FillMode::Enum fillFrameMode() const;
     void setFillFrameMode(FillMode::Enum fillFrameMode);
@@ -122,6 +123,8 @@ public:
     GL_ShaderMaterialPtr createMaterial(MaterialType::Enum type) const;
 
     QSize viewportSize() const;
+
+    GLuint emptyTextureId() const;
 
     QMatrix4x4 projectionMatrix() const;
 

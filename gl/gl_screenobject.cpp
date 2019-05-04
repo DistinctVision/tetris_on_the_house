@@ -79,28 +79,28 @@ QMatrix4x4 GL_ScreenObject::getMatrixMVP(const QSize & viewportSize) const
     } break;
     case FillMode::PreserveAspectFit:
     {
-        float viewAspect = viewportSize.height() / static_cast<float>(viewportSize.width());
+        float aspect = size.x() / size.y();
 
-        float width = size.y() / viewAspect, height = static_cast<float>(viewportSize.height());
-        if (width < static_cast<float>(viewportSize.width()))
-        {
-            width = static_cast<float>(viewportSize.width());
-            height = size.x() * viewAspect;
-        }
-        size.x() = width;
-        size.y() = height;
-        origin.x() = (width - viewportSize.width()) * (0.5f / width);
-        origin.y() = (height - viewportSize.height()) * (0.5f / height);
-    } break;
-    case FillMode::PreserveAspectCrop:
-    {
-        float viewAspect = viewportSize.height() / static_cast<float>(viewportSize.width());
-
-        float width = size.y() * viewAspect, height = static_cast<float>(viewportSize.height());
+        float width = viewportSize.height() * aspect, height = static_cast<float>(viewportSize.height());
         if (width > static_cast<float>(viewportSize.width()))
         {
             width = static_cast<float>(viewportSize.width());
-            height = width / viewAspect;
+            height = viewportSize.width() / aspect;
+        }
+        size.x() = width;
+        size.y() = height;
+        origin.x() = (viewportSize.width() - width) * 0.5f;
+        origin.y() = (viewportSize.height() - height) * 0.5f;
+    } break;
+    case FillMode::PreserveAspectCrop:
+    {
+        float aspect = size.x() / size.y();
+
+        float width = viewportSize.height() * aspect, height = static_cast<float>(viewportSize.height());
+        if (width < static_cast<float>(viewportSize.width()))
+        {
+            width = static_cast<float>(viewportSize.width());
+            height = viewportSize.width() / aspect;
         }
         size.x() = width;
         size.y() = height;

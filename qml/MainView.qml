@@ -25,6 +25,7 @@ Item {
     FrameHandler {
         id: frameHandler
         objectEdgesTracker {
+            debugEnabled: false
         }
     }
 
@@ -38,14 +39,22 @@ Item {
     GL_View {
         id: gl_view
         anchors.fill: parent
-        fillFrameMode: FillMode.PreserveAspectFit
+        fillFrameMode: FillMode.PreserveAspectCrop
+        inputFrameSize: frameHandler.frameSize
 
-        scenes: [ debugImageScene ]
+        scenes: [ debugImageScene, testCubeScene ]
     }
 
     GL_DebugImageScene {
         id: debugImageScene
+        enabled: false
         fillMode: gl_view.fillFrameMode
         debugImageObject: frameHandler.objectEdgesTracker
+    }
+
+    TestCubeScene {
+        id: testCubeScene
+        enabled: true
+        objectEdgesTracker: frameHandler.objectEdgesTracker
     }
 }

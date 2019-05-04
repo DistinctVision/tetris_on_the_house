@@ -7,17 +7,19 @@
 #include "gl/gl_scene.h"
 #include "debugimageobject.h"
 #include "gl/gl_debugimagescene.h"
+#include "game/testcubescene.h"
 #include "objectedgestracker.h"
 
-void regsiterQmlClasses()
+void regsiterQmlTypes()
 {
     qmlRegisterType<FrameHandler>("mystuffs", 1, 0, "FrameHandler");
-    qmlRegisterType<GL_View>("mystuffs", 1, 0, "GL_View");
-    qmlRegisterUncreatableType<GL_Scene>("mystuffs", 1, 0, "GL_Scene", "Abstact class");
-    qmlRegisterType<GL_DebugImageScene>("mystuffs", 1, 0, "GL_DebugImageScene");
-    qmlRegisterUncreatableType<DebugImageObject>("mystuffs", 1, 0, "DebugImageObject", "Abstact class");
     qmlRegisterUncreatableType<ObjectEdgesTracker>("mystuffs", 1, 0, "ObjectEdgesTracker", "!");
+    qmlRegisterType<GL_View>("mystuffs", 1, 0, "GL_View");
     qmlRegisterUncreatableType<FillMode>("mystuffs", 1, 0, "FillMode", "Its enum");
+    qmlRegisterUncreatableType<DebugImageObject>("mystuffs", 1, 0, "DebugImageObject", "Abstract class");
+    qmlRegisterUncreatableType<GL_Scene>("mystuffs", 1, 0, "GL_Scene", "Abstract class");
+    qmlRegisterType<GL_DebugImageScene>("mystuffs", 1, 0, "GL_DebugImageScene");
+    qmlRegisterType<TestCubeScene>("mystuffs", 1, 0, "TestCubeScene");
 }
 
 int main(int argc, char* argv[])
@@ -32,7 +34,7 @@ int main(int argc, char* argv[])
     defaultFormat.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
     QSurfaceFormat::setDefaultFormat(defaultFormat);*/
 
-    regsiterQmlClasses();
+    regsiterQmlTypes();
 
     QQuickView view;
     view.setResizeMode(QQuickView::SizeRootObjectToView);

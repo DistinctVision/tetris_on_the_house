@@ -112,8 +112,6 @@ void GL_DebugImageScene::draw(GL_ViewRenderer * view)
 
     view->glDisable(GL_DEPTH_TEST);
     view->glDepthMask(GL_FALSE);
-    view->glClearColor(0.0f, 1.0f, 0.0f, 1.0f);
-    view->glClear(GL_COLOR_BUFFER_BIT);
 
     m_screenQuad->setOrigin(Vector2f(0.0f, 0.0f));
     m_screenQuad->setSize(Vector2f(image.cols, image.rows));

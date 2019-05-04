@@ -40,5 +40,9 @@ void TestCubeScene::draw(GL_ViewRenderer * view)
         qCritical() << Q_FUNC_INFO << "Object edges tracker is not set!";
         return;
     }
+    view->glDisable(GL_DEPTH_TEST);
+    view->glDepthMask(GL_FALSE);
+    gl_assert(view);
     m_cube->draw(view, m_tracker->viewMatrix());
+    gl_assert(view);
 }
