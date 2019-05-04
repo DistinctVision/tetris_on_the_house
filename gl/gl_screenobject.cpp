@@ -42,7 +42,6 @@ void GL_ScreenObject::setFillMode(FillMode::Enum fillMode)
     m_fillMode = fillMode;
 }
 
-
 Vector2f GL_ScreenObject::origin() const
 {
     return m_origin;
@@ -65,8 +64,6 @@ void GL_ScreenObject::setSize(const Vector2f & size)
 
 QMatrix4x4 GL_ScreenObject::getMatrixMVP(const QSize & viewportSize) const
 {
-    return QMatrix4x4();
-
     if ((viewportSize.width() == 0) || (viewportSize.height() == 0))
         return QMatrix4x4();
 
@@ -84,16 +81,16 @@ QMatrix4x4 GL_ScreenObject::getMatrixMVP(const QSize & viewportSize) const
     {
         float viewAspect = viewportSize.height() / static_cast<float>(viewportSize.width());
 
-        float width = size.y() * viewAspect, height = static_cast<float>(viewportSize.height());
+        float width = size.y() / viewAspect, height = static_cast<float>(viewportSize.height());
         if (width < static_cast<float>(viewportSize.width()))
         {
             width = static_cast<float>(viewportSize.width());
-            height = width / viewAspect;
+            height = size.x() * viewAspect;
         }
         size.x() = width;
         size.y() = height;
-        origin.x() = (width - viewportSize.width()) * 0.5f;
-        origin.y() = (height - viewportSize.height()) * 0.5f;
+        origin.x() = (width - viewportSize.width()) * (0.5f / width);
+        origin.y() = (height - viewportSize.height()) * (0.5f / height);
     } break;
     case FillMode::PreserveAspectCrop:
     {

@@ -38,7 +38,7 @@ Item {
     GL_View {
         id: gl_view
         anchors.fill: parent
-        fillFrameMode: FillMode.PreserveAspectCrop
+        fillFrameMode: FillMode.PreserveAspectFit
 
         scenes: [ debugImageScene ]
     }

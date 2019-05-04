@@ -23,7 +23,8 @@ struct MaterialType
 public:
     enum Enum
     {
-        MT_Texture
+        Color,
+        Texture
     };
     Q_ENUM(Enum)
 };
@@ -34,7 +35,7 @@ struct FillMode
 public:
     enum Enum
     {
-        NoFill,
+        NoFillMode,
         Stretch,
         PreserveAspectFit,
         PreserveAspectCrop

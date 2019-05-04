@@ -10,13 +10,17 @@
 #include <QVector2D>
 #include <QVector3D>
 
+QString glErrorToQString(GLenum error);
+
+void gl_assert(QOpenGLFunctions * gl);
+
 class GL_ShaderMaterial;
 
 class GL_Mesh
 {
 public:
     static QVector<QVector3D> computeNormals(const QVector<QVector3D> & vertices,
-                                             const QVector<int> & indices);
+                                             const QVector<GLuint> & indices);
 
     static GL_Mesh createQuad(const QVector2D & size = QVector2D(1.0f, 1.0f));
     static GL_Mesh createCube(const QVector3D & size = QVector3D(1.0f, 1.0f, 1.0f));
@@ -30,7 +34,7 @@ private:
     QOpenGLBuffer m_textureCoordsBuffer;
     QOpenGLBuffer m_normalsBuffer;
     QOpenGLBuffer m_indicesBuffer;
-
+    GLsizei m_numberElements;
 };
 
 using GL_MeshPtr = QSharedPointer<GL_Mesh>;

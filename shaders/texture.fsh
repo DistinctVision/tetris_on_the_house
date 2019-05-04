@@ -7,5 +7,4 @@ out highp vec4 color;
 void main(void)
 {
     color = texture(main_texture, textureCoord);
-    color.r = 1.0;
 }

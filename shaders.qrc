@@ -3,5 +3,7 @@
     <qresource prefix="/">
         <file>shaders/texture.vsh</file>
         <file>shaders/texture.fsh</file>
+        <file>shaders/color.fsh</file>
+        <file>shaders/color.vsh</file>
     </qresource>
 </RCC>

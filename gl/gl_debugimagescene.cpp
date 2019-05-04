@@ -61,7 +61,7 @@ void GL_DebugImageScene::init(GL_ViewRenderer * view)
         view->glGenTextures(1, &m_debugTextureId);
         m_debugTextureSize = QSize(-1, -1);
         m_screenQuad = GL_ScreenObjectPtr::create(GL_MeshPtr::create(GL_Mesh::createQuad()),
-                                                  view->createMaterial(MaterialType::MT_Texture));
+                                                  view->createMaterial(MaterialType::Texture));
         m_screenQuad->material()->setTexture("main_texture", m_debugTextureId);
     }
 }
@@ -100,7 +100,7 @@ void GL_DebugImageScene::draw(GL_ViewRenderer * view)
     if ((image.cols != m_debugTextureSize.width()) || (image.rows != m_debugTextureSize.height()))
     {
         m_debugTextureSize = QSize(image.cols, image.rows);
-        view->glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8UI, m_debugTextureSize.width(), m_debugTextureSize.height(), 0,
+        view->glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_debugTextureSize.width(), m_debugTextureSize.height(), 0,
                            GL_RGBA, GL_UNSIGNED_BYTE, image.data);
     }
     else
@@ -108,14 +108,15 @@ void GL_DebugImageScene::draw(GL_ViewRenderer * view)
         view->glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, m_debugTextureSize.width(), m_debugTextureSize.height(),
                               GL_RGBA, GL_UNSIGNED_BYTE, image.data);
     }
+    view->glGenerateMipmap(GL_TEXTURE_2D);
 
     view->glDisable(GL_DEPTH_TEST);
     view->glDepthMask(GL_FALSE);
     view->glClearColor(0.0f, 1.0f, 0.0f, 1.0f);
     view->glClear(GL_COLOR_BUFFER_BIT);
+
     m_screenQuad->setOrigin(Vector2f(0.0f, 0.0f));
     m_screenQuad->setSize(Vector2f(image.cols, image.rows));
     m_screenQuad->setFillMode(m_fillMode);
-    m_screenQuad->setFillMode(FillMode::Stretch);
     m_screenQuad->draw(view);
 }

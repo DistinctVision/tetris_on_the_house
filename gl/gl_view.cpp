@@ -299,7 +299,7 @@ void GL_ViewRenderer::_initEmptyTexture()
     const uchar bytes[] = { 255, 255, 255, 255 };
     glGenTextures(1, &m_emptyTextureId);
     glBindTexture(GL_TEXTURE_2D, m_emptyTextureId);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8UI, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, bytes);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, bytes);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -354,9 +354,17 @@ QSharedPointer<QOpenGLShaderProgram> GL_ViewRenderer::_loadShader(const QString 
 
 void GL_ViewRenderer::_loadShaders()
 {
-    QSharedPointer<QOpenGLShaderProgram> programPtr = _loadShader(":/shaders/texture.vsh",
-                                                                  ":/shaders/texture.fsh");
-    m_shaderMaterials.insert(MaterialType::MT_Texture,
+    QSharedPointer<QOpenGLShaderProgram> programPtr = _loadShader(":/shaders/color.vsh",
+                                                                  ":/shaders/color.fsh");
+    m_shaderMaterials.insert(MaterialType::Color,
+                             GL_ShaderMaterialPtr::create(programPtr,
+                                                          QVariantMap {
+                                                              { "matrixMVP", QMatrix4x4() },
+                                                              { "mainColor", QColor(255, 0, 0, 255) }
+                                                          }));
+    programPtr = _loadShader(":/shaders/texture.vsh",
+                             ":/shaders/texture.fsh");
+    m_shaderMaterials.insert(MaterialType::Texture,
                              GL_ShaderMaterialPtr::create(programPtr,
                                                           QVariantMap {
                                                               { "matrixMVP", QMatrix4x4() }

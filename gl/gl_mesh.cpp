@@ -4,6 +4,42 @@
 
 #include "gl_shadermaterial.h"
 
+QString glErrorToQString(GLenum error)
+{
+    switch (error) {
+    case GL_INVALID_ENUM:
+        return "Invalid enum";
+    case GL_INVALID_VALUE:
+        return "Invalid value";
+    case GL_INVALID_OPERATION:
+        return "Invalid operation";
+    case GL_INVALID_FRAMEBUFFER_OPERATION:
+        return "Invalid framebuffer operation";
+    case GL_OUT_OF_MEMORY:
+        return "Out of memory";
+#if defined(GL_STACK_UNDERFLOW)
+    case GL_STACK_UNDERFLOW:
+        return "Stack underflow";
+#endif
+#if defined(GL_STACK_UNDERFLOW)
+    case GL_STACK_OVERFLOW:
+        return "Stack overflow";
+#endif
+    default:
+        break;
+    }
+    return "No error";
+}
+
+void gl_assert(QOpenGLFunctions * gl)
+{
+    GLenum error = gl->glGetError();
+    QString strError = glErrorToQString(error);
+    if (error != GL_NO_ERROR)
+        qCritical() << "OpenGL error:" << strError;
+    assert(error == GL_NO_ERROR);
+}
+
 GL_Mesh::GL_Mesh():
     m_vertexBuffer(QOpenGLBuffer::VertexBuffer),
     m_textureCoordsBuffer(QOpenGLBuffer::VertexBuffer),
@@ -16,7 +52,7 @@ GL_Mesh::GL_Mesh():
     m_indicesBuffer.create();
 }
 
-QVector<QVector3D> GL_Mesh::computeNormals(const QVector<QVector3D> & vertices, const QVector<int> & indices)
+QVector<QVector3D> GL_Mesh::computeNormals(const QVector<QVector3D> & vertices, const QVector<GLuint> & indices)
 {
     QVector<QVector3D> normals(vertices.size());
     normals.fill(QVector3D(0.0, 0.0, 0.0));
@@ -49,7 +85,7 @@ GL_Mesh GL_Mesh::createQuad(const QVector2D & size)
         QVector2D(size.x(), size.y()),
         QVector2D(0.0f, size.y())
     };
-    QVector<int> indices = {
+    QVector<GLuint> indices = {
         0, 1, 2,
         0, 2, 3
     };
@@ -57,12 +93,13 @@ GL_Mesh GL_Mesh::createQuad(const QVector2D & size)
     mesh.m_vertexBuffer.allocate(vertices.data(), static_cast<int>(sizeof(QVector3D)) * vertices.size());
     mesh.m_textureCoordsBuffer.bind();
     mesh.m_textureCoordsBuffer.allocate(textureCoords.data(), static_cast<int>(sizeof(QVector2D)) * textureCoords.size());
-    mesh.m_indicesBuffer.bind();
-    mesh.m_indicesBuffer.allocate(vertices.data(), static_cast<int>(sizeof(int)) * indices.size());
     QVector<QVector3D> normals = computeNormals(vertices, indices);
     mesh.m_normalsBuffer.bind();
     mesh.m_normalsBuffer.allocate(normals.data(), static_cast<int>(sizeof(QVector3D)) * normals.size());
     mesh.m_normalsBuffer.release();
+    mesh.m_indicesBuffer.bind();
+    mesh.m_indicesBuffer.allocate(indices.data(), static_cast<int>(sizeof(GLuint)) * indices.size());
+    mesh.m_numberElements = indices.size();
     return mesh;
 }
 
@@ -73,7 +110,7 @@ GL_Mesh GL_Mesh::createCube(const QVector3D & size)
     GL_Mesh mesh;
     QVector<QVector3D> vertices;
     QVector<QVector2D> textureCoords;
-    QVector<int> indices;
+    QVector<GLuint> indices;
     vertices.reserve(4 * 6);
     textureCoords.resize(vertices.size());
     indices.reserve(6 * 2 * 3);
@@ -84,7 +121,7 @@ GL_Mesh GL_Mesh::createCube(const QVector3D & size)
 
     auto addSide = [&] ()
     {
-        int i_o = static_cast<int>(vertices.size());
+        GLuint i_o = static_cast<GLuint>(vertices.size());
         vertices.push_back((- halfSize.x()) * axisX + (- halfSize.y()) * axisY + halfSize.z() * axisZ);
         vertices.push_back((halfSize.x()) * axisX + (- halfSize.y()) * axisY + halfSize.z() * axisZ);
         vertices.push_back((halfSize.x()) * axisX + (halfSize.y()) * axisY + halfSize.z() * axisZ);
@@ -115,18 +152,18 @@ GL_Mesh GL_Mesh::createCube(const QVector3D & size)
 
     QVector<QVector3D> normals = computeNormals(vertices, indices);
 
-    mesh.m_indicesBuffer.bind();
-    mesh.m_indicesBuffer.allocate(vertices.data(), static_cast<int>(sizeof(int)) * indices.size());
     mesh.m_normalsBuffer.bind();
     mesh.m_normalsBuffer.allocate(normals.data(), static_cast<int>(sizeof(QVector3D)) * normals.size());
     mesh.m_normalsBuffer.release();
+    mesh.m_indicesBuffer.bind();
+    mesh.m_indicesBuffer.allocate(indices.data(), static_cast<int>(sizeof(GLuint)) * indices.size());
+    mesh.m_numberElements = indices.size();
     return mesh;
 }
 
 void GL_Mesh::draw(QOpenGLFunctions * gl, const GL_ShaderMaterial & shaderMaterial)
 {
     shaderMaterial.bind(gl);
-
     m_indicesBuffer.bind();
 
     int vertexLocation = shaderMaterial.attributeLocation("vertex_position");
@@ -135,24 +172,23 @@ void GL_Mesh::draw(QOpenGLFunctions * gl, const GL_ShaderMaterial & shaderMateri
 
     if (vertexLocation >= 0)
     {
-        shaderMaterial.enableAttribute(vertexLocation);
         m_vertexBuffer.bind();
+        shaderMaterial.enableAttribute(vertexLocation);
         shaderMaterial.setAttributeBuffer(vertexLocation, GL_FLOAT, 0, 3, sizeof(QVector3D));
     }
     if (textureCoordLocation >= 0)
     {
-        shaderMaterial.enableAttribute(textureCoordLocation);
         m_textureCoordsBuffer.bind();
+        shaderMaterial.enableAttribute(textureCoordLocation);
         shaderMaterial.setAttributeBuffer(textureCoordLocation, GL_FLOAT, 0, 2, sizeof(QVector2D));
     }
     if (normalLocation >= 0)
     {
-        shaderMaterial.enableAttribute(normalLocation);
         m_normalsBuffer.bind();
+        shaderMaterial.enableAttribute(normalLocation);
         shaderMaterial.setAttributeBuffer(normalLocation, GL_FLOAT, 0, 3, sizeof(QVector3D));
     }
-
-    gl->glDrawElements(GL_TRIANGLES, m_indicesBuffer.size() / static_cast<int>(sizeof(int)), GL_INT, nullptr);
+    gl->glDrawElements(GL_TRIANGLES, m_numberElements, GL_UNSIGNED_INT, nullptr);
 
     if (vertexLocation >= 0)
         shaderMaterial.disableAttribute(vertexLocation);

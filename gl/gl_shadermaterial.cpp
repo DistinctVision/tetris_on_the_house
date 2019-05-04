@@ -6,6 +6,7 @@
 #include <QVector4D>
 #include <QMatrix3x3>
 #include <QMatrix4x4>
+#include <QColor>
 
 GL_ShaderMaterial::GL_ShaderMaterial(const QSharedPointer<QOpenGLShaderProgram> & program,
                                      const QVariantMap & values,
@@ -154,6 +155,13 @@ bool GL_ShaderMaterial::_setUniformValue(const QString & name, const QVariant & 
     case QVariant::Matrix4x4:
         m_program->setUniformValue(location, value.value<QMatrix4x4>());
         break;
+    case QVariant::Color: {
+        QColor color = value.value<QColor>();
+        m_program->setUniformValue(location, QVector4D(static_cast<float>(color.redF()),
+                                                       static_cast<float>(color.greenF()),
+                                                       static_cast<float>(color.blueF()),
+                                                       static_cast<float>(color.alphaF())));
+    } break;
     default:
         return false;
     }
