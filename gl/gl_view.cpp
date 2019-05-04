@@ -179,10 +179,24 @@ void GL_View::handleWindowChanged(QQuickWindow * win)
     }
 }
 
+int GL_View::orderRender() const
+{
+    return m_orderRender;
+}
+
+void GL_View::setOrderRender(int orderRender)
+{
+    if (m_orderRender == orderRender)
+        return;
+    m_orderRender = orderRender;
+    emit orderRenderChanged();
+}
+
 GL_ViewRenderer::GL_ViewRenderer(GL_View * parent):
     m_parent(parent)
 {
-    connect(m_parent->window(), &QQuickWindow::afterRendering, this, &GL_ViewRenderer::_draw, Qt::DirectConnection);
+    connect(m_parent->window(), &QQuickWindow::beforeRendering, this, &GL_ViewRenderer::_beforeSlotDraw, Qt::DirectConnection);
+    connect(m_parent->window(), &QQuickWindow::afterRendering, this, &GL_ViewRenderer::_afterSlotDraw, Qt::DirectConnection);
     initializeOpenGLFunctions();
     _initEmptyTexture();
     _loadShaders();
@@ -393,6 +407,18 @@ void GL_ViewRenderer::_loadShaders()
                                                               { "border_size", 0.1f },
                                                               { "border_color", QColor(255, 255, 255, 255) }
                                                           }));
+}
+
+void GL_ViewRenderer::_beforeSlotDraw()
+{
+    if (m_parent->orderRender() <= 0)
+        _draw();
+}
+
+void GL_ViewRenderer::_afterSlotDraw()
+{
+    if (m_parent->orderRender() > 0)
+        _draw();
 }
 
 void GL_ViewRenderer::_draw()

@@ -37,7 +37,7 @@ public:
     using Polygons = std::vector<Polygon, Eigen::aligned_allocator<Polygon>>;
 
     static ObjectModel createBox(const Eigen::Vector3d & size = Eigen::Vector3d(1.0, 1.0, 1.0));
-    static ObjectModel createCubikRubik(double border = 0.05);
+    static ObjectModel createCubikRubik(double border = 0.075);
 
     const Vectors3d & vertices() const;
     const Polygons & polygons() const;

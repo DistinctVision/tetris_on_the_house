@@ -21,8 +21,21 @@ class ObjectEdgesTracker:
         public DebugImageObject
 {
     Q_OBJECT
+
+    Q_PROPERTY(float controlPixelDistance READ controlPixelDistance WRITE setControlPixelDistance NOTIFY controlPixelDistanceChanged)
+    Q_PROPERTY(float cannyThresholdA READ cannyThresholdA WRITE setCannyThresholdA NOTIFY cannyThresholdAChanged)
+    Q_PROPERTY(float cannyThresholdB READ cannyThresholdB WRITE setCannyThresholdB NOTIFY cannyThresholdBChanged)
 public:
     ObjectEdgesTracker();
+
+    float controlPixelDistance() const;
+    void setControlPixelDistance(float controlPixelDistance);
+
+    double cannyThresholdA() const;
+    void setCannyThresholdA(double cannyThresholdA);
+
+    double cannyThresholdB() const;
+    void setCannyThresholdB(double cannyThresholdB);
 
     std::shared_ptr<PinholeCamera> camera() const;
     void setCamera(const std::shared_ptr<PinholeCamera> & camera);
@@ -33,8 +46,15 @@ public:
 
     cv::Mat debugImage() const override;
 
+signals:
+    void controlPixelDistanceChanged();
+    void cannyThresholdAChanged();
+    void cannyThresholdBChanged();
+
 private:
     float m_controlPixelDistance;
+    double m_cannyThresholdA;
+    double m_cannyThresholdB;
 
     std::shared_ptr<PerformanceMonitor> m_monitor;
 

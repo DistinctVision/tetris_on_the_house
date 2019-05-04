@@ -24,8 +24,10 @@ void regsiterQmlTypes()
 
 int main(int argc, char* argv[])
 {
-    QGuiApplication::setApplicationName("App");
     QGuiApplication app(argc,argv);
+    app.setOrganizationName("App inc.");
+    app.setOrganizationDomain("appinc.com");
+    app.setApplicationName("App");
 
     /*QSurfaceFormat defaultFormat;
     defaultFormat.setProfile(QSurfaceFormat::CompatibilityProfile);

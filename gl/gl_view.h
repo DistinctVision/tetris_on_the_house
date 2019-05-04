@@ -56,6 +56,7 @@ class GL_View:
     Q_PROPERTY(float farPlane READ farPlane WRITE setFarPlane NOTIFY farPlaneChanged)
     Q_PROPERTY(QSize inputFrameSize READ inputFrameSize WRITE setInputFrameSize NOTIFY inputFrameSizeChanged)
     Q_PROPERTY(int fillFrameMode READ fillFrameMode WRITE setFillFrameMode NOTIFY fillFrameModeChanged)
+    Q_PROPERTY(int orderRender READ orderRender WRITE setOrderRender NOTIFY orderRenderChanged)
 
 public:
     GL_View();
@@ -85,6 +86,9 @@ public:
     void setFillFrameMode(FillMode::Enum fillFrameMode);
     void setFillFrameMode(int fillFrameMode);
 
+    int orderRender() const;
+    void setOrderRender(int orderRender);
+
 public slots:
     void sync();
     void cleanup();
@@ -100,6 +104,7 @@ signals:
     void farPlaneChanged();
     void inputFrameSizeChanged();
     void fillFrameModeChanged();
+    void orderRenderChanged();
 
 private:
     friend class GL_ViewRenderer;
@@ -112,6 +117,7 @@ private:
     float m_farPlane;
     QSize m_inputeFrameSize;
     FillMode::Enum m_fillFrameMode;
+    int m_orderRender;
 };
 
 class GL_ViewRenderer:
@@ -130,6 +136,9 @@ public:
     QMatrix4x4 projectionMatrix() const;
 
 private slots:
+    void _beforeSlotDraw();
+    void _afterSlotDraw();
+
     void _draw();
 
 private:

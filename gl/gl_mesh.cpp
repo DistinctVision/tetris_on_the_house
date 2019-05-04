@@ -86,8 +86,8 @@ GL_Mesh GL_Mesh::createQuad(const QVector2D & size)
         QVector2D(0.0f, size.y())
     };
     QVector<GLuint> indices = {
-        0, 1, 2,
-        0, 2, 3
+        0, 2, 1,
+        0, 3, 2
     };
     mesh.m_vertexBuffer.bind();
     mesh.m_vertexBuffer.allocate(vertices.data(), static_cast<int>(sizeof(QVector3D)) * vertices.size());

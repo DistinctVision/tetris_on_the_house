@@ -25,11 +25,52 @@ using namespace Eigen;
 
 ObjectEdgesTracker::ObjectEdgesTracker():
     m_controlPixelDistance(15.0f),
+    m_cannyThresholdA(50.0),
+    m_cannyThresholdB(100.0),
     m_model(ObjectModel::createCubikRubik())
 {
     m_monitor = make_shared<PerformanceMonitor>();
     m_R = Matrix3d::Identity();
     m_t = Vector3d(0.0, 0.0, 5.0);
+}
+
+float ObjectEdgesTracker::controlPixelDistance() const
+{
+    return m_controlPixelDistance;
+}
+
+void ObjectEdgesTracker::setControlPixelDistance(float controlPixelDistance)
+{
+    if (m_controlPixelDistance == controlPixelDistance)
+        return;
+    m_controlPixelDistance = controlPixelDistance;
+    emit controlPixelDistanceChanged();
+}
+
+double ObjectEdgesTracker::cannyThresholdA() const
+{
+    return m_cannyThresholdA;
+}
+
+void ObjectEdgesTracker::setCannyThresholdA(double cannyThresholdA)
+{
+    if (m_cannyThresholdA == cannyThresholdA)
+        return;
+    m_cannyThresholdA = cannyThresholdA;
+    emit cannyThresholdAChanged();
+}
+
+double ObjectEdgesTracker::cannyThresholdB() const
+{
+    return m_cannyThresholdB;
+}
+
+void ObjectEdgesTracker::setCannyThresholdB(double cannyThresholdB)
+{
+    if (m_cannyThresholdB == cannyThresholdB)
+        return;
+    m_cannyThresholdB = cannyThresholdB;
+    emit cannyThresholdBChanged();
 }
 
 shared_ptr<PinholeCamera> ObjectEdgesTracker::camera() const
@@ -63,7 +104,7 @@ void ObjectEdgesTracker::compute(cv::Mat image)
 
     m_monitor->startTimer("Canny");
     cv::Mat edges;
-    cv::Canny(image, edges, 50.0, 100.0);
+    cv::Canny(image, edges, m_cannyThresholdA, m_cannyThresholdB);
     m_monitor->endTimer("Canny");
 
     m_monitor->startTimer("Inverting");
@@ -169,7 +210,25 @@ double ObjectEdgesTracker::_tracking(const cv::Mat & distancesMap)
         m_R = exp_rotationMatrix(x.segment<3>(3));
     }
 
-    if (E > 4.0)
+    Vector2f bb_min(numeric_limits<float>::max(), numeric_limits<float>::max());
+    Vector2f bb_max(- numeric_limits<float>::max(), - numeric_limits<float>::max());
+
+    for (const Vector3d & v : controlModelPoints)
+    {
+        Vector2f p = m_camera->project((m_R * v + m_t).cast<float>());
+        if (p.x() < bb_min.x())
+            bb_min.x() = p.x();
+        if (p.y() < bb_min.y())
+            bb_min.y() = p.y();
+        if (p.x() > bb_max.x())
+            bb_max.x() = p.x();
+        if (p.y() > bb_max.y())
+            bb_max.y() = p.y();
+    }
+    float area = (bb_max.x() - bb_min.x()) * (bb_max.y() - bb_min.y());
+    if (area < 100.0f)
+        E = numeric_limits<double>::max();
+    if (E > 2.5)
     {
         m_R = Matrix3d::Identity();
         m_t = Vector3d(0.0, 0.0, 5.0);
