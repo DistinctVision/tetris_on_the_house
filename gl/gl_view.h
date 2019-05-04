@@ -24,7 +24,8 @@ public:
     enum Enum
     {
         Color,
-        Texture
+        Texture,
+        ContourFallOff
     };
     Q_ENUM(Enum)
 };

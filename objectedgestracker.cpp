@@ -75,12 +75,8 @@ void ObjectEdgesTracker::compute(cv::Mat image)
     cv::distanceTransform(edges, distancesMap, cv::DIST_L2, 3);
     m_monitor->endTimer("Distance transfrom");
 
-    double E = 0.0;
     m_monitor->startTimer("Tracking");
-    //_tracking(distancesMap);
-
-    m_R = Matrix3d::Identity();
-    m_t = Vector3d(0.0, 0.0, 5.0);
+    double E = _tracking(distancesMap);
     m_monitor->endTimer("Tracking");
     m_monitor->end();
 

@@ -82,7 +82,7 @@ void GL_ShaderMaterial::bind(QOpenGLFunctions * gl) const
             it.next();
             if (!_setUniformValue(it.key(), it.value()))
             {
-                qFatal(QString("Coudn't set uniform value: %1").arg(it.key()).toStdString().c_str());
+                //qFatal(QString("Coudn't set uniform value: %1").arg(it.key()).toStdString().c_str());
             }
         }
     }
@@ -132,6 +132,8 @@ void GL_ShaderMaterial::setAttributeBuffer(int location, GLenum type, int offset
 
 bool GL_ShaderMaterial::_setUniformValue(const QString & name, const QVariant & value) const
 {
+    static const int variant_float_type = qMetaTypeId<float>();
+
     int location = m_program->uniformLocation(name.toStdString().c_str());
     if (location < 0)
         return false;
@@ -163,6 +165,11 @@ bool GL_ShaderMaterial::_setUniformValue(const QString & name, const QVariant & 
                                                        static_cast<float>(color.alphaF())));
     } break;
     default:
+        if (value.type() == variant_float_type)
+        {
+            m_program->setUniformValue(location, value.toFloat());
+            break;
+        }
         return false;
     }
     return true;

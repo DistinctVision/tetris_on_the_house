@@ -37,9 +37,14 @@ void GL_WorldObject::setWorldMatrix(const QMatrix4x4 & worldMatrix)
 
 void GL_WorldObject::draw(GL_ViewRenderer * view, const QMatrix4x4 & viewMatrix)
 {
+    QMatrix4x4 matrixMV = viewMatrix * m_worldMatrix;
+    if (m_material->containsValue("matrixMV"))
+    {
+        m_material->setValue("matrixMV", matrixMV);
+    }
     if (m_material->containsValue("matrixMVP"))
     {
-        m_material->setValue("matrixMVP", view->projectionMatrix() * viewMatrix * m_worldMatrix);
+        m_material->setValue("matrixMVP", view->projectionMatrix() * matrixMV);
     }
     m_mesh->draw(view, *m_material);
 }

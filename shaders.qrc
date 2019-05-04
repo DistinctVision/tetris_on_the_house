@@ -5,5 +5,7 @@
         <file>shaders/texture.fsh</file>
         <file>shaders/color.fsh</file>
         <file>shaders/color.vsh</file>
+        <file>shaders/contour_falloff.fsh</file>
+        <file>shaders/contour_falloff.vsh</file>
     </qresource>
 </RCC>

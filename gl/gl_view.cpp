@@ -382,6 +382,17 @@ void GL_ViewRenderer::_loadShaders()
                                                           QMap<QString, GLuint> {
                                                               { "main_texture", m_emptyTextureId }
                                                           }));
+    programPtr = _loadShader(":/shaders/contour_falloff.vsh",
+                             ":/shaders/contour_falloff.fsh");
+    m_shaderMaterials.insert(MaterialType::ContourFallOff,
+                             GL_ShaderMaterialPtr::create(programPtr,
+                                                          QVariantMap {
+                                                              { "matrixMVP", QMatrix4x4() },
+                                                              { "matrixMV", QMatrix4x4() },
+                                                              { "fallOff_color", QColor(255, 215, 0, 200) },
+                                                              { "border_size", 0.02f },
+                                                              { "border_color", QColor(100, 28, 52, 255) }
+                                                          }));
 }
 
 void GL_ViewRenderer::_draw()
@@ -395,6 +406,8 @@ void GL_ViewRenderer::_draw()
 
     //glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     //glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+    glClear(GL_DEPTH_BUFFER_BIT);
+    glEnable(GL_CULL_FACE);
 
     QList<QPair<GL_Scene*, bool>> & scenes = m_parent->m_scenes;
     for (QPair<GL_Scene*, bool> & s : scenes)

@@ -24,7 +24,7 @@ void TestCubeScene::setObjectEdgesTracker(ObjectEdgesTracker * tracker)
 void TestCubeScene::init(GL_ViewRenderer * view)
 {
     m_cube = GL_WorldObjectPtr::create(GL_MeshPtr::create(GL_Mesh::createCube()),
-                                       view->createMaterial(MaterialType::Texture));
+                                       view->createMaterial(MaterialType::ContourFallOff));
 }
 
 void TestCubeScene::destroy(GL_ViewRenderer * view)
@@ -40,9 +40,7 @@ void TestCubeScene::draw(GL_ViewRenderer * view)
         qCritical() << Q_FUNC_INFO << "Object edges tracker is not set!";
         return;
     }
-    view->glDisable(GL_DEPTH_TEST);
-    view->glDepthMask(GL_FALSE);
-    gl_assert(view);
+    view->glEnable(GL_BLEND);
+    view->glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     m_cube->draw(view, m_tracker->viewMatrix());
-    gl_assert(view);
 }
