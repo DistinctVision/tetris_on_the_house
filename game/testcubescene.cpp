@@ -23,7 +23,7 @@ void TestCubeScene::setObjectEdgesTracker(ObjectEdgesTracker * tracker)
 
 void TestCubeScene::init(GL_ViewRenderer * view)
 {
-    m_cube = GL_WorldObjectPtr::create(GL_MeshPtr::create(GL_Mesh::createCube()),
+    m_cube = GL_WorldObjectPtr::create(GL_MeshPtr::create(GL_Mesh::createCubikRubik()),
                                        view->createMaterial(MaterialType::ContourFallOff));
 }
 

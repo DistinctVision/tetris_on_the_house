@@ -390,8 +390,8 @@ void GL_ViewRenderer::_loadShaders()
                                                               { "matrixMVP", QMatrix4x4() },
                                                               { "matrixMV", QMatrix4x4() },
                                                               { "fallOff_color", QColor(255, 215, 0, 200) },
-                                                              { "border_size", 0.02f },
-                                                              { "border_color", QColor(100, 28, 52, 255) }
+                                                              { "border_size", 0.1f },
+                                                              { "border_color", QColor(255, 255, 255, 255) }
                                                           }));
 }
 

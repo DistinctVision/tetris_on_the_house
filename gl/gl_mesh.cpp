@@ -167,6 +167,83 @@ GL_Mesh GL_Mesh::createCube(const QVector3D & size)
     return mesh;
 }
 
+GL_Mesh GL_Mesh::createCubikRubik(float border)
+{
+    float i_border = 1.0f - border;
+
+    GL_Mesh mesh;
+    QVector<QVector3D> vertices;
+    QVector<QVector2D> textureCoords;
+    QVector<GLuint> indices;
+    vertices.reserve(6 * 4 * 9);
+    textureCoords.reserve(vertices.size());
+    indices.reserve(6 * 2 * 3 * 9);
+
+    QVector3D axisX(1.0f, 0.0f, 0.0f),
+              axisY(0.0f, 1.0f, 0.0f),
+              axisZ(0.0f, 0.0f, 1.0f);
+
+    auto addSide = [&] ()
+    {
+        for (int i = 0; i < 3; ++i)
+        {
+            for (int j = 0; j < 3; ++j)
+            {
+                QVector2D v(i * (1.0f / 3.0f), j * (1.0f / 3.0f));
+                GLuint i_o = static_cast<GLuint>(vertices.size());
+                vertices.push_back((v.x() + (border / 3.0f) - 0.5f) * axisX +
+                                   (v.y() + (border / 3.0f) - 0.5f) * axisY +
+                                   axisZ * 0.5);
+                vertices.push_back((v.x() + (i_border / 3.0f) - 0.5f) * axisX +
+                                   (v.y() + (border / 3.0f) - 0.5f) * axisY +
+                                   axisZ * 0.5);
+                vertices.push_back((v.x() + (i_border / 3.0f) - 0.5f) * axisX +
+                                   (v.y() + (i_border / 3.0f) - 0.5f) * axisY +
+                                   axisZ * 0.5);
+                vertices.push_back((v.x() + (border / 3.0f) - 0.5f) * axisX +
+                                   (v.y() + (i_border / 3.0f) - 0.5f) * axisY +
+                                   axisZ * 0.5);
+                textureCoords.push_back(QVector2D(0.0f, 0.0f));
+                textureCoords.push_back(QVector2D(0.0f, 1.0f));
+                textureCoords.push_back(QVector2D(1.0f, 1.0f));
+                textureCoords.push_back(QVector2D(1.0f, 0.0f));
+                indices.append({ i_o + 0, i_o + 1, i_o + 2 });
+                indices.append({ i_o + 0, i_o + 2, i_o + 3 });
+            }
+        }
+    };
+
+    for (int k = 0; k < 4; ++k)
+    {
+        addSide();
+        std::swap(axisZ, axisY);
+        axisZ = - axisZ;
+    }
+
+    axisX = QVector3D(0.0f, 0.0f, 1.0f);
+    axisY = QVector3D(0.0f, 1.0f, 0.0f);
+    axisZ = QVector3D(-1.0f, 0.0f, 0.0f);
+    addSide();
+
+    axisX = - axisX;
+    axisZ = - axisZ;
+    addSide();
+
+    QVector<QVector3D> normals = computeNormals(vertices, indices);
+
+    mesh.m_vertexBuffer.bind();
+    mesh.m_vertexBuffer.allocate(vertices.data(), static_cast<int>(sizeof(QVector3D)) * vertices.size());
+    mesh.m_textureCoordsBuffer.bind();
+    mesh.m_textureCoordsBuffer.allocate(textureCoords.data(), static_cast<int>(sizeof(QVector2D)) * textureCoords.size());
+    mesh.m_normalsBuffer.bind();
+    mesh.m_normalsBuffer.allocate(normals.data(), static_cast<int>(sizeof(QVector3D)) * normals.size());
+    mesh.m_normalsBuffer.release();
+    mesh.m_indicesBuffer.bind();
+    mesh.m_indicesBuffer.allocate(indices.data(), static_cast<int>(sizeof(GLuint)) * indices.size());
+    mesh.m_numberElements = indices.size();
+    return mesh;
+}
+
 void GL_Mesh::draw(QOpenGLFunctions * gl, const GL_ShaderMaterial & shaderMaterial)
 {
     shaderMaterial.bind(gl);
