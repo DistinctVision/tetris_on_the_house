@@ -85,6 +85,13 @@ QVideoFrame FrameHandlerRunnable::run(QVideoFrame * videoFrame,
         {
             qFatal("Coudn't read video frame");
         }
+        cv::cvtColor(frame, frame, cv::COLOR_BGRA2GRAY);
+        QSize maxSize = m_parent->maxFrameSize();
+        double scale1 = maxSize.width() / static_cast<double>(frame.cols);
+        double scale2 = maxSize.height() / static_cast<double>(frame.rows);
+        double scale = std::min(scale1, scale2);
+        if (scale < 1.0)
+            cv::resize(frame, frame, cv::Size(), scale, scale);
     }
     else if (surfaceFormat.handleType() == QAbstractVideoBuffer::GLTextureHandle)
     {
@@ -99,8 +106,6 @@ QVideoFrame FrameHandlerRunnable::run(QVideoFrame * videoFrame,
     if (!frame.empty())
     {
         ObjectEdgesTracker * objectEdgesTracking = m_parent->objectEdgesTracker();
-        if (frame.type() == CV_8UC3)
-            cv::cvtColor(frame, frame, cv::COLOR_BGRA2GRAY);
         if (!objectEdgesTracking->camera() ||
                 (objectEdgesTracking->camera()->imageSize() != Vector2i(frame.cols, frame.rows)))
         {

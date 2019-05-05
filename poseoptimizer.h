@@ -3,6 +3,8 @@
 
 #include <memory>
 
+#include <QThreadPool>
+
 #include <Eigen/Eigen>
 
 #include <opencv2/core.hpp>
@@ -26,6 +28,7 @@ void optimize_pose(Eigen::Matrix3d & R, Eigen::Vector3d & t,
                    int numberIterations);
 
 double optimize_pose(Eigen::Matrix3d & R, Eigen::Vector3d & t,
+                     QThreadPool * pool, size_t numberWorkThreads,
                      const cv::Mat & distanceMap,
                      const std::shared_ptr<const PinholeCamera> & camera,
                      const Vectors3d & modelPoints,
@@ -33,6 +36,7 @@ double optimize_pose(Eigen::Matrix3d & R, Eigen::Vector3d & t,
                      int numberIterations);
 
 double optimize_pose(Eigen::Matrix<double, 6, 1> & x,
+                     QThreadPool * pool, size_t numberWorkThreads,
                      const cv::Mat & distanceMap,
                      const std::shared_ptr<const PinholeCamera> & camera,
                      const Vectors3d & modelPoints,

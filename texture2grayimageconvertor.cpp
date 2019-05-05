@@ -43,9 +43,9 @@ cv::Mat Texture2GrayImageConvertor::read(QOpenGLFunctions * gl,
     m_material->setValue("step_x", 1.0f / (fboSize.width() * 4.0f));
     m_fbo->bind();
     gl->glViewport(0, 0, fboSize.width(), fboSize.height());
-    gl->glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    gl->glClear(GL_COLOR_BUFFER_BIT);
     gl->glEnable(GL_BLEND);
+    gl->glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    gl->glClear(GL_COLOR_BUFFER_BIT);
     m_quad->draw(gl, *m_material);
     cv::Mat image(imageSize.height(), imageSize.width(), CV_8UC1);
     gl->glReadPixels(0, 0, fboSize.width(), fboSize.height(), GL_RGBA, GL_UNSIGNED_BYTE, image.data);

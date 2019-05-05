@@ -119,17 +119,19 @@ void ObjectEdgesTracker::compute(cv::Mat image)
     m_monitor->startTimer("Tracking");
     double E = _tracking(distancesMap);
     m_monitor->endTimer("Tracking");
-    m_monitor->end();
 
     qDebug() << "Error =" << E;
 
     if (debugEnabled())
     {
+        m_monitor->startTimer("Debug");
         cv::cvtColor(edges, edges, cv::COLOR_GRAY2BGR);
         m_model.draw(edges, m_camera, m_R, m_t);
 
-        qDebug().noquote() << QString::fromStdString(m_monitor->report());
+        m_monitor->endTimer("Debug");
     }
+    m_monitor->end();
+    qDebug().noquote() << QString::fromStdString(m_monitor->report());
     m_debugImage = edges;
 }
 
@@ -178,7 +180,9 @@ double ObjectEdgesTracker::_tracking(const cv::Mat & distancesMap)
         }
 
         Matrix<double, 6, 1> x1 = x;
-        double E1 = optimize_pose(x1, distancesMap, m_camera, controlModelPoints, 60.0f, 6);
+        double E1 = optimize_pose(x1,
+                                  QThreadPool::globalInstance(), QThread::idealThreadCount(),
+                                  distancesMap, m_camera, controlModelPoints, 60.0f, 6);
 
         for (int j = 0; j < 0; ++j)
         {
@@ -193,7 +197,9 @@ double ObjectEdgesTracker::_tracking(const cv::Mat & distancesMap)
                 continue;
             }
 
-            double E2 = optimize_pose(x2, distancesMap, m_camera, controlModelPoints, 60.0f, 6);
+            double E2 = optimize_pose(x2,
+                                      QThreadPool::globalInstance(), QThread::idealThreadCount(),
+                                      distancesMap, m_camera, controlModelPoints, 60.0f, 6);
             if (E2 < E1)
             {
                 E1 = E2;

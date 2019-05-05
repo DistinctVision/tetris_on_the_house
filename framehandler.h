@@ -19,7 +19,7 @@ class FrameHandler: public QAbstractVideoFilter
 
     Q_PROPERTY(ObjectEdgesTracker* objectEdgesTracker READ objectEdgesTracker CONSTANT)
     Q_PROPERTY(QSize frameSize READ frameSize NOTIFY frameSizeChanged)
-    Q_PROPERTY(QSize maxFrameSize READ maxFrameSize NOTIFY maxFrameSizeChanged)
+    Q_PROPERTY(QSize maxFrameSize READ maxFrameSize WRITE setMaxFrameSize NOTIFY maxFrameSizeChanged)
 
 public:
     FrameHandler();

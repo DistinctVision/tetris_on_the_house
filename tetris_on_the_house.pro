@@ -3,7 +3,7 @@ QT += qml quick widgets multimedia
 
 CONFIG += c++11
 
-TARGET = App
+TARGET = Tetris
 TEMPLATE = app
 
 include(eigen3.pri)

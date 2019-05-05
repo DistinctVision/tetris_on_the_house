@@ -82,6 +82,7 @@ Item {
     }*/
 
     FrameHandler {
+        maxFrameSize: "300x300"
         id: frameHandler
         objectEdgesTracker {
             debugEnabled: false

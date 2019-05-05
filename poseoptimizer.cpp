@@ -6,6 +6,9 @@
 #include <climits>
 #include <limits>
 
+#include <QSemaphore>
+#include <QtConcurrent/QtConcurrent>
+
 #include "pinholecamera.h"
 
 using namespace std;
@@ -308,6 +311,7 @@ void optimize_pose(Matrix3d & R, Vector3d & t,
 }
 
 double optimize_pose(Matrix3d & R, Vector3d & t,
+                     QThreadPool * pool, size_t numberWorkThreads,
                      const cv::Mat & distanceMap,
                      const shared_ptr<const PinholeCamera> & camera,
                      const Vectors3d & modelPoints,
@@ -317,13 +321,14 @@ double optimize_pose(Matrix3d & R, Vector3d & t,
     Matrix<double, 6, 1> x;
     x.segment<3>(0) = t;
     x.segment<3>(3) = ln_rotationMatrix(R);
-    double E = optimize_pose(x, distanceMap, camera, modelPoints, maxDistance, numberIterations);
+    double E = optimize_pose(x, pool, numberWorkThreads, distanceMap, camera, modelPoints, maxDistance, numberIterations);
     t = x.segment<3>(0);
     R = exp_rotationMatrix(x.segment<3>(3));
     return E;
 }
 
 double optimize_pose(Matrix<double, 6, 1> & x,
+                     QThreadPool * pool, size_t numberWorkThreads,
                      const cv::Mat & distanceMap,
                      const shared_ptr<const PinholeCamera> & camera,
                      const Vectors3d & modelPoints,
@@ -482,12 +487,47 @@ double optimize_pose(Matrix<double, 6, 1> & x,
         return true;
     };
 
+    using MinimizationInfo = tuple<Matrix<double, 6, 6>, Matrix<double, 6, 1>, double, size_t>;
+    auto computeMinimzationInfo = [&] (size_t begin_index, size_t end_index) -> MinimizationInfo
+    {
+        size_t count = 0;
+        Matrix<double, 6, 6> JtJ = Matrix<double, 6, 6>::Zero();
+        Matrix<double, 6, 1> Je = Matrix<double, 6, 1>::Zero();
+        double Fsq = 0.0;
+        Matrix<double, 1, 6> J_i;
+        double e;
+        for (size_t i = begin_index; i < end_index; ++i)
+        {
+            if (!getJacobianAndResidual(J_i, e, modelPoints[i]))
+                continue;
+            JtJ += J_i.transpose() * J_i;
+            Je += J_i.transpose() * e;
+            Fsq += e * e;
+            ++count;
+        }
+        return make_tuple(JtJ, Je, Fsq, count);
+    };
+    auto computeResiduals = [&] (size_t begin_index, size_t end_index) -> tuple<double, size_t>
+    {
+        size_t count = 0;
+        double Fsq = 0.0, e;
+        for (size_t i = begin_index; i < end_index; ++i)
+        {
+            if (!getResidual(e, modelPoints[i]))
+                continue;
+            Fsq += e * e;
+            ++count;
+        }
+        return make_tuple(Fsq, count);
+    };
+
     double firstError = - 1.0;
 
     double Fsq = numeric_limits<double>::max();
     double factor = 1e-5;
-    Matrix<double, 1, 6> J_i;
-    double e;
+
+    QSemaphore semaphore;
+    size_t workPartSize = static_cast<size_t>(ceil(numberPoints / numberWorkThreads));
 
     for (int iter = 0; iter < numberIterations; ++iter)
     {
@@ -505,18 +545,30 @@ double optimize_pose(Matrix<double, 6, 1> & x,
             rW = (- ((w * w.transpose() + (R.transpose() - Matrix3d::Identity()) * skewMatrix(w)) / lw));
         }
 
-        size_t count = 0;
         Matrix<double, 6, 6> JtJ = Matrix<double, 6, 6>::Zero();
         Matrix<double, 6, 1> Je = Matrix<double, 6, 1>::Zero();
         Fsq = 0.0;
-        for (size_t i = 0; i < numberPoints; ++i)
+        size_t count = 0;
         {
-            if (!getJacobianAndResidual(J_i, e, modelPoints[i]))
-                continue;
-            JtJ += J_i.transpose() * J_i;
-            Je += J_i.transpose() * e;
-            Fsq += e * e;
-            ++count;
+            vector<MinimizationInfo> results(numberWorkThreads);
+            for (size_t i = 0; i < numberWorkThreads; ++i)
+            {
+                QtConcurrent::run(pool, [&, i] () {
+                    size_t begin_index = i * workPartSize;
+                    size_t end_index = min(begin_index + workPartSize, numberPoints);
+                    results[i] = computeMinimzationInfo(begin_index, end_index);
+                    semaphore.release();
+                });
+            }
+            semaphore.acquire(static_cast<int>(numberWorkThreads));
+            for (size_t i = 0; i < numberWorkThreads; ++i)
+            {
+                const MinimizationInfo & info = results[i];
+                JtJ += get<0>(info);
+                Je += get<1>(info);
+                Fsq += get<2>(info);
+                count += get<3>(info);
+            }
         }
         Fsq /= static_cast<double>(count);
         if (firstError < 0.0)
@@ -533,12 +585,23 @@ double optimize_pose(Matrix<double, 6, 1> & x,
 
             count = 0;
             Fsq_next = 0.0;
-            for (size_t i = 0; i < numberPoints; ++i)
             {
-                if (!getResidual(e, modelPoints[i]))
-                    continue;
-                Fsq_next += e * e;
-                ++count;
+                vector<tuple<double, size_t>> results(numberWorkThreads);
+                for (size_t i = 0; i < numberWorkThreads; ++i)
+                {
+                    QtConcurrent::run(pool, [&, i] () {
+                        size_t begin_index = i * workPartSize;
+                        size_t end_index = min(begin_index + workPartSize, numberPoints);
+                        results[i] = computeResiduals(begin_index, end_index);
+                        semaphore.release();
+                    });
+                }
+                semaphore.acquire(static_cast<int>(numberWorkThreads));
+                for (size_t i = 0; i < numberWorkThreads; ++i)
+                {
+                    Fsq_next += get<0>(results[i]);
+                    count += get<1>(results[i]);
+                }
             }
             Fsq_next /= static_cast<double>(count);
 
