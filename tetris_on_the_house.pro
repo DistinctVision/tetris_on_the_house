@@ -18,7 +18,8 @@ HEADERS += \
     objectmodel.h \
     pinholecamera.h \
     performancemonitor.h \
-    poseoptimizer.h
+    poseoptimizer.h \
+    texture2grayimageconvertor.h
 
 SOURCES += \
     debugimageobject.cpp \
@@ -28,8 +29,14 @@ SOURCES += \
     objectmodel.cpp \
     pinholecamera.cpp \
     performancemonitor.cpp \
-    poseoptimizer.cpp
+    poseoptimizer.cpp \
+    texture2grayimageconvertor.cpp
 
 RESOURCES += \
     qml.qrc \
     shaders.qrc
+
+contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
+    ANDROID_EXTRA_LIBS = \
+        $$PWD/../../opencv/android/libs/armeabi-v7a/libopencv_java4.so
+}

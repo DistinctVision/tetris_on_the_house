@@ -1,4 +1,4 @@
-uniform vec4 mainColor;
+uniform highp vec4 mainColor;
 
 out highp vec4 color;
 

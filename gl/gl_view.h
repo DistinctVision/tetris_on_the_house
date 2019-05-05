@@ -125,6 +125,9 @@ class GL_ViewRenderer:
 {
     Q_OBJECT
 public:
+    static QSharedPointer<QOpenGLShaderProgram> loadShader(const QString & vertexPath,
+                                                           const QString & fragmentPath);
+
     GL_ViewRenderer(GL_View * parent);
 
     GL_ShaderMaterialPtr createMaterial(MaterialType::Enum type) const;
@@ -151,7 +154,6 @@ private:
 
     void _initEmptyTexture();
     void _loadShaders();
-    QSharedPointer<QOpenGLShaderProgram> _loadShader(const QString & vertexPath, const QString & fragmentPath) const;
     QMatrix4x4 _computeProjectionMatrix() const;
 };
 

@@ -2,9 +2,9 @@ in highp vec3 position;
 in highp vec2 textureCoord;
 in highp vec3 normal;
 
-uniform vec4 fallOff_color;
-uniform float border_size;
-uniform vec4 border_color;
+uniform highp vec4 fallOff_color;
+uniform highp float border_size;
+uniform highp vec4 border_color;
 
 out highp vec4 color;
 
@@ -17,7 +17,7 @@ void main(void)
         return;
     }
 
-    float v = 1.0 - max(- dot(normalize(position), normalize(normal)), 0.0);
+    highp float v = 1.0 - max(- dot(normalize(position), normalize(normal)), 0.0);
     v = 1.0 - (1.0 - v) * (1.0 - v);
     color = vec4(mix(fallOff_color.xyz, vec3(1.0), v), fallOff_color.w * v);
 }

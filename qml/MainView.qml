@@ -70,14 +70,9 @@ Item {
     Camera {
         id: camera
 
-        captureMode: Camera.CaptureViewfinder
+        captureMode: Camera.CaptureVideo
 
         deviceId: QtMultimedia.availableCameras[0].deviceId
-
-        videoRecorder {
-             resolution: "640x480"
-             frameRate: 30
-        }
     }
 
     /*MediaPlayer {
@@ -100,6 +95,7 @@ Item {
         fillMode: VideoOutput.PreserveAspectCrop
         source: camera
         anchors.fill: parent
+        autoOrientation: true
         filters: [ frameHandler ]
     }
 
@@ -124,8 +120,8 @@ Item {
     }
 
     ToolButton {
-        width: 30
-        height: 30
+        width: 60
+        height: 60
         x: parent.width - width
         y: 0
         text: "*"
@@ -142,7 +138,7 @@ Item {
         anchors.fill: parent
 
         color: "black"
-        opacity: 0.1
+        opacity: 0.3
 
         ColumnLayout {
             anchors.fill: parent

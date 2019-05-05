@@ -74,16 +74,16 @@ GL_Mesh GL_Mesh::createQuad(const QVector2D & size)
 {
     GL_Mesh mesh;
     QVector<QVector3D> vertices = {
-        QVector3D(0.0f, 0.0f, 0.0f),
-        QVector3D(1.0f, 0.0f, 0.0f),
-        QVector3D(1.0f, 1.0f, 0.0f),
-        QVector3D(0.0f, 1.0f, 0.0f)
+        QVector3D(0.0f,     0.0f,     0.0f),
+        QVector3D(size.x(), 0.0f,     0.0f),
+        QVector3D(size.x(), size.y(), 0.0f),
+        QVector3D(0.0f,     size.y(), 0.0f)
     };
     QVector<QVector2D> textureCoords = {
         QVector2D(0.0f, 0.0),
-        QVector2D(size.x(), 0.0f),
-        QVector2D(size.x(), size.y()),
-        QVector2D(0.0f, size.y())
+        QVector2D(1.0f, 0.0f),
+        QVector2D(1.0f, 1.0f),
+        QVector2D(0.0f, 1.0f)
     };
     QVector<GLuint> indices = {
         0, 2, 1,

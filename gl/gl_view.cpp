@@ -13,7 +13,8 @@ GL_View::GL_View():
     m_nearPlane(0.1f),
     m_farPlane(100.0f),
     m_inputeFrameSize(-1, -1),
-    m_fillFrameMode(FillMode::PreserveAspectCrop)
+    m_fillFrameMode(FillMode::PreserveAspectCrop),
+    m_orderRender(1)
 {
     connect(this, &QQuickItem::windowChanged, this, &GL_View::handleWindowChanged);
 }
@@ -330,8 +331,8 @@ void GL_ViewRenderer::_initEmptyTexture()
     glGenerateMipmap(GL_TEXTURE_2D);
 }
 
-QSharedPointer<QOpenGLShaderProgram> GL_ViewRenderer::_loadShader(const QString & vertexPath,
-                                                                  const QString & fragmentPath) const
+QSharedPointer<QOpenGLShaderProgram> GL_ViewRenderer::loadShader(const QString & vertexPath,
+                                                                 const QString & fragmentPath)
 {
     QString vertexSource, fragmentSource;
     {
@@ -378,7 +379,7 @@ QSharedPointer<QOpenGLShaderProgram> GL_ViewRenderer::_loadShader(const QString 
 
 void GL_ViewRenderer::_loadShaders()
 {
-    QSharedPointer<QOpenGLShaderProgram> programPtr = _loadShader(":/shaders/color.vsh",
+    QSharedPointer<QOpenGLShaderProgram> programPtr = loadShader(":/shaders/color.vsh",
                                                                   ":/shaders/color.fsh");
     m_shaderMaterials.insert(MaterialType::Color,
                              GL_ShaderMaterialPtr::create(programPtr,
@@ -386,7 +387,7 @@ void GL_ViewRenderer::_loadShaders()
                                                               { "matrixMVP", QMatrix4x4() },
                                                               { "mainColor", QColor(255, 0, 0, 255) }
                                                           }));
-    programPtr = _loadShader(":/shaders/texture.vsh",
+    programPtr = loadShader(":/shaders/texture.vsh",
                              ":/shaders/texture.fsh");
     m_shaderMaterials.insert(MaterialType::Texture,
                              GL_ShaderMaterialPtr::create(programPtr,
@@ -396,7 +397,7 @@ void GL_ViewRenderer::_loadShaders()
                                                           QMap<QString, GLuint> {
                                                               { "main_texture", m_emptyTextureId }
                                                           }));
-    programPtr = _loadShader(":/shaders/contour_falloff.vsh",
+    programPtr = loadShader(":/shaders/contour_falloff.vsh",
                              ":/shaders/contour_falloff.fsh");
     m_shaderMaterials.insert(MaterialType::ContourFallOff,
                              GL_ShaderMaterialPtr::create(programPtr,
@@ -451,5 +452,6 @@ void GL_ViewRenderer::_draw()
         s.first->draw(this);
     }
 
+    glDisable(GL_CULL_FACE);
     window->resetOpenGLState();
 }

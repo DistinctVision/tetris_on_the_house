@@ -6,6 +6,7 @@
 
 #include "pinholecamera.h"
 #include "objectedgestracker.h"
+#include "texture2grayimageconvertor.h"
 
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
@@ -13,7 +14,8 @@
 using namespace Eigen;
 
 FrameHandler::FrameHandler():
-    m_frameSize(-1, -1)
+    m_frameSize(-1, -1),
+    m_maxFrameSize(640, 480)
 {
     m_objectEdgesTracker = QSharedPointer<ObjectEdgesTracker>::create();
 }
@@ -33,6 +35,19 @@ QSize FrameHandler::frameSize() const
     return m_frameSize;
 }
 
+QSize FrameHandler::maxFrameSize() const
+{
+    return m_maxFrameSize;
+}
+
+void FrameHandler::setMaxFrameSize(const QSize & maxFrameSize)
+{
+    if (maxFrameSize == m_maxFrameSize)
+        return;
+    m_maxFrameSize = maxFrameSize;
+    emit maxFrameSizeChanged();
+}
+
 void FrameHandler::_setFrameSize(const QSize & frameSize)
 {
     if (frameSize == m_frameSize)
@@ -44,21 +59,22 @@ void FrameHandler::_setFrameSize(const QSize & frameSize)
 FrameHandlerRunnable::FrameHandlerRunnable(FrameHandler * parent):
     m_parent(parent)
 {
+    initializeOpenGLFunctions();
 }
 
 QVideoFrame FrameHandlerRunnable::run(QVideoFrame * videoFrame,
-                                      const QVideoSurfaceFormat &surfaceFormat,
+                                      const QVideoSurfaceFormat & surfaceFormat,
                                       QVideoFilterRunnable::RunFlags flags)
 {
     Q_UNUSED(flags);
 
-    ObjectEdgesTracker * objectEdgesTracking = m_parent->objectEdgesTracker();
+    cv::Mat frame;
 
     if (surfaceFormat.handleType() == QAbstractVideoBuffer::NoHandle)
     {
         Vector2i imageSize(videoFrame->width(), videoFrame->height());
         m_parent->_setFrameSize(videoFrame->size());
-        cv::Mat frame(imageSize.y(), imageSize.x(), CV_8UC4);
+        frame = cv::Mat(imageSize.y(), imageSize.x(), CV_8UC4);
         if (videoFrame->map(QAbstractVideoBuffer::ReadOnly))
         {
             std::memcpy(frame.data, videoFrame->bits(),
@@ -69,17 +85,29 @@ QVideoFrame FrameHandlerRunnable::run(QVideoFrame * videoFrame,
         {
             qFatal("Coudn't read video frame");
         }
-
-        cv::flip(frame, frame, -1);
-        cv::flip(frame, frame, 1);
-        cv::cvtColor(frame, frame, cv::COLOR_BGRA2GRAY);
-        cv::resize(frame, frame, cv::Size(imageSize.x(), imageSize.y()));
-        if (!objectEdgesTracking->camera() ||
-                (objectEdgesTracking->camera()->imageSize() != imageSize))
+    }
+    else if (surfaceFormat.handleType() == QAbstractVideoBuffer::GLTextureHandle)
+    {
+        if (!m_texture2GrayImageConverter)
         {
-            objectEdgesTracking->setCamera(std::make_shared<PinholeCamera>(imageSize,
-                                                                           Vector2f(imageSize.x(), imageSize.x()) * 1.2f,
-                                                                           imageSize.cast<float>() * 0.5));
+            m_texture2GrayImageConverter = QSharedPointer<Texture2GrayImageConvertor>::create();
+        }
+        frame = m_texture2GrayImageConverter->read(this, videoFrame->handle().toUInt(),
+                                                   videoFrame->size(), m_parent->maxFrameSize());
+    }
+
+    if (!frame.empty())
+    {
+        ObjectEdgesTracker * objectEdgesTracking = m_parent->objectEdgesTracker();
+        if (frame.type() == CV_8UC3)
+            cv::cvtColor(frame, frame, cv::COLOR_BGRA2GRAY);
+        if (!objectEdgesTracking->camera() ||
+                (objectEdgesTracking->camera()->imageSize() != Vector2i(frame.cols, frame.rows)))
+        {
+            //TODO set camera parameters
+            objectEdgesTracking->setCamera(std::make_shared<PinholeCamera>(Vector2i(frame.cols, frame.rows),
+                                                                           Vector2f(frame.cols, frame.cols) * 1.2f,
+                                                                           Vector2f(frame.cols, frame.rows) * 0.5f));
         }
         objectEdgesTracking->compute(frame);
     }
