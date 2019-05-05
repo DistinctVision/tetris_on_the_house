@@ -82,10 +82,12 @@ Item {
     }*/
 
     FrameHandler {
-        maxFrameSize: "300x300"
         id: frameHandler
+        maxFrameSize: "2000x2000"
+        orientation: camera.orientation
+        flipHorizontally: camera.position == Camera.BackFace
         objectEdgesTracker {
-            debugEnabled: false
+            debugEnabled: true
             cannyThresholdA: settings.canny_thresholdA
             cannyThresholdB: settings.canny_thresholdB
         }

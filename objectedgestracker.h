@@ -56,7 +56,7 @@ private:
     double m_cannyThresholdA;
     double m_cannyThresholdB;
 
-    std::shared_ptr<PerformanceMonitor> m_monitor;
+    std::shared_ptr<PerformanceMonitor> m_monitor; //TODO maybe move to top
 
     ObjectModel m_model;
     std::shared_ptr<PinholeCamera> m_camera;

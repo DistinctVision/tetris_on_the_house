@@ -169,7 +169,7 @@ double ObjectEdgesTracker::_tracking(const cv::Mat & distancesMap)
     x.segment<3>(0) = m_t;
     x.segment<3>(3) = ln_rotationMatrix(m_R);
 
-    for (int i = 0; i < 5; ++i)
+    for (int i = 0; i < 2; ++i)
     {
         controlModelPoints = m_model.getControlPoints(m_camera, m_controlPixelDistance,
                                                       m_R, m_t);

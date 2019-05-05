@@ -8,14 +8,15 @@
 #include "objectedgestracker.h"
 #include "texture2grayimageconvertor.h"
 
-#include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
 
 using namespace Eigen;
 
 FrameHandler::FrameHandler():
     m_frameSize(-1, -1),
-    m_maxFrameSize(640, 480)
+    m_maxFrameSize(640, 480),
+    m_orientation(0),
+    m_flipHorizontally(false)
 {
     m_objectEdgesTracker = QSharedPointer<ObjectEdgesTracker>::create();
 }
@@ -46,6 +47,32 @@ void FrameHandler::setMaxFrameSize(const QSize & maxFrameSize)
         return;
     m_maxFrameSize = maxFrameSize;
     emit maxFrameSizeChanged();
+}
+
+int FrameHandler::orientation() const
+{
+    return m_orientation;
+}
+
+void FrameHandler::setOrientation(int orientation)
+{
+    if (orientation == m_orientation)
+        return;
+    m_orientation = orientation;
+    emit orientationChanged();
+}
+
+bool FrameHandler::flipHorizontally() const
+{
+    return m_flipHorizontally;
+}
+
+void FrameHandler::setFlipHorizontally(bool flipHorizontally)
+{
+    if (flipHorizontally == m_flipHorizontally)
+        return;
+    m_flipHorizontally = flipHorizontally;
+    emit flipHorizontallyChanged();
 }
 
 void FrameHandler::_setFrameSize(const QSize & frameSize)
@@ -86,6 +113,7 @@ QVideoFrame FrameHandlerRunnable::run(QVideoFrame * videoFrame,
             qFatal("Coudn't read video frame");
         }
         cv::cvtColor(frame, frame, cv::COLOR_BGRA2GRAY);
+        _transformImage(frame);
         QSize maxSize = m_parent->maxFrameSize();
         double scale1 = maxSize.width() / static_cast<double>(frame.cols);
         double scale2 = maxSize.height() / static_cast<double>(frame.rows);
@@ -100,7 +128,9 @@ QVideoFrame FrameHandlerRunnable::run(QVideoFrame * videoFrame,
             m_texture2GrayImageConverter = QSharedPointer<Texture2GrayImageConvertor>::create();
         }
         frame = m_texture2GrayImageConverter->read(this, videoFrame->handle().toUInt(),
-                                                   videoFrame->size(), m_parent->maxFrameSize());
+                                                   videoFrame->size(), m_parent->maxFrameSize(),
+                                                   m_parent->orientation(),
+                                                   m_parent->flipHorizontally());
     }
 
     if (!frame.empty())
@@ -111,11 +141,50 @@ QVideoFrame FrameHandlerRunnable::run(QVideoFrame * videoFrame,
         {
             //TODO set camera parameters
             objectEdgesTracking->setCamera(std::make_shared<PinholeCamera>(Vector2i(frame.cols, frame.rows),
-                                                                           Vector2f(frame.cols, frame.cols) * 1.2f,
+                                                                           Vector2f(frame.cols, frame.cols) * 0.6f,
                                                                            Vector2f(frame.cols, frame.rows) * 0.5f));
         }
         objectEdgesTracking->compute(frame);
     }
 
     return QVideoFrame(*videoFrame);
+}
+
+void FrameHandlerRunnable::_transformImage(cv::Mat & image) const
+{
+    int orientation = ((m_parent->orientation() / 90) % 4) * 90;
+    //orientation = (orientation + 180) % 360; // TODO why?
+    bool transpose = false;
+    bool flipVertically = false, flipHorizontally = m_parent->flipHorizontally();
+    switch (orientation)
+    {
+    case 90:
+        transpose = true;
+        std::swap(flipVertically, flipHorizontally);
+        flipHorizontally = !flipHorizontally;
+        break;
+    case 180:
+        transpose = false;
+        flipHorizontally = !flipHorizontally;
+        flipVertically = !flipVertically;
+        break;
+    case 270:
+        transpose = true;
+        std::swap(flipVertically, flipHorizontally);
+        flipVertically = !flipVertically;
+        break;
+    }
+    if (transpose)
+        cv::transpose(image, image);
+    if (flipHorizontally)
+    {
+        if (flipVertically)
+            cv::flip(image, image, -1);
+        else
+            cv::flip(image, image, 0);
+    }
+    else if (flipVertically)
+    {
+        cv::flip(image, image, 1);
+    }
 }

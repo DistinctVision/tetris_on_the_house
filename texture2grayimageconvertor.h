@@ -6,6 +6,7 @@
 #include <QOpenGLFunctions>
 #include <QOpenGLShaderProgram>
 #include <QOpenGLFramebufferObject>
+#include <QMatrix4x4>
 
 #include <opencv2/core.hpp>
 
@@ -19,8 +20,10 @@ public:
 
     cv::Mat read(QOpenGLFunctions * gl,
                  GLuint textureId,
-                 const QSize & textureSize,
-                 const QSize & maxImageSize);
+                 QSize textureSize,
+                 const QSize & maxImageSize,
+                 int orientation = 0,
+                 bool flipHorizontally = false);
 
 private:
     GL_MeshPtr m_quad;
@@ -29,6 +32,9 @@ private:
 
     QSize _getImageSize(const QSize & textureSize,
                         QSize maxImageSize) const;
+    QMatrix4x4 _getMatrixMVP(int orientation, bool flipHorizontally) const;
+
+
 };
 
 #endif // TEXTURE2GRAYIMAGECONVERTOR_H
