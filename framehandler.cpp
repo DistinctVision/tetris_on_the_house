@@ -16,7 +16,9 @@ FrameHandler::FrameHandler():
     m_frameSize(-1, -1),
     m_maxFrameSize(640, 480),
     m_orientation(0),
-    m_flipHorizontally(false)
+    m_flipHorizontally(false),
+    m_focalLength(1.0f, 1.0f),
+    m_opticalCenter(0.5f, 0.5f)
 {
     m_objectEdgesTracker = QSharedPointer<ObjectEdgesTracker>::create();
 }
@@ -73,6 +75,32 @@ void FrameHandler::setFlipHorizontally(bool flipHorizontally)
         return;
     m_flipHorizontally = flipHorizontally;
     emit flipHorizontallyChanged();
+}
+
+QVector2D FrameHandler::focalLength() const
+{
+    return m_focalLength;
+}
+
+void FrameHandler::setFocalLength(const QVector2D & focalLength)
+{
+    if (m_focalLength == focalLength)
+        return;
+    m_focalLength = focalLength;
+    emit focalLengthChanged();
+}
+
+QVector2D FrameHandler::opticalCenter() const
+{
+    return m_opticalCenter;
+}
+
+void FrameHandler::setOpticalCenter(const QVector2D & opticalCenter)
+{
+    if (m_opticalCenter == opticalCenter)
+        return;
+    m_opticalCenter = opticalCenter;
+    emit opticalCenterChanged();
 }
 
 void FrameHandler::_setFrameSize(const QSize & frameSize)
@@ -135,14 +163,20 @@ QVideoFrame FrameHandlerRunnable::run(QVideoFrame * videoFrame,
 
     if (!frame.empty())
     {
+        QVector2D focalLength = m_parent->focalLength();
+        QVector2D opticalCenter = m_parent->opticalCenter();
+        Vector2i v_imageSize(frame.cols, frame.rows);
+        Vector2f v_focalLength(frame.cols * focalLength.x(),
+                               frame.cols * focalLength.y());
+        Vector2f v_opticalCenter(frame.cols * opticalCenter.x(),
+                                 frame.rows * opticalCenter.y());
         ObjectEdgesTracker * objectEdgesTracking = m_parent->objectEdgesTracker();
-        if (!objectEdgesTracking->camera() ||
-                (objectEdgesTracking->camera()->imageSize() != Vector2i(frame.cols, frame.rows)))
+        std::shared_ptr<const PinholeCamera> prevCamera = objectEdgesTracking->camera();
+        if (!prevCamera || (prevCamera->imageSize() == v_imageSize) ||
+                ((v_focalLength - prevCamera->focalLength()).array().sum() < 1e-4f) ||
+                ((v_opticalCenter - prevCamera->opticalCenter()).array().sum() < 1e-4f))
         {
-            //TODO set camera parameters
-            objectEdgesTracking->setCamera(std::make_shared<PinholeCamera>(Vector2i(frame.cols, frame.rows),
-                                                                           Vector2f(frame.cols, frame.cols) * 0.6f,
-                                                                           Vector2f(frame.cols, frame.rows) * 0.5f));
+            objectEdgesTracking->setCamera(std::make_shared<PinholeCamera>(v_imageSize, v_focalLength, v_opticalCenter));
         }
         objectEdgesTracking->compute(frame);
     }

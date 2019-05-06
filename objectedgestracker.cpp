@@ -234,7 +234,7 @@ double ObjectEdgesTracker::_tracking(const cv::Mat & distancesMap)
     float area = (bb_max.x() - bb_min.x()) * (bb_max.y() - bb_min.y());
     if (area < 100.0f)
         E = numeric_limits<double>::max();
-    if (E > 2.5)
+    if (E > 7.0)
     {
         m_R = Matrix3d::Identity();
         m_t = Vector3d(0.0, 0.0, 5.0);

@@ -4,6 +4,7 @@
 #include <QSize>
 #include <QSharedPointer>
 #include <QVideoFrame>
+#include <QVector2D>
 #include <QVideoSurfaceFormat>
 #include <QAbstractVideoFilter>
 #include <QOpenGLFunctions>
@@ -24,6 +25,8 @@ class FrameHandler: public QAbstractVideoFilter
     Q_PROPERTY(QSize maxFrameSize READ maxFrameSize WRITE setMaxFrameSize NOTIFY maxFrameSizeChanged)
     Q_PROPERTY(int orientation READ orientation WRITE setOrientation NOTIFY orientationChanged)
     Q_PROPERTY(bool flipHorizontally READ flipHorizontally WRITE setFlipHorizontally NOTIFY flipHorizontallyChanged)
+    Q_PROPERTY(QVector2D focalLength READ focalLength WRITE setFocalLength NOTIFY focalLengthChanged)
+    Q_PROPERTY(QVector2D opticalCenter READ opticalCenter WRITE setOpticalCenter NOTIFY opticalCenterChanged)
 
 public:
     FrameHandler();
@@ -43,11 +46,19 @@ public:
     bool flipHorizontally() const;
     void setFlipHorizontally(bool flipHorizontally);
 
+    QVector2D focalLength() const;
+    void setFocalLength(const QVector2D & focalLength);
+
+    QVector2D opticalCenter() const;
+    void setOpticalCenter(const QVector2D & opticalCenter);
+
 signals:
     void frameSizeChanged();
     void maxFrameSizeChanged();
     void orientationChanged();
     void flipHorizontallyChanged();
+    void focalLengthChanged();
+    void opticalCenterChanged();
 
 private:
     friend class FrameHandlerRunnable;
@@ -57,6 +68,9 @@ private:
     QSize m_maxFrameSize;
     int m_orientation;
     bool m_flipHorizontally;
+
+    QVector2D m_focalLength;
+    QVector2D m_opticalCenter;
 
     void _setFrameSize(const QSize & frameSize);
 };

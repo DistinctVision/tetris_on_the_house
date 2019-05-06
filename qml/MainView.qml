@@ -12,6 +12,8 @@ Item {
         id: settings
         property double canny_thresholdA: 100
         property double canny_thresholdB: 150
+        property vector2d focalLength: Qt.vector2d(1.2, 1.2)
+        property vector2d opticalCenter: Qt.vector2d(0.5, 0.5)
     }
 
     states: [
@@ -86,6 +88,8 @@ Item {
         maxFrameSize: "2000x2000"
         orientation: camera.orientation
         flipHorizontally: camera.position == Camera.BackFace
+        focalLength: settings.focalLength
+        opticalCenter: settings.opticalCenter
         objectEdgesTracker {
             debugEnabled: true
             cannyThresholdA: settings.canny_thresholdA
@@ -107,6 +111,8 @@ Item {
         anchors.fill: parent
         fillFrameMode: FillMode.PreserveAspectCrop
         inputFrameSize: frameHandler.frameSize
+        focalLength: settings.focalLength
+        opticalCenter: settings.opticalCenter
 
         scenes: [ debugImageScene, testCubeScene ]
     }
