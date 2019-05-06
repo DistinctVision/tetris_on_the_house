@@ -4,6 +4,7 @@
 #include <QThreadPool>
 #include <QTime>
 
+#include "performancemonitor.h"
 #include "pinholecamera.h"
 #include "objectedgestracker.h"
 #include "texture2grayimageconvertor.h"
@@ -20,7 +21,8 @@ FrameHandler::FrameHandler():
     m_focalLength(1.0f, 1.0f),
     m_opticalCenter(0.5f, 0.5f)
 {
-    m_objectEdgesTracker = QSharedPointer<ObjectEdgesTracker>::create();
+    m_monitor = QSharedPointer<PerformanceMonitor>::create();
+    m_objectEdgesTracker = QSharedPointer<ObjectEdgesTracker>::create(m_monitor);
 }
 
 QVideoFilterRunnable * FrameHandler::createFilterRunnable()
@@ -103,6 +105,11 @@ void FrameHandler::setOpticalCenter(const QVector2D & opticalCenter)
     emit opticalCenterChanged();
 }
 
+QSharedPointer<PerformanceMonitor> FrameHandler::monitor() const
+{
+    return m_monitor;
+}
+
 void FrameHandler::_setFrameSize(const QSize & frameSize)
 {
     if (frameSize == m_frameSize)
@@ -125,6 +132,10 @@ QVideoFrame FrameHandlerRunnable::run(QVideoFrame * videoFrame,
 
     cv::Mat frame;
 
+    QSharedPointer<PerformanceMonitor> monitor = m_parent->monitor();
+
+    monitor->start();
+    monitor->startTimer("Getting frame");
     if (surfaceFormat.handleType() == QAbstractVideoBuffer::NoHandle)
     {
         Vector2i imageSize(videoFrame->width(), videoFrame->height());
@@ -160,6 +171,7 @@ QVideoFrame FrameHandlerRunnable::run(QVideoFrame * videoFrame,
                                                    m_parent->orientation(),
                                                    m_parent->flipHorizontally());
     }
+    monitor->endTimer("Getting frame");
 
     if (!frame.empty())
     {
@@ -181,13 +193,16 @@ QVideoFrame FrameHandlerRunnable::run(QVideoFrame * videoFrame,
         objectEdgesTracking->compute(frame);
     }
 
+    monitor->end();
+    qDebug().noquote() << QString::fromStdString(monitor->report());
+
     return QVideoFrame(*videoFrame);
 }
 
 void FrameHandlerRunnable::_transformImage(cv::Mat & image) const
 {
     int orientation = ((m_parent->orientation() / 90) % 4) * 90;
-    //orientation = (orientation + 180) % 360; // TODO why?
+    orientation = (orientation + 180) % 360; // TODO why?
     bool transpose = false;
     bool flipVertically = false, flipHorizontally = m_parent->flipHorizontally();
     switch (orientation)

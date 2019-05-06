@@ -6,6 +6,7 @@
 #include <tuple>
 
 #include <QMatrix4x4>
+#include <QSharedPointer>
 
 #include <Eigen/Eigen>
 
@@ -26,7 +27,7 @@ class ObjectEdgesTracker:
     Q_PROPERTY(float cannyThresholdA READ cannyThresholdA WRITE setCannyThresholdA NOTIFY cannyThresholdAChanged)
     Q_PROPERTY(float cannyThresholdB READ cannyThresholdB WRITE setCannyThresholdB NOTIFY cannyThresholdBChanged)
 public:
-    ObjectEdgesTracker();
+    ObjectEdgesTracker(const QSharedPointer<PerformanceMonitor> & monitor);
 
     float controlPixelDistance() const;
     void setControlPixelDistance(float controlPixelDistance);
@@ -52,11 +53,11 @@ signals:
     void cannyThresholdBChanged();
 
 private:
+    QSharedPointer<PerformanceMonitor> m_monitor;
+
     float m_controlPixelDistance;
     double m_cannyThresholdA;
     double m_cannyThresholdB;
-
-    std::shared_ptr<PerformanceMonitor> m_monitor; //TODO maybe move to top
 
     ObjectModel m_model;
     std::shared_ptr<PinholeCamera> m_camera;

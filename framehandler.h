@@ -11,6 +11,7 @@
 
 #include <opencv2/core.hpp>
 
+class PerformanceMonitor;
 class ObjectEdgesTracker;
 class Texture2GrayImageConvertor;
 
@@ -52,6 +53,8 @@ public:
     QVector2D opticalCenter() const;
     void setOpticalCenter(const QVector2D & opticalCenter);
 
+    QSharedPointer<PerformanceMonitor> monitor() const;
+
 signals:
     void frameSizeChanged();
     void maxFrameSizeChanged();
@@ -63,6 +66,7 @@ signals:
 private:
     friend class FrameHandlerRunnable;
 
+    QSharedPointer<PerformanceMonitor> m_monitor;
     QSharedPointer<ObjectEdgesTracker> m_objectEdgesTracker;
     QSize m_frameSize;
     QSize m_maxFrameSize;

@@ -23,13 +23,13 @@ using namespace std;
 using namespace std::chrono;
 using namespace Eigen;
 
-ObjectEdgesTracker::ObjectEdgesTracker():
+ObjectEdgesTracker::ObjectEdgesTracker(const QSharedPointer<PerformanceMonitor> & monitor):
+    m_monitor(monitor),
     m_controlPixelDistance(15.0f),
     m_cannyThresholdA(50.0),
     m_cannyThresholdB(100.0),
     m_model(ObjectModel::createCubikRubik())
 {
-    m_monitor = make_shared<PerformanceMonitor>();
     m_R = Matrix3d::Identity();
     m_t = Vector3d(0.0, 0.0, 5.0);
 }
@@ -100,8 +100,6 @@ void ObjectEdgesTracker::compute(cv::Mat image)
     assert(image.channels() == 1);
     assert(m_camera);
 
-    m_monitor->start();
-
     m_monitor->startTimer("Canny");
     cv::Mat edges;
     cv::Canny(image, edges, m_cannyThresholdA, m_cannyThresholdB);
@@ -130,8 +128,6 @@ void ObjectEdgesTracker::compute(cv::Mat image)
 
         m_monitor->endTimer("Debug");
     }
-    m_monitor->end();
-    qDebug().noquote() << QString::fromStdString(m_monitor->report());
     m_debugImage = edges;
 }
 
@@ -171,6 +167,9 @@ double ObjectEdgesTracker::_tracking(const cv::Mat & distancesMap)
 
     for (int i = 0; i < 2; ++i)
     {
+        string iterName = QString("    Tracking_iter_%1").arg(i).toStdString();
+        m_monitor->startTimer(iterName);
+
         controlModelPoints = m_model.getControlPoints(m_camera, m_controlPixelDistance,
                                                       m_R, m_t);
         if (controlModelPoints.size() < 4)
@@ -214,6 +213,8 @@ double ObjectEdgesTracker::_tracking(const cv::Mat & distancesMap)
         }
         m_t = x.segment<3>(0);
         m_R = exp_rotationMatrix(x.segment<3>(3));
+
+        m_monitor->endTimer(iterName);
     }
 
     Vector2f bb_min(numeric_limits<float>::max(), numeric_limits<float>::max());
