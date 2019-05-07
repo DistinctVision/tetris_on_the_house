@@ -67,7 +67,8 @@ private:
 
     cv::Mat m_debugImage;
 
-    double _tracking(const cv::Mat & distanceMap);
+    double _tracking1(const cv::Mat & edges);
+    double _tracking2(const cv::Mat & edges);
 };
 
 #endif // OBJECTEDGESTRACKER_H

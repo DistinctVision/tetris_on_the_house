@@ -178,26 +178,68 @@ void test_exp()
     }
 }
 
-void optimize_pose(Matrix3d & R, Vector3d & t,
-                   const shared_ptr<const PinholeCamera> & camera,
-                   const Vectors3d & controlModelPoints,
-                   const Vectors2f & controlImagePoints,
-                   int numberIterations)
+double optimize_pose(Matrix3d & R, Vector3d & t,
+                     const shared_ptr<const PinholeCamera> & camera,
+                     const Vectors3d & controlModelPoints,
+                     const Vectors2f & viewPoints,
+                     float maxDistance,
+                     int numberIterations)
 {
-    size_t numberPoints = controlModelPoints.size();
-
-    Vectors2d uv_points(controlImagePoints.size());
-    for (size_t i = 0; i < numberPoints; ++i)
-    {
-        uv_points[i] = camera->unproject(controlImagePoints[i]).segment<2>(0).cast<double>();
-    }
-
-    Vector3d w = ln_rotationMatrix(R);
-    Matrix3d rW;
-
     Matrix<double, 6, 1> x;
     x.segment<3>(0) = t;
-    x.segment<3>(3) = w;
+    x.segment<3>(3) = ln_rotationMatrix(R);
+    double E = optimize_pose(x, camera, controlModelPoints, viewPoints, maxDistance, numberIterations);
+    t = x.segment<3>(0);
+    R = exp_rotationMatrix(x.segment<3>(3));
+    return E;
+}
+
+double optimize_pose(Matrix<double, 6, 1> & x,
+                     const shared_ptr<const PinholeCamera> & camera,
+                     const Vectors3d & controlModelPoints,
+                     const Vectors2f & viewPoints,
+                     float maxDistance,
+                     int numberIterations)
+{
+    float weightFunction_k2 = 1.0f / (3.0f * maxDistance * maxDistance);
+    float weightFunction_k1 = 1.0f / (maxDistance * (1.0f - weightFunction_k2 * maxDistance * maxDistance));
+
+    auto weightFunction = [&] (float x) -> float
+    {
+        return (x >= maxDistance) ? 0.0f : (weightFunction_k1 * x * (1.0f - (x * x) * weightFunction_k2));
+    };
+
+    auto div_weightFunction = [&] (float x) -> float
+    {
+        return (x >= maxDistance) ? 0.0f : (weightFunction_k1 - 3.0f * weightFunction_k1 * weightFunction_k2 * x * x);
+    };
+
+    auto get_x_weightFunction = [&] (double y) -> double
+    {
+        double b = - 1.0 / static_cast<double>(weightFunction_k2);
+        double c = y / static_cast<double>(weightFunction_k1 * weightFunction_k2);
+        double Q = ( - 3.0 * b) / 9.0;
+        double R = (27.0 * c) / 54.0;
+
+        double t = acos(R / sqrt(Q * Q * Q)) / 3.0;
+        double x = - 2.0 * sqrt(Q) * cos(t - (2.0 / 3.0) * M_PI);
+
+        return x;
+    };
+
+    size_t numberPoints = controlModelPoints.size();
+
+    Vectors2d uv_points(viewPoints.size());
+    for (size_t i = 0; i < numberPoints; ++i)
+    {
+        uv_points[i] = camera->unproject(viewPoints[i]).segment<2>(0).cast<double>();
+    }
+
+    Vector3d w;
+    Matrix3d rW;
+
+    Matrix3d R;
+    Vector3d t;
 
     auto getJacobianAndResiduals = [&]
             (const Vector3d & point, const Vector2d & uv) -> tuple<Matrix<double, 2, 6>, Vector2d>
@@ -207,6 +249,10 @@ void optimize_pose(Matrix3d & R, Vector3d & t,
         Vector3d v = R * point + t;
         double z_inv = 1.0 / v.z();
         double z_inv_squared = z_inv * z_inv;
+
+        Vector2d e = v.segment<2>(0) * z_inv - uv;
+
+        double w = sqrt(e.dot(e));
 
         Matrix<double, 2, 6> J;
 
@@ -223,8 +269,6 @@ void optimize_pose(Matrix3d & R, Vector3d & t,
         J(1, 3) = (rJ(1, 0) * v.z() - v.y() * rJ(2, 0)) * z_inv_squared;
         J(1, 4) = (rJ(1, 1) * v.z() - v.y() * rJ(2, 1)) * z_inv_squared;
         J(1, 5) = (rJ(1, 2) * v.z() - v.y() * rJ(2, 2)) * z_inv_squared;
-
-        Vector2d e = v.segment<2>(0) * z_inv - uv;
 
         return make_tuple(J, e);
     };
@@ -306,8 +350,6 @@ void optimize_pose(Matrix3d & R, Vector3d & t,
             break;
         }
     }
-    t = x.segment<3>(0);
-    R = exp_rotationMatrix(x.segment<3>(3));
 }
 
 double optimize_pose(Matrix3d & R, Vector3d & t,

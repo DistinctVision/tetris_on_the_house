@@ -10,6 +10,7 @@
 
 #include "pinholecamera.h"
 
+using namespace std;
 using namespace Eigen;
 
 ObjectModel::ObjectModel()
@@ -149,12 +150,12 @@ const ObjectModel::Polygons & ObjectModel::polygons() const
     return m_polygons;
 }
 
-Vectors3d ObjectModel::getControlPoints(const std::shared_ptr<PinholeCamera> & camera,
+Vectors3d ObjectModel::getControlPoints(const shared_ptr<PinholeCamera> & camera,
                                         float controlPixelDistance,
                                         const Matrix3d & R, const Vector3d & t) const
 {
-    std::set<int> setOfVertices;
-    std::set<std::pair<int, int>, less_pair_i> setOfEdges;
+    set<int> setOfVertices;
+    set<std::pair<int, int>, less_pair_i> setOfEdges;
     Vector3d cam_pose = - R.inverse() * t;
     for (const Polygon & polygon : m_polygons)
     {
@@ -213,11 +214,79 @@ Vectors3d ObjectModel::getControlPoints(const std::shared_ptr<PinholeCamera> & c
     return controlModelPoints;
 }
 
+tuple<Vectors3d, Vectors2f> ObjectModel::getControlAndViewPoints(const shared_ptr<PinholeCamera> & camera,
+                                                                 float controlPixelDistance,
+                                                                 const Matrix3d & R,
+                                                                 const Vector3d & t) const
+{
+    set<int> setOfVertices;
+    set<std::pair<int, int>, less_pair_i> setOfEdges;
+    Vector3d cam_pose = - R.inverse() * t;
+    for (const Polygon & polygon : m_polygons)
+    {
+        if (polygon.normal.dot(cam_pose - m_vertices[polygon.vertexIndices[0]]) > 0.0)
+        {
+            for (int i = 0; i < polygon.vertexIndices.size(); ++i)
+            {
+                std::pair<int, int> edge(polygon.vertexIndices[i],
+                                         polygon.vertexIndices[(i + 1) % polygon.vertexIndices.size()]);
+                if (edge.first > edge.second)
+                    std::swap(edge.first, edge.second);
+                setOfEdges.insert(edge);
+                setOfVertices.insert(polygon.vertexIndices[i]);
+            }
+        }
+    }
+
+    Vectors3d controlModelPoints;
+    Vectors2f viewPoints;
+    for (auto it = setOfVertices.cbegin(); it != setOfVertices.cend(); ++it)
+    {
+        const Vector3d & v = m_vertices[*it];
+        bool inViewFlag;
+        Vector2f p = camera->project((R * v + t).cast<float>(), inViewFlag);
+        if (!inViewFlag)
+            continue;
+        controlModelPoints.push_back(v);
+        viewPoints.push_back(p);
+    }
+    for (auto itEdge = setOfEdges.cbegin(); itEdge != setOfEdges.cend(); ++itEdge)
+    {
+        const Vector3d & v1 = m_vertices[itEdge->first];
+        const Vector3d & v2 = m_vertices[itEdge->second];
+
+        bool inViewFlag;
+        Vector2f p1 = camera->project((R * v1 + t).cast<float>(), inViewFlag);
+        if (!inViewFlag)
+            continue;
+        Vector2f p2 = camera->project((R * v2 + t).cast<float>(), inViewFlag);
+        if (!inViewFlag)
+            continue;
+
+        float distance = (p2 - p1).norm();
+        int n = static_cast<int>(ceil(distance / controlPixelDistance));
+        if (n <= 1)
+            continue;
+
+        Vector3d delta = v2 - v1;
+        double step = 1.0 / static_cast<double>(n);
+        for (int i = 1; i < n; ++i)
+        {
+            double k = i * step;
+            Vector3d v = v1 + delta * k;
+            Vector2f p = camera->project((R * v + t).cast<float>());
+            controlModelPoints.push_back(v);
+            viewPoints.push_back(p);
+        }
+    }
+    return make_tuple(controlModelPoints, viewPoints);
+}
+
 void ObjectModel::draw(const cv::Mat & image,
-                       const std::shared_ptr<PinholeCamera> & camera,
+                       const shared_ptr<PinholeCamera> & camera,
                        const Matrix3d & R, const Vector3d & t) const
 {
-    std::set<std::pair<int, int>> setOfEdges;
+    set<std::pair<int, int>> setOfEdges;
     Vector3d cam_pose = - R.inverse() * t;
     for (const Polygon & polygon : m_polygons)
     {

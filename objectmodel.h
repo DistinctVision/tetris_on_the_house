@@ -47,6 +47,11 @@ public:
                                const Eigen::Matrix3d & R,
                                const Eigen::Vector3d & t) const;
 
+    std::tuple<Vectors3d, Vectors2f> getControlAndViewPoints(const std::shared_ptr<PinholeCamera> & camera,
+                                                             float controlPixelDistance,
+                                                             const Eigen::Matrix3d & R,
+                                                             const Eigen::Vector3d & t) const;
+
     void draw(const cv::Mat & image,
               const std::shared_ptr<PinholeCamera> & camera,
               const Eigen::Matrix3d & R, const Eigen::Vector3d & t) const;
