@@ -14,11 +14,14 @@ public:
     Eigen::Vector2f focalLength() const;
     Eigen::Vector2f opticalCenter() const;
 
+    Eigen::Vector2f project(const Eigen::Vector2f & view) const;
     Eigen::Vector2f project(const Eigen::Vector3f & v) const;
     bool imagePointInView(const Eigen::Vector2f & imagePoint) const;
+    Eigen::Vector2f project(const Eigen::Vector2f & view, bool & inViewFlag) const;
     Eigen::Vector2f project(const Eigen::Vector3f & v, bool & inViewFlag) const;
 
     Eigen::Vector3f unproject(const Eigen::Vector2f & imagePoint) const;
+    Eigen::Vector2f unprojectToView(const Eigen::Vector2f & imagePoint) const;
 
 private:
     Eigen::Vector2i m_imageSize;

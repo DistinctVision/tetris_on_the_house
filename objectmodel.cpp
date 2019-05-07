@@ -178,7 +178,7 @@ Vectors3f ObjectModel::getControlPoints(const std::shared_ptr<PinholeCamera> & c
     {
         const Vector3f & v = m_vertices[*it];
         bool inViewFlag;
-        Vector2f p = camera->project((R * v + t), inViewFlag);
+        Vector2f p = camera->project((R * v + t).eval(), inViewFlag);
         if (!inViewFlag)
             continue;
         controlModelPoints.push_back(v);
@@ -189,10 +189,10 @@ Vectors3f ObjectModel::getControlPoints(const std::shared_ptr<PinholeCamera> & c
         const Vector3f & v2 = m_vertices[itEdge->second];
 
         bool inViewFlag;
-        Vector2f p1 = camera->project((R * v1 + t), inViewFlag);
+        Vector2f p1 = camera->project((R * v1 + t).eval(), inViewFlag);
         if (!inViewFlag)
             continue;
-        Vector2f p2 = camera->project((R * v2 + t), inViewFlag);
+        Vector2f p2 = camera->project((R * v2 + t).eval(), inViewFlag);
         if (!inViewFlag)
             continue;
 
@@ -207,24 +207,23 @@ Vectors3f ObjectModel::getControlPoints(const std::shared_ptr<PinholeCamera> & c
         {
             float k = i * step;
             Vector3f v = v1 + delta * k;
-            Vector2f p = camera->project((R * v + t));
+            //Vector2f p = camera->project((R * v + t).eval());
             controlModelPoints.push_back(v);
         }
     }
     return controlModelPoints;
 }
 
-tuple<Vectors3d, Vectors2f> ObjectModel::getControlAndViewPoints(const shared_ptr<PinholeCamera> & camera,
-                                                                 float controlPixelDistance,
-                                                                 const Matrix3d & R,
-                                                                 const Vector3d & t) const
+tuple<Vectors3f, Vectors2f> ObjectModel::getControlAndImagePoints(const shared_ptr<PinholeCamera> & camera,
+                                                                  float controlPixelDistance,
+                                                                  const Matrix3f & R, const Vector3f & t) const
 {
     set<int> setOfVertices;
     set<std::pair<int, int>, less_pair_i> setOfEdges;
-    Vector3d cam_pose = - R.inverse() * t;
+    Vector3f cam_pose = - R.inverse() * t;
     for (const Polygon & polygon : m_polygons)
     {
-        if (polygon.normal.dot(cam_pose - m_vertices[polygon.vertexIndices[0]]) > 0.0)
+        if (polygon.normal.dot(cam_pose - m_vertices[polygon.vertexIndices[0]]) > 0.0f)
         {
             for (int i = 0; i < polygon.vertexIndices.size(); ++i)
             {
@@ -238,28 +237,35 @@ tuple<Vectors3d, Vectors2f> ObjectModel::getControlAndViewPoints(const shared_pt
         }
     }
 
-    Vectors3d controlModelPoints;
-    Vectors2f viewPoints;
+    Vectors3f controlModelPoints;
+    Vectors2f imagePoints;
     for (auto it = setOfVertices.cbegin(); it != setOfVertices.cend(); ++it)
     {
-        const Vector3d & v = m_vertices[*it];
+        Vector3f v = R * m_vertices[*it] + t;
+        if (v.z() < numeric_limits<float>::epsilon())
+            continue;
         bool inViewFlag;
-        Vector2f p = camera->project((R * v + t).cast<float>(), inViewFlag);
+        Vector2f view = v.segment<2>(0) / v.z();
+        Vector2f p = camera->project(view, inViewFlag);
         if (!inViewFlag)
             continue;
         controlModelPoints.push_back(v);
-        viewPoints.push_back(p);
+        imagePoints.push_back(p);
     }
     for (auto itEdge = setOfEdges.cbegin(); itEdge != setOfEdges.cend(); ++itEdge)
     {
-        const Vector3d & v1 = m_vertices[itEdge->first];
-        const Vector3d & v2 = m_vertices[itEdge->second];
+        Vector3f v1 = R * m_vertices[itEdge->first] + t;
+        if (v1.z() < numeric_limits<float>::epsilon())
+            continue;
+        Vector3f v2 = R * m_vertices[itEdge->second] + t;
+        if (v2.z() < numeric_limits<float>::epsilon())
+            continue;
 
         bool inViewFlag;
-        Vector2f p1 = camera->project((R * v1 + t).cast<float>(), inViewFlag);
+        Vector2f p1 = camera->project(v1, inViewFlag);
         if (!inViewFlag)
             continue;
-        Vector2f p2 = camera->project((R * v2 + t).cast<float>(), inViewFlag);
+        Vector2f p2 = camera->project(v2, inViewFlag);
         if (!inViewFlag)
             continue;
 
@@ -268,18 +274,18 @@ tuple<Vectors3d, Vectors2f> ObjectModel::getControlAndViewPoints(const shared_pt
         if (n <= 1)
             continue;
 
-        Vector3d delta = v2 - v1;
-        double step = 1.0 / static_cast<double>(n);
+        Vector3f delta = v2 - v1;
+        float step = 1.0f / static_cast<float>(n);
         for (int i = 1; i < n; ++i)
         {
-            double k = i * step;
-            Vector3d v = v1 + delta * k;
-            Vector2f p = camera->project((R * v + t).cast<float>());
+            float k = i * step;
+            Vector3f v = R * (v1 + delta * k) + t;
+            Vector2f p = camera->project(v);
             controlModelPoints.push_back(v);
-            viewPoints.push_back(p);
+            imagePoints.push_back(p);
         }
     }
-    return make_tuple(controlModelPoints, viewPoints);
+    return make_tuple(controlModelPoints, imagePoints);
 }
 
 void ObjectModel::draw(const cv::Mat & image,
@@ -309,10 +315,10 @@ void ObjectModel::draw(const cv::Mat & image,
         const Vector3f & v2 = m_vertices[itEdge->second];
 
         bool inViewFlag;
-        Vector2f p1 = camera->project((R * v1 + t), inViewFlag);
+        Vector2f p1 = camera->project((R * v1 + t).eval(), inViewFlag);
         if (!inViewFlag)
             continue;
-        Vector2f p2 = camera->project((R * v2 + t), inViewFlag);
+        Vector2f p2 = camera->project((R * v2 + t).eval(), inViewFlag);
         if (!inViewFlag)
             continue;
 

@@ -31,6 +31,7 @@ ObjectEdgesTracker::ObjectEdgesTracker(const QSharedPointer<PerformanceMonitor> 
     m_model(ObjectModel::createCubikRubik())
 {
     m_R = Matrix3f::Identity();
+    m_t = Vector3f(0.0f, 0.0f, 5.0f);
 }
 
 float ObjectEdgesTracker::controlPixelDistance() const
@@ -88,8 +89,8 @@ QMatrix4x4 ObjectEdgesTracker::viewMatrix() const
     for (int i = 0; i < 3; ++i)
     {
         for (int j = 0; j < 3; ++j)
-            M(i, j) = static_cast<float>(m_R(i, j));
-        M(i, 3) = static_cast<float>(m_t(i));
+            M(i, j) = m_R(i, j);
+        M(i, 3) = m_t(i);
     }
     return M;
 }
@@ -108,7 +109,7 @@ void ObjectEdgesTracker::compute(cv::Mat image)
     cv::bitwise_not(edges, edges);
     m_monitor->endTimer("Inverting");
 
-    double E = _tracking1(edges);
+    float E = _tracking1(edges);
 
     qDebug() << "Error =" << E;
 
@@ -144,7 +145,7 @@ float ObjectEdgesTracker::_tracking1(const cv::Mat & edges)
 
     m_monitor->startTimer("Tracking [1]");
 
-    for (int i = 0; i < 2; ++i)
+    for (int i = 0; i < 5; ++i)
     {
         string iterName = QString("    Tracking [1] iter_%1").arg(i).toStdString();
         m_monitor->startTimer(iterName);
@@ -159,7 +160,7 @@ float ObjectEdgesTracker::_tracking1(const cv::Mat & edges)
 
         E = optimize_pose(x,
                           QThreadPool::globalInstance(), QThread::idealThreadCount(),
-                          distancesMap, m_camera, controlModelPoints, 60.0f, 6);
+                          distancesMap, m_camera, controlModelPoints, 20.0f, 6);
 
         m_t = x.segment<3>(0);
         m_R = exp_rotationMatrix(x.segment<3>(3));
@@ -171,9 +172,9 @@ float ObjectEdgesTracker::_tracking1(const cv::Mat & edges)
     Vector2f bb_min(numeric_limits<float>::max(), numeric_limits<float>::max());
     Vector2f bb_max(- numeric_limits<float>::max(), - numeric_limits<float>::max());
 
-    for (const Vector3d & v : controlModelPoints)
+    for (const Vector3f & v : controlModelPoints)
     {
-        Vector2f p = m_camera->project(m_R * v + m_t);
+        Vector2f p = m_camera->project((m_R * v + m_t).eval());
         if (p.x() < bb_min.x())
             bb_min.x() = p.x();
         if (p.y() < bb_min.y())
@@ -185,11 +186,11 @@ float ObjectEdgesTracker::_tracking1(const cv::Mat & edges)
     }
     float area = (bb_max.x() - bb_min.x()) * (bb_max.y() - bb_min.y());
     if (area < 100.0f)
-        E = numeric_limits<double>::max();
-    if (E > 7.0)
+        E = numeric_limits<float>::max();
+    if (E > 7.0f)
     {
-        m_R = Matrix3d::Identity();
-        m_t = Vector3d(0.0, 0.0, 5.0);
+        m_R = Matrix3f::Identity();
+        m_t = Vector3f(0.0f, 0.0f, 5.0f);
     }
 
     return E;
@@ -217,12 +218,13 @@ float ObjectEdgesTracker::_tracking2(const cv::Mat & edges)
             }
         }
     }
+    m_monitor->endTimer("Indexing [2]");
 
-    Vectors3d controlModelPoints;
-    Vectors2f viewPoints;
-    double E = numeric_limits<double>::max();
+    Vectors3f controlModelPoints;
+    Vectors2f imagePoints;
+    float E = numeric_limits<float>::max();
 
-    Matrix<double, 6, 1> x;
+    Matrix<float, 6, 1> x;
     x.segment<3>(0) = m_t;
     x.segment<3>(3) = ln_rotationMatrix(m_R);
 
@@ -233,15 +235,30 @@ float ObjectEdgesTracker::_tracking2(const cv::Mat & edges)
         string iterName = QString("    Tracking [2] iter_%1").arg(i).toStdString();
         m_monitor->startTimer(iterName);
 
-        tie(controlModelPoints, viewPoints) = m_model.getControlAndViewPoints(m_camera, m_controlPixelDistance,
-                                                                              m_R, m_t);
+        tie(controlModelPoints, imagePoints) = m_model.getControlAndImagePoints(m_camera, m_controlPixelDistance,
+                                                                                m_R, m_t);
+
+        for (size_t j = 0; j < controlModelPoints.size(); )
+        {
+            Vector2f & imagePoint = imagePoints[j];
+            Vector2i imagePoint_i = imagePoint.cast<int>();
+            auto it = index2point.find(labels.at<int>(imagePoint_i.y(), imagePoint_i.x()));
+            if (it == index2point.cend())
+            {
+                controlModelPoints.erase(controlModelPoints.begin() + j);
+                imagePoints.erase(imagePoints.begin() + j);
+                continue;
+            }
+            ++j;
+        }
+
         if (controlModelPoints.size() < 4)
         {
-            E = numeric_limits<double>::max();
+            E = numeric_limits<float>::max();
             break;
         }
 
-        E = optimize_pose(x, m_camera, controlModelPoints, viewPoints, 60.0f, 6);
+        E = optimize_pose(x, m_camera, controlModelPoints, imagePoints, 20.0f, 6);
 
         m_t = x.segment<3>(0);
         m_R = exp_rotationMatrix(x.segment<3>(3));
@@ -256,7 +273,7 @@ float ObjectEdgesTracker::_tracking2(const cv::Mat & edges)
 
     for (const Vector3f & v : controlModelPoints)
     {
-        Vector2f p = m_camera->project(m_R * v + m_t);
+        Vector2f p = m_camera->project((m_R * v + m_t).eval());
         if (p.x() < bb_min.x())
             bb_min.x() = p.x();
         if (p.y() < bb_min.y())
@@ -269,7 +286,7 @@ float ObjectEdgesTracker::_tracking2(const cv::Mat & edges)
     float area = (bb_max.x() - bb_min.x()) * (bb_max.y() - bb_min.y());
     if (area < 100.0f)
         E = numeric_limits<float>::max();
-    if (E > 2.5f)
+    if (E > 7.0f)
     {
         m_R = Matrix3f::Identity();
         m_t = Vector3f(0.0f, 0.0f, 5.0f);

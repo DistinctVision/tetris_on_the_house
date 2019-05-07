@@ -28,10 +28,15 @@ Vector2f PinholeCamera::opticalCenter() const
     return m_opticalCenter;
 }
 
+Vector2f PinholeCamera::project(const Vector2f & view) const
+{
+    return Vector2f(view.x() * m_focalLength.x() + m_opticalCenter.x(),
+                    view.y() * m_focalLength.y() + m_opticalCenter.y());
+}
+
 Vector2f PinholeCamera::project(const Vector3f & v) const
 {
-    return Vector2f((v.x() / v.z()) * m_focalLength.x() + m_opticalCenter.x(),
-                    (v.y() / v.z()) * m_focalLength.y() + m_opticalCenter.y());
+    return project((v.segment<2>(0) / v.z()).eval());
 }
 
 bool PinholeCamera::imagePointInView(const Vector2f & imagePoint) const
@@ -49,7 +54,12 @@ Vector2f PinholeCamera::project(const Vector3f & v, bool & inViewFlag) const
         inViewFlag = false;
         return Vector2f::Zero();
     }
-    Vector2f p = project(v);
+    return project((v.segment<2>(0) / v.z()).eval(), inViewFlag);
+}
+
+Vector2f PinholeCamera::project(const Vector2f & view, bool & inViewFlag) const
+{
+    Vector2f p = project(view);
     if (!imagePointInView(p))
     {
         inViewFlag = false;
@@ -63,4 +73,10 @@ Vector3f PinholeCamera::unproject(const Vector2f & imagePoint) const
 {
     Vector2f d = imagePoint - m_opticalCenter;
     return Vector3f(d.x() / m_focalLength.x(), d.y() / m_focalLength.y(), 1.0f);
+}
+
+Vector2f PinholeCamera::unprojectToView(const Vector2f & imagePoint) const
+{
+    Vector2f d = imagePoint - m_opticalCenter;
+    return Vector2f(d.x() / m_focalLength.x(), d.y() / m_focalLength.y());
 }
