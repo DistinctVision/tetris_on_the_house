@@ -32,20 +32,20 @@ public:
     struct Polygon
     {
          Eigen::VectorXi vertexIndices;
-         Eigen::Vector3d normal;
+         Eigen::Vector3f normal;
     };
     using Polygons = std::vector<Polygon, Eigen::aligned_allocator<Polygon>>;
 
-    static ObjectModel createBox(const Eigen::Vector3d & size = Eigen::Vector3d(1.0, 1.0, 1.0));
-    static ObjectModel createCubikRubik(double border = 0.075);
+    static ObjectModel createBox(const Eigen::Vector3f & size = Eigen::Vector3f(1.0f, 1.0f, 1.0f));
+    static ObjectModel createCubikRubik(float border = 0.075f);
 
-    const Vectors3d & vertices() const;
+    const Vectors3f & vertices() const;
     const Polygons & polygons() const;
 
-    Vectors3d getControlPoints(const std::shared_ptr<PinholeCamera> & camera,
+    Vectors3f getControlPoints(const std::shared_ptr<PinholeCamera> & camera,
                                float controlPixelDistance,
-                               const Eigen::Matrix3d & R,
-                               const Eigen::Vector3d & t) const;
+                               const Eigen::Matrix3f & R,
+                               const Eigen::Vector3f & t) const;
 
     std::tuple<Vectors3d, Vectors2f> getControlAndViewPoints(const std::shared_ptr<PinholeCamera> & camera,
                                                              float controlPixelDistance,
@@ -54,12 +54,12 @@ public:
 
     void draw(const cv::Mat & image,
               const std::shared_ptr<PinholeCamera> & camera,
-              const Eigen::Matrix3d & R, const Eigen::Vector3d & t) const;
+              const Eigen::Matrix3f & R, const Eigen::Vector3f & t) const;
 
 private:
     ObjectModel();
 
-    Vectors3d m_vertices;
+    Vectors3f m_vertices;
     Polygons m_polygons;
 };
 

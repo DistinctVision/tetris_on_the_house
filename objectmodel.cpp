@@ -16,45 +16,45 @@ using namespace Eigen;
 ObjectModel::ObjectModel()
 {}
 
-ObjectModel ObjectModel::createBox(const Vector3d & size)
+ObjectModel ObjectModel::createBox(const Vector3f & size)
 {
-    Vector3d halfSize = size * 0.5;
+    Vector3f halfSize = size * 0.5f;
 
     ObjectModel box;
     box.m_vertices = {
-        Vector3d(- halfSize.x(), - halfSize.y(), halfSize.z()),
-        Vector3d(halfSize.x(), - halfSize.y(), halfSize.z()),
-        Vector3d(halfSize.x(), halfSize.y(), halfSize.z()),
-        Vector3d(- halfSize.x(), halfSize.y(), halfSize.z()),
-        Vector3d(- halfSize.x(), - halfSize.y(), - halfSize.z()),
-        Vector3d(halfSize.x(), - halfSize.y(), - halfSize.z()),
-        Vector3d(halfSize.x(), halfSize.y(), - halfSize.z()),
-        Vector3d(- halfSize.x(), halfSize.y(), - halfSize.z())
+        Vector3f(- halfSize.x(), - halfSize.y(), halfSize.z()),
+        Vector3f(halfSize.x(), - halfSize.y(), halfSize.z()),
+        Vector3f(halfSize.x(), halfSize.y(), halfSize.z()),
+        Vector3f(- halfSize.x(), halfSize.y(), halfSize.z()),
+        Vector3f(- halfSize.x(), - halfSize.y(), - halfSize.z()),
+        Vector3f(halfSize.x(), - halfSize.y(), - halfSize.z()),
+        Vector3f(halfSize.x(), halfSize.y(), - halfSize.z()),
+        Vector3f(- halfSize.x(), halfSize.y(), - halfSize.z())
     };
     box.m_polygons = {
         Polygon {
             (VectorXi(4) << 0, 1, 2, 3).finished(),
-            Vector3d(0.0, 0.0, 1.0)
+            Vector3f(0.0f, 0.0f, 1.0f)
         },
         Polygon {
             (VectorXi(4) << 7, 6, 5, 4).finished(),
-            Vector3d(0.0, 0.0, -1.0)
+            Vector3f(0.0f, 0.0f, -1.0f)
         },
         Polygon {
             (VectorXi(4) << 1, 5, 6, 2).finished(),
-            Vector3d(1.0, 0.0, 0.0)
+            Vector3f(1.0f, 0.0f, 0.0f)
         },
         Polygon {
             (VectorXi(4) << 0, 3, 7, 4).finished(),
-            Vector3d(-1.0, 0.0, 0.0)
+            Vector3f(-1.0f, 0.0f, 0.0f)
         },
         Polygon {
             (VectorXi(4) << 2, 6, 7, 3).finished(),
-            Vector3d(0.0, 1.0, 0.0)
+            Vector3f(0.0f, 1.0f, 0.0f)
         },
         Polygon {
             (VectorXi(4) << 0, 4, 5, 1).finished(),
-            Vector3d(0.0, -1.0, 0.0)
+            Vector3f(0.0f, -1.0f, 0.0f)
         }
     };
 
@@ -73,15 +73,15 @@ ObjectModel ObjectModel::createBox(const Vector3d & size)
     return box;
 }
 
-ObjectModel ObjectModel::createCubikRubik(double border)
+ObjectModel ObjectModel::createCubikRubik(float border)
 {
-    double i_border = 1.0 - border;
+    float i_border = 1.0f - border;
 
     ObjectModel model;
 
-    Vector3d axisX(1.0, 0.0, 0.0),
-             axisY(0.0, 1.0, 0.0),
-             axisZ(0.0, 0.0, 1.0);
+    Vector3f axisX(1.0f, 0.0f, 0.0f),
+             axisY(0.0f, 1.0f, 0.0f),
+             axisZ(0.0f, 0.0f, 1.0f);
 
     auto addSide = [&] ()
     {
@@ -89,20 +89,20 @@ ObjectModel ObjectModel::createCubikRubik(double border)
         {
             for (int j = 0; j < 3; ++j)
             {
-                Vector2d v(i * (1.0 / 3.0), j * (1.0 / 3.0));
+                Vector2f v(i * (1.0f / 3.0f), j * (1.0f / 3.0f));
                 int i_o = static_cast<int>(model.m_vertices.size());
-                model.m_vertices.push_back((v.x() + (border / 3.0) - 0.5) * axisX +
-                                           (v.y() + (border / 3.0) - 0.5) * axisY +
-                                           axisZ * 0.5);
-                model.m_vertices.push_back((v.x() + (i_border / 3.0) - 0.5) * axisX +
-                                           (v.y() + (border / 3.0) - 0.5) * axisY +
-                                           axisZ * 0.5);
-                model.m_vertices.push_back((v.x() + (i_border / 3.0) - 0.5) * axisX +
-                                           (v.y() + (i_border / 3.0) - 0.5) * axisY +
-                                           axisZ * 0.5);
-                model.m_vertices.push_back((v.x() + (border / 3.0) - 0.5) * axisX +
-                                           (v.y() + (i_border / 3.0) - 0.5) * axisY +
-                                           axisZ * 0.5);
+                model.m_vertices.push_back((v.x() + (border / 3.0f) - 0.5f) * axisX +
+                                           (v.y() + (border / 3.0f) - 0.5f) * axisY +
+                                           axisZ * 0.5f);
+                model.m_vertices.push_back((v.x() + (i_border / 3.0f) - 0.5f) * axisX +
+                                           (v.y() + (border / 3.0f) - 0.5f) * axisY +
+                                           axisZ * 0.5f);
+                model.m_vertices.push_back((v.x() + (i_border / 3.0f) - 0.5f) * axisX +
+                                           (v.y() + (i_border / 3.0f) - 0.5f) * axisY +
+                                           axisZ * 0.5f);
+                model.m_vertices.push_back((v.x() + (border / 3.0f) - 0.5f) * axisX +
+                                           (v.y() + (i_border / 3.0f) - 0.5f) * axisY +
+                                           axisZ * 0.5f);
                 model.m_polygons.push_back(Polygon { (VectorXi(4) << i_o + 0, i_o + 1, i_o + 2, i_o + 3).finished(),
                                                      axisZ });
             }
@@ -116,9 +116,9 @@ ObjectModel ObjectModel::createCubikRubik(double border)
         axisZ = - axisZ;
     }
 
-    axisX = Vector3d(0.0, 0.0, 1.0);
-    axisY = Vector3d(0.0, 1.0, 0.0);
-    axisZ = Vector3d(-1.0, 0.0, 0.0);
+    axisX = Vector3f(0.0f, 0.0f, 1.0f);
+    axisY = Vector3f(0.0f, 1.0f, 0.0f);
+    axisZ = Vector3f(-1.0f, 0.0f, 0.0f);
     addSide();
 
     axisX = - axisX;
@@ -140,7 +140,7 @@ ObjectModel ObjectModel::createCubikRubik(double border)
     return model;
 }
 
-const Vectors3d & ObjectModel::vertices() const
+const Vectors3f & ObjectModel::vertices() const
 {
     return m_vertices;
 }
@@ -150,16 +150,16 @@ const ObjectModel::Polygons & ObjectModel::polygons() const
     return m_polygons;
 }
 
-Vectors3d ObjectModel::getControlPoints(const shared_ptr<PinholeCamera> & camera,
+Vectors3f ObjectModel::getControlPoints(const std::shared_ptr<PinholeCamera> & camera,
                                         float controlPixelDistance,
-                                        const Matrix3d & R, const Vector3d & t) const
+                                        const Matrix3f & R, const Vector3f & t) const
 {
-    set<int> setOfVertices;
-    set<std::pair<int, int>, less_pair_i> setOfEdges;
-    Vector3d cam_pose = - R.inverse() * t;
+    std::set<int> setOfVertices;
+    std::set<std::pair<int, int>, less_pair_i> setOfEdges;
+    Vector3f cam_pose = - R.inverse() * t;
     for (const Polygon & polygon : m_polygons)
     {
-        if (polygon.normal.dot(cam_pose - m_vertices[polygon.vertexIndices[0]]) > 0.0)
+        if (polygon.normal.dot(cam_pose - m_vertices[polygon.vertexIndices[0]]) > 0.0f)
         {
             for (int i = 0; i < polygon.vertexIndices.size(); ++i)
             {
@@ -173,26 +173,26 @@ Vectors3d ObjectModel::getControlPoints(const shared_ptr<PinholeCamera> & camera
         }
     }
 
-    Vectors3d controlModelPoints;
+    Vectors3f controlModelPoints;
     for (auto it = setOfVertices.cbegin(); it != setOfVertices.cend(); ++it)
     {
-        const Vector3d & v = m_vertices[*it];
+        const Vector3f & v = m_vertices[*it];
         bool inViewFlag;
-        Vector2f p = camera->project((R * v + t).cast<float>(), inViewFlag);
+        Vector2f p = camera->project((R * v + t), inViewFlag);
         if (!inViewFlag)
             continue;
         controlModelPoints.push_back(v);
     }
     for (auto itEdge = setOfEdges.cbegin(); itEdge != setOfEdges.cend(); ++itEdge)
     {
-        const Vector3d & v1 = m_vertices[itEdge->first];
-        const Vector3d & v2 = m_vertices[itEdge->second];
+        const Vector3f & v1 = m_vertices[itEdge->first];
+        const Vector3f & v2 = m_vertices[itEdge->second];
 
         bool inViewFlag;
-        Vector2f p1 = camera->project((R * v1 + t).cast<float>(), inViewFlag);
+        Vector2f p1 = camera->project((R * v1 + t), inViewFlag);
         if (!inViewFlag)
             continue;
-        Vector2f p2 = camera->project((R * v2 + t).cast<float>(), inViewFlag);
+        Vector2f p2 = camera->project((R * v2 + t), inViewFlag);
         if (!inViewFlag)
             continue;
 
@@ -201,13 +201,13 @@ Vectors3d ObjectModel::getControlPoints(const shared_ptr<PinholeCamera> & camera
         if (n <= 1)
             continue;
 
-        Vector3d delta = v2 - v1;
-        double step = 1.0 / static_cast<double>(n);
+        Vector3f delta = v2 - v1;
+        float step = 1.0f / static_cast<float>(n);
         for (int i = 1; i < n; ++i)
         {
-            double k = i * step;
-            Vector3d v = v1 + delta * k;
-            Vector2f p = camera->project((R * v + t).cast<float>());
+            float k = i * step;
+            Vector3f v = v1 + delta * k;
+            Vector2f p = camera->project((R * v + t));
             controlModelPoints.push_back(v);
         }
     }
@@ -284,13 +284,13 @@ tuple<Vectors3d, Vectors2f> ObjectModel::getControlAndViewPoints(const shared_pt
 
 void ObjectModel::draw(const cv::Mat & image,
                        const shared_ptr<PinholeCamera> & camera,
-                       const Matrix3d & R, const Vector3d & t) const
+                       const Matrix3f & R, const Vector3f & t) const
 {
-    set<std::pair<int, int>> setOfEdges;
-    Vector3d cam_pose = - R.inverse() * t;
+    std::set<std::pair<int, int>> setOfEdges;
+    Vector3f cam_pose = - R.inverse() * t;
     for (const Polygon & polygon : m_polygons)
     {
-        if (polygon.normal.dot(cam_pose - m_vertices[polygon.vertexIndices[0]]) > 0.0)
+        if (polygon.normal.dot(cam_pose - m_vertices[polygon.vertexIndices[0]]) > 0.0f)
         {
             for (int i = 0; i < polygon.vertexIndices.size(); ++i)
             {
@@ -305,14 +305,14 @@ void ObjectModel::draw(const cv::Mat & image,
 
     for (auto itEdge = setOfEdges.cbegin(); itEdge != setOfEdges.cend(); ++itEdge)
     {
-        const Vector3d & v1 = m_vertices[itEdge->first];
-        const Vector3d & v2 = m_vertices[itEdge->second];
+        const Vector3f & v1 = m_vertices[itEdge->first];
+        const Vector3f & v2 = m_vertices[itEdge->second];
 
         bool inViewFlag;
-        Vector2f p1 = camera->project((R * v1 + t).cast<float>(), inViewFlag);
+        Vector2f p1 = camera->project((R * v1 + t), inViewFlag);
         if (!inViewFlag)
             continue;
-        Vector2f p2 = camera->project((R * v2 + t).cast<float>(), inViewFlag);
+        Vector2f p2 = camera->project((R * v2 + t), inViewFlag);
         if (!inViewFlag)
             continue;
 

@@ -62,13 +62,13 @@ private:
     ObjectModel m_model;
     std::shared_ptr<PinholeCamera> m_camera;
 
-    Eigen::Matrix3d m_R;
-    Eigen::Vector3d m_t;
+    Eigen::Matrix3f m_R;
+    Eigen::Vector3f m_t;
 
     cv::Mat m_debugImage;
 
-    double _tracking1(const cv::Mat & edges);
-    double _tracking2(const cv::Mat & edges);
+    float _tracking1(const cv::Mat & edges);
+    float _tracking2(const cv::Mat & edges);
 };
 
 #endif // OBJECTEDGESTRACKER_H
