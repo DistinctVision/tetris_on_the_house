@@ -67,7 +67,7 @@ Item {
         }
     ]
 
-    state: "settings"//current_scene
+    state: current_scene
 
     Camera {
         id: camera
@@ -85,7 +85,7 @@ Item {
 
     FrameHandler {
         id: frameHandler
-        maxFrameSize: "200x200"
+        maxFrameSize: "600x600"
         orientation: camera.orientation
         flipHorizontally: (camera.position == Camera.BackFace) || (camera.position == Camera.UnspecifiedPosition)
         focalLength: settings.focalLength
@@ -95,6 +95,7 @@ Item {
             cannyThresholdA: settings.canny_thresholdA
             cannyThresholdB: settings.canny_thresholdB
         }
+        gl_view: gl_view
     }
 
     VideoOutput {
@@ -110,9 +111,9 @@ Item {
         id: gl_view
         anchors.fill: parent
         fillFrameMode: FillMode.PreserveAspectCrop
-        inputFrameSize: frameHandler.frameSize
-        focalLength: settings.focalLength
-        opticalCenter: settings.opticalCenter
+        inputFrameSize: frameHandler.objectEdgesTracker.frameSize
+        focalLength: frameHandler.objectEdgesTracker.focalLength
+        opticalCenter: frameHandler.objectEdgesTracker.opticalCenter
 
         scenes: [ debugImageScene, testCubeScene ]
     }

@@ -14,6 +14,7 @@
 class PerformanceMonitor;
 class ObjectEdgesTracker;
 class Texture2GrayImageConvertor;
+class GL_View;
 
 class FrameHandlerRunnable;
 
@@ -28,6 +29,7 @@ class FrameHandler: public QAbstractVideoFilter
     Q_PROPERTY(bool flipHorizontally READ flipHorizontally WRITE setFlipHorizontally NOTIFY flipHorizontallyChanged)
     Q_PROPERTY(QVector2D focalLength READ focalLength WRITE setFocalLength NOTIFY focalLengthChanged)
     Q_PROPERTY(QVector2D opticalCenter READ opticalCenter WRITE setOpticalCenter NOTIFY opticalCenterChanged)
+    Q_PROPERTY(GL_View * gl_view READ gl_view WRITE setGl_view NOTIFY gl_viewChanged)
 
 public:
     FrameHandler();
@@ -55,6 +57,9 @@ public:
 
     QSharedPointer<PerformanceMonitor> monitor() const;
 
+    GL_View * gl_view() const;
+    void setGl_view(GL_View * gl_view);
+
 signals:
     void frameSizeChanged();
     void maxFrameSizeChanged();
@@ -62,6 +67,7 @@ signals:
     void flipHorizontallyChanged();
     void focalLengthChanged();
     void opticalCenterChanged();
+    void gl_viewChanged();
 
 private:
     friend class FrameHandlerRunnable;
@@ -75,6 +81,8 @@ private:
 
     QVector2D m_focalLength;
     QVector2D m_opticalCenter;
+
+    GL_View * m_gl_view;
 
     void _setFrameSize(const QSize & frameSize);
 };

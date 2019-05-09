@@ -14,7 +14,8 @@ GL_View::GL_View():
     m_farPlane(100.0f),
     m_inputeFrameSize(-1, -1),
     m_fillFrameMode(FillMode::PreserveAspectCrop),
-    m_orderRender(1)
+    m_orderRender(1),
+    m_viewportSize(-1, -1)
 {
     connect(this, &QQuickItem::windowChanged, this, &GL_View::handleWindowChanged);
 }
@@ -70,7 +71,7 @@ QVector2D GL_View::focalLength() const
 
 void GL_View::setFocalLength(const QVector2D & focalLength)
 {
-    if (focalLength == focalLength)
+    if (m_focalLength == focalLength)
         return;
     m_focalLength = focalLength;
     emit focalLengthChanged();
@@ -180,6 +181,19 @@ void GL_View::handleWindowChanged(QQuickWindow * win)
     }
 }
 
+QSize GL_View::viewportSize() const
+{
+    return m_viewportSize;
+}
+
+void GL_View::_setViewportSize(const QSize & viewportSize)
+{
+    if (viewportSize == m_viewportSize)
+        return;
+    m_viewportSize = viewportSize;
+    emit viewportSizeChanged();
+}
+
 int GL_View::orderRender() const
 {
     return m_orderRender;
@@ -201,6 +215,8 @@ GL_ViewRenderer::GL_ViewRenderer(GL_View * parent):
     initializeOpenGLFunctions();
     _initEmptyTexture();
     _loadShaders();
+    if (m_parent->viewportSize() != viewportSize())
+        m_parent->_setViewportSize(viewportSize());
 }
 
 GL_ShaderMaterialPtr GL_ViewRenderer::createMaterial(MaterialType::Enum type) const
@@ -236,7 +252,7 @@ QMatrix4x4 GL_ViewRenderer::_computeProjectionMatrix() const
 
     QSize viewportSize = this->viewportSize();
     QSize inputFrameSize = m_parent->inputFrameSize();
-    if (inputFrameSize == QSize(-1, -1))
+    if ((inputFrameSize.width() <= 0) || (inputFrameSize.height() <= 0))
         inputFrameSize = viewportSize;
     QMatrix4x4 M;
     float clip = farPlane - nearPlane;
@@ -424,9 +440,10 @@ void GL_ViewRenderer::_afterSlotDraw()
 
 void GL_ViewRenderer::_draw()
 {
-    m_projectionMatrix = _computeProjectionMatrix();
+    if (m_parent->viewportSize() != viewportSize())
+        m_parent->_setViewportSize(viewportSize());
 
-    QQuickWindow * window = m_parent->window();
+    m_projectionMatrix = _computeProjectionMatrix();
 
     QSize viewportSize = this->viewportSize();
     glViewport(0, 0, viewportSize.width(), viewportSize.height());
@@ -447,11 +464,11 @@ void GL_ViewRenderer::_draw()
     }
     for (QPair<GL_Scene*, bool> & s : scenes)
     {
-        if (!s.first->enabled())
+        if (!s.first->enabled() || (!s.second))
             continue;
         s.first->draw(this);
     }
 
     glDisable(GL_CULL_FACE);
-    window->resetOpenGLState();
+    m_parent->window()->resetOpenGLState();
 }

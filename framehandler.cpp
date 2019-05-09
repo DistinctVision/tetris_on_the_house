@@ -8,6 +8,7 @@
 #include "pinholecamera.h"
 #include "objectedgestracker.h"
 #include "texture2grayimageconvertor.h"
+#include "gl/gl_view.h"
 
 #include <opencv2/imgproc.hpp>
 
@@ -19,7 +20,8 @@ FrameHandler::FrameHandler():
     m_orientation(0),
     m_flipHorizontally(false),
     m_focalLength(1.0f, 1.0f),
-    m_opticalCenter(0.5f, 0.5f)
+    m_opticalCenter(0.5f, 0.5f),
+    m_gl_view(nullptr)
 {
     m_monitor = QSharedPointer<PerformanceMonitor>::create();
     m_objectEdgesTracker = QSharedPointer<ObjectEdgesTracker>::create(m_monitor);
@@ -110,6 +112,19 @@ QSharedPointer<PerformanceMonitor> FrameHandler::monitor() const
     return m_monitor;
 }
 
+GL_View * FrameHandler::gl_view() const
+{
+    return m_gl_view;
+}
+
+void FrameHandler::setGl_view(GL_View * gl_view)
+{
+    if (m_gl_view == gl_view)
+        return;
+    m_gl_view = gl_view;
+    emit gl_viewChanged();
+}
+
 void FrameHandler::_setFrameSize(const QSize & frameSize)
 {
     if (frameSize == m_frameSize)
@@ -131,6 +146,7 @@ QVideoFrame FrameHandlerRunnable::run(QVideoFrame * videoFrame,
     Q_UNUSED(flags);
 
     cv::Mat frame;
+    QVector2D viewScale(1.0f, 1.0f);
 
     QSharedPointer<PerformanceMonitor> monitor = m_parent->monitor();
 
@@ -163,32 +179,56 @@ QVideoFrame FrameHandlerRunnable::run(QVideoFrame * videoFrame,
     else if (surfaceFormat.handleType() == QAbstractVideoBuffer::GLTextureHandle)
     {
         if (!m_texture2GrayImageConverter)
-        {
             m_texture2GrayImageConverter = QSharedPointer<Texture2GrayImageConvertor>::create();
+
+        GL_View * gl_view = m_parent->gl_view();
+        QSize viewportSize = ((gl_view != nullptr) &&
+                                (gl_view->fillFrameMode() == FillMode::PreserveAspectCrop)) ?
+                              gl_view->viewportSize() : QSize(-1, -1);
+
+        if ((viewportSize.width() > 0) && (viewportSize.height() > 0))
+        {
+            std::tie(frame, viewScale) = m_texture2GrayImageConverter->read_cropped(this,
+                                                               videoFrame->handle().toUInt(),
+                                                               videoFrame->size(), m_parent->maxFrameSize(),
+                                                               viewportSize.width() / static_cast<float>(viewportSize.height()),
+                                                               m_parent->orientation(),
+                                                               m_parent->flipHorizontally());
         }
-        frame = m_texture2GrayImageConverter->read(this, videoFrame->handle().toUInt(),
-                                                   videoFrame->size(), m_parent->maxFrameSize(),
-                                                   m_parent->orientation(),
-                                                   m_parent->flipHorizontally());
+        else
+        {
+            frame = m_texture2GrayImageConverter->read(this,
+                                                       videoFrame->handle().toUInt(),
+                                                       videoFrame->size(), m_parent->maxFrameSize(),
+                                                       m_parent->orientation(),
+                                                       m_parent->flipHorizontally());
+        }
+
     }
     monitor->endTimer("Getting frame");
 
     if (!frame.empty())
     {
+        viewScale = QVector2D(std::fabs(viewScale.x()), std::fabs(viewScale.y()));
+
         QVector2D focalLength = m_parent->focalLength();
         QVector2D opticalCenter = m_parent->opticalCenter();
         Vector2i v_imageSize(frame.cols, frame.rows);
-        Vector2f v_focalLength(frame.cols * focalLength.x(),
-                               frame.cols * focalLength.y());
-        Vector2f v_opticalCenter(frame.cols * opticalCenter.x(),
-                                 frame.rows * opticalCenter.y());
+        Vector2f v_focalLength(frame.cols * focalLength.x() / viewScale.x(),
+                               frame.cols * focalLength.y() / viewScale.x());
+        Vector2f v_opticalCenter(frame.cols * ((opticalCenter.x() - 0.5f) / viewScale.x() + 0.5f),
+                                 frame.rows * ((opticalCenter.y() - 0.5f) / viewScale.y() + 0.5f));
         ObjectEdgesTracker * objectEdgesTracking = m_parent->objectEdgesTracker();
         std::shared_ptr<const PinholeCamera> prevCamera = objectEdgesTracking->camera();
-        if (!prevCamera || (prevCamera->imageSize() == v_imageSize) ||
-                ((v_focalLength - prevCamera->focalLength()).array().sum() < 1e-4f) ||
-                ((v_opticalCenter - prevCamera->opticalCenter()).array().sum() < 1e-4f))
+        if (!prevCamera || (prevCamera->imageSize() != v_imageSize) ||
+                ((v_focalLength - prevCamera->pixelFocalLength()).array().sum() > 1e-4f) ||
+                ((v_opticalCenter - prevCamera->pixelOpticalCenter()).array().sum() > 1e-4f))
         {
-            objectEdgesTracking->setCamera(std::make_shared<PinholeCamera>(v_imageSize, v_focalLength, v_opticalCenter));
+            qDebug() << "!!!! setting of camera";
+
+            objectEdgesTracking->setCamera(std::make_shared<PinholeCamera>(v_imageSize,
+                                                                           v_focalLength,
+                                                                           v_opticalCenter));
         }
         objectEdgesTracking->compute(frame);
     }

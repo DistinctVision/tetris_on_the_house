@@ -230,8 +230,8 @@ float optimize_pose(Matrix<float, 6, 1> & x,
 
     size_t numberPoints = modelPoints.size();
 
-    Vector2f focalLength = camera->focalLength();
-    Vector2f opticaCenter = camera->opticalCenter();
+    Vector2f focalLength = camera->pixelFocalLength();
+    Vector2f opticaCenter = camera->pixelOpticalCenter();
 
     Vector3f w;
     Matrix3f R;
@@ -459,8 +459,8 @@ float optimize_pose(Matrix<float, 6, 1> & x,
 
     size_t numberPoints = modelPoints.size();
 
-    Vector2f focalLength = camera->focalLength();
-    Vector2f opticalCenter = camera->opticalCenter();
+    Vector2f focalLength = camera->pixelFocalLength();
+    Vector2f opticalCenter = camera->pixelOpticalCenter();
     Vector2f imageCorner(static_cast<float>(distanceMap.cols - 2), static_cast<float>(distanceMap.rows - 2));
 
     Vector3f w;

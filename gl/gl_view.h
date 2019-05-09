@@ -57,6 +57,7 @@ class GL_View:
     Q_PROPERTY(QSize inputFrameSize READ inputFrameSize WRITE setInputFrameSize NOTIFY inputFrameSizeChanged)
     Q_PROPERTY(int fillFrameMode READ fillFrameMode WRITE setFillFrameMode NOTIFY fillFrameModeChanged)
     Q_PROPERTY(int orderRender READ orderRender WRITE setOrderRender NOTIFY orderRenderChanged)
+    Q_PROPERTY(QSize viewportSize READ viewportSize NOTIFY viewportSizeChanged)
 
 public:
     GL_View();
@@ -89,6 +90,8 @@ public:
     int orderRender() const;
     void setOrderRender(int orderRender);
 
+    QSize viewportSize() const;
+
 public slots:
     void sync();
     void cleanup();
@@ -105,6 +108,7 @@ signals:
     void inputFrameSizeChanged();
     void fillFrameModeChanged();
     void orderRenderChanged();
+    void viewportSizeChanged();
 
 private:
     friend class GL_ViewRenderer;
@@ -118,6 +122,9 @@ private:
     QSize m_inputeFrameSize;
     FillMode::Enum m_fillFrameMode;
     int m_orderRender;
+    QSize m_viewportSize;
+
+    void _setViewportSize(const QSize & viewportSize);
 };
 
 class GL_ViewRenderer:

@@ -1,6 +1,8 @@
 #ifndef TEXTURE2GRAYIMAGECONVERTOR_H
 #define TEXTURE2GRAYIMAGECONVERTOR_H
 
+#include <tuple>
+
 #include <QSize>
 #include <QSharedPointer>
 #include <QOpenGLFunctions>
@@ -25,6 +27,14 @@ public:
                  int orientation = 0,
                  bool flipHorizontally = false);
 
+    std::tuple<cv::Mat, QVector2D> read_cropped(QOpenGLFunctions * gl,
+                                                GLuint textureId,
+                                                QSize textureSize,
+                                                const QSize & maxImageSize,
+                                                float viewAspect,
+                                                int orientation = 0,
+                                                bool flipHorizontally = false);
+
 private:
     GL_MeshPtr m_quad;
     GL_ShaderMaterialPtr m_materialColor;
@@ -34,6 +44,9 @@ private:
 
     QSize _getImageSize(const QSize & textureSize,
                         QSize maxImageSize) const;
+    QMatrix4x4 _getRotation(int orientation) const;
+    QMatrix4x4 _getViewMatrix(float scaleX, float scaleY) const;
+
     QMatrix4x4 _getMatrixMVP(int orientation, bool flipHorizontally) const;
 
 

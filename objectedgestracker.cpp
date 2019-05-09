@@ -80,7 +80,26 @@ shared_ptr<PinholeCamera> ObjectEdgesTracker::camera() const
 
 void ObjectEdgesTracker::setCamera(const shared_ptr<PinholeCamera> & camera)
 {
+    if (m_camera == camera)
+        return;
     m_camera = camera;
+    emit cameraChanged();
+}
+
+QVector2D ObjectEdgesTracker::focalLength() const
+{
+    return m_camera ? m_camera->focalLength() : QVector2D(0.0f, 0.0f);
+}
+
+QVector2D ObjectEdgesTracker::opticalCenter() const
+{
+    return m_camera ? m_camera->opticalCenter() : QVector2D(0.0f, 0.0f);
+}
+
+QSize ObjectEdgesTracker::frameSize() const
+{
+    return m_camera ? QSize(m_camera->imageSize().x(), m_camera->imageSize().y()) :
+                      QSize(-1, -1);
 }
 
 QMatrix4x4 ObjectEdgesTracker::viewMatrix() const
