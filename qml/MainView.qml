@@ -67,7 +67,7 @@ Item {
         }
     ]
 
-    state: current_scene
+    state: "settings"//current_scene
 
     Camera {
         id: camera
@@ -85,9 +85,9 @@ Item {
 
     FrameHandler {
         id: frameHandler
-        maxFrameSize: "2000x2000"
+        maxFrameSize: "200x200"
         orientation: camera.orientation
-        flipHorizontally: camera.position == Camera.BackFace
+        flipHorizontally: (camera.position == Camera.BackFace) || (camera.position == Camera.UnspecifiedPosition)
         focalLength: settings.focalLength
         opticalCenter: settings.opticalCenter
         objectEdgesTracker {

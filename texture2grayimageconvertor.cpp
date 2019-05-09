@@ -10,11 +10,19 @@
 Texture2GrayImageConvertor::Texture2GrayImageConvertor()
 {
     QSharedPointer<QOpenGLShaderProgram> programPtr = GL_ViewRenderer::loadShader(":/shaders/texture.vsh",
-                                                                                  ":/shaders/packed_gray_image.fsh");
-    m_material = GL_ShaderMaterialPtr::create(programPtr,
-                                              QVariantMap({ { "matrixMVP", _getMatrixMVP(0, false) },
-                                                            { "steps", QVector4D(0.0f, 0.0f, 0.0f, 0.0f) } }),
-                                              QMap<QString, GLuint>({ { "main_texture", 0 } }));
+                                                                                  ":/shaders/texture.fsh");
+    m_materialColor = GL_ShaderMaterialPtr::create(programPtr,
+                                                   QVariantMap({ { "matrixMVP", _getMatrixMVP(0, false) } }),
+                                                   QMap<QString, GLuint>({ { "main_texture", 0 } }));
+    programPtr = GL_ViewRenderer::loadShader(":/shaders/color.vsh",
+                                             ":/shaders/packed_gray_image.fsh");
+    m_materialPackedGray = GL_ShaderMaterialPtr::create(programPtr,
+                                                        QVariantMap({ { "matrixMVP", _getMatrixMVP(0, false) },
+                                                                      { "offsets[0]", 0 },
+                                                                      { "offsets[1]", 1 },
+                                                                      { "offsets[2]", 2 },
+                                                                      { "offsets[3]", 3 } }),
+                                                        QMap<QString, GLuint>({ { "main_texture", 0 } }));
     m_quad = GL_MeshPtr::create(GL_Mesh::createQuad());
 }
 
@@ -28,27 +36,41 @@ cv::Mat Texture2GrayImageConvertor::read(QOpenGLFunctions * gl,
     if ((orientation == 90) || (orientation == 270))
         textureSize = QSize(textureSize.height(), textureSize.width());
     QSize imageSize = _getImageSize(textureSize, maxImageSize);
-    QSize fboSize(imageSize.width(), imageSize.height());
-    if (!m_fbo || (m_fbo->width() < fboSize.width()) || (m_fbo->height() < fboSize.height()))
+    if (!m_fboColor ||
+            (m_fboColor->width() < imageSize.width()) ||
+            (m_fboColor->height() < imageSize.height()))
     {
-        m_fbo = QSharedPointer<QOpenGLFramebufferObject>::create(fboSize);
+        m_fboColor = QSharedPointer<QOpenGLFramebufferObject>::create(imageSize);
+        m_fboPackedGray = QSharedPointer<QOpenGLFramebufferObject>::create(imageSize.width() / 4,
+                                                                           imageSize.height());
     }
-    m_material->setTexture("main_texture", textureId);
-    m_material->setValue("matrixMVP", _getMatrixMVP(orientation, flipHorizontally));
-    float step = 1.0f / static_cast<float>(fboSize.width() * 4);
-    step = 0.0f;
-    m_material->setValue("steps", QVector4D(0.0f, step, step * 2.0f, step * 3.0f));
-    m_fbo->bind();
-    gl->glViewport(0, 0, fboSize.width(), fboSize.height());
-    gl->glEnable(GL_BLEND);
-    gl->glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    gl->glClear(GL_COLOR_BUFFER_BIT);
-    m_quad->draw(gl, *m_material);
-    cv::Mat image(imageSize.height(), imageSize.width(), CV_8UC4);
-    gl->glReadPixels(0, 0, fboSize.width(), fboSize.height(), GL_RGBA, GL_UNSIGNED_BYTE, image.data);
-    cv::cvtColor(image, image, cv::COLOR_RGBA2GRAY);
+    m_materialColor->setTexture("main_texture", textureId);
+    m_materialColor->setValue("matrixMVP", _getMatrixMVP(orientation, flipHorizontally));
+    m_fboColor->bind();
+    gl->glViewport(0, 0, imageSize.width(), imageSize.height());
     gl->glDisable(GL_BLEND);
-    m_fbo->release();
+    gl->glDisable(GL_DEPTH_TEST);
+    gl->glDepthMask(GL_FALSE);
+    m_quad->draw(gl, *m_materialColor);
+    m_fboPackedGray->bind();
+    gl->glViewport(0, 0, imageSize.width() / 4, imageSize.height());
+    gl->glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    gl->glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    gl->glClear(GL_COLOR_BUFFER_BIT);
+    m_materialPackedGray->setTexture("main_texture", m_fboColor->texture());
+    m_materialPackedGray->setValue("offsets[0]", 0);
+    m_materialPackedGray->setValue("offsets[1]", 1);
+    m_materialPackedGray->setValue("offsets[2]", 2);
+    m_materialPackedGray->setValue("offsets[3]", 3);
+    m_quad->draw(gl, *m_materialPackedGray);
+    cv::Mat image(imageSize.height(), imageSize.width(), CV_8UC1);
+    gl->glReadPixels(0, 0, imageSize.width() / 4, imageSize.height(), GL_RGBA, GL_UNSIGNED_BYTE, image.data);
+    //cv::Mat image(imageSize.height(), imageSize.width(), CV_8UC4);
+    //gl->glReadPixels(0, 0, imageSize.width(), imageSize.height(), GL_RGBA, GL_UNSIGNED_BYTE, image.data);
+    //cv::cvtColor(image, image, cv::COLOR_RGBA2GRAY);
+    gl->glDisable(GL_BLEND);
+    m_fboPackedGray->release();
     return image;
 }
 

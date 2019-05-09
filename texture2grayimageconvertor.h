@@ -27,8 +27,10 @@ public:
 
 private:
     GL_MeshPtr m_quad;
-    GL_ShaderMaterialPtr m_material;
-    QSharedPointer<QOpenGLFramebufferObject> m_fbo;
+    GL_ShaderMaterialPtr m_materialColor;
+    GL_ShaderMaterialPtr m_materialPackedGray;
+    QSharedPointer<QOpenGLFramebufferObject> m_fboColor;
+    QSharedPointer<QOpenGLFramebufferObject> m_fboPackedGray;
 
     QSize _getImageSize(const QSize & textureSize,
                         QSize maxImageSize) const;

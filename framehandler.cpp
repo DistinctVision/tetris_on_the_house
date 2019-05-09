@@ -202,7 +202,6 @@ QVideoFrame FrameHandlerRunnable::run(QVideoFrame * videoFrame,
 void FrameHandlerRunnable::_transformImage(cv::Mat & image) const
 {
     int orientation = ((m_parent->orientation() / 90) % 4) * 90;
-    orientation = (orientation + 180) % 360; // TODO why?
     bool transpose = false;
     bool flipVertically = false, flipHorizontally = m_parent->flipHorizontally();
     switch (orientation)

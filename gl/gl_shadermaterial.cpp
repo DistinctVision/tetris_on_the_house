@@ -82,7 +82,7 @@ void GL_ShaderMaterial::bind(QOpenGLFunctions * gl) const
             it.next();
             if (!_setUniformValue(it.key(), it.value()))
             {
-                //qFatal(QString("Coudn't set uniform value: %1").arg(it.key()).toStdString().c_str());
+                qFatal(QString("Coudn't set uniform value: %1").arg(it.key()).toStdString().c_str());
             }
         }
     }

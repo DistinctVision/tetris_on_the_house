@@ -25,7 +25,7 @@ using namespace Eigen;
 
 ObjectEdgesTracker::ObjectEdgesTracker(const QSharedPointer<PerformanceMonitor> & monitor):
     m_monitor(monitor),
-    m_controlPixelDistance(15.0f),
+    m_controlPixelDistance(30.0f),
     m_cannyThresholdA(50.0),
     m_cannyThresholdB(100.0),
     m_model(ObjectModel::createCubikRubik())
@@ -111,7 +111,7 @@ void ObjectEdgesTracker::compute(cv::Mat image)
 
     float E = _tracking1(edges);
 
-    qDebug() << "Error =" << E;
+    qDebug() << "Error =" << E << edges.cols << edges.rows;
 
     if (debugEnabled())
     {
@@ -145,7 +145,7 @@ float ObjectEdgesTracker::_tracking1(const cv::Mat & edges)
 
     m_monitor->startTimer("Tracking [1]");
 
-    for (int i = 0; i < 5; ++i)
+    for (int i = 0; i < 3; ++i)
     {
         string iterName = QString("    Tracking [1] iter_%1").arg(i).toStdString();
         m_monitor->startTimer(iterName);

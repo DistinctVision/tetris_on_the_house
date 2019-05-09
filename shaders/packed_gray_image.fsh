@@ -1,19 +1,19 @@
-in highp vec2 textureCoord;
-
 uniform sampler2D main_texture;
-uniform highp vec4 steps;
 
-out highp vec4 color;
+uniform int offsets[4];
 
 highp float toGray(highp vec3 color)
 {
     return (color.x + color.y + color.z) / 3.0;
 }
 
+out highp vec4 color;
+
 void main(void)
 {
-    color = vec4(toGray(texture(main_texture, vec2(textureCoord.x + steps.x, textureCoord.y)).xyz),
-                 toGray(texture(main_texture, vec2(textureCoord.x + steps.y, textureCoord.y)).xyz),
-                 toGray(texture(main_texture, vec2(textureCoord.x + steps.z, textureCoord.y)).xyz),
-                 toGray(texture(main_texture, vec2(textureCoord.x + steps.w, textureCoord.y)).xyz));
+    ivec2 c = ivec2(int(gl_FragCoord.x) * 4, int(gl_FragCoord.y));
+    color = vec4(toGray(texelFetch(main_texture, ivec2(c.x + offsets[0], c.y), 0).xyz),
+                 toGray(texelFetch(main_texture, ivec2(c.x + offsets[1], c.y), 0).xyz),
+                 toGray(texelFetch(main_texture, ivec2(c.x + offsets[2], c.y), 0).xyz),
+                 toGray(texelFetch(main_texture, ivec2(c.x + offsets[3], c.y), 0).xyz));
 }
