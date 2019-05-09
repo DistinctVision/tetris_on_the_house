@@ -19,7 +19,8 @@ HEADERS += \
     pinholecamera.h \
     performancemonitor.h \
     poseoptimizer.h \
-    texture2grayimageconvertor.h
+    texture2grayimageconvertor.h \
+    poseoptimizer2.h
 
 SOURCES += \
     debugimageobject.cpp \
@@ -30,7 +31,8 @@ SOURCES += \
     pinholecamera.cpp \
     performancemonitor.cpp \
     poseoptimizer.cpp \
-    texture2grayimageconvertor.cpp
+    texture2grayimageconvertor.cpp \
+    poseoptimizer2.cpp
 
 RESOURCES += \
     qml.qrc \

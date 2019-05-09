@@ -8,6 +8,7 @@
 #include "debugimageobject.h"
 #include "gl/gl_debugimagescene.h"
 #include "game/testcubescene.h"
+#include "game/tetrisscene.h"
 #include "objectedgestracker.h"
 
 void regsiterQmlTypes()
@@ -20,6 +21,7 @@ void regsiterQmlTypes()
     qmlRegisterUncreatableType<GL_Scene>("mystuffs", 1, 0, "GL_Scene", "Abstract class");
     qmlRegisterType<GL_DebugImageScene>("mystuffs", 1, 0, "GL_DebugImageScene");
     qmlRegisterType<TestCubeScene>("mystuffs", 1, 0, "TestCubeScene");
+    qmlRegisterType<TetrisScene>("mystuffs", 1, 0, "TetrisScene");
 }
 
 int main(int argc, char* argv[])
@@ -43,7 +45,7 @@ int main(int argc, char* argv[])
     QObject::connect(view.engine(), &QQmlEngine::quit,
                      qApp, &QGuiApplication::quit);
     view.setSource(QUrl("qrc:///qml/MainView.qml"));
-    view.resize(800, 480);
+    //view.resize(800, 480);
     view.show();
     return app.exec();
 }

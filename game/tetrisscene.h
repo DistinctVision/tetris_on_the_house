@@ -1,12 +1,12 @@
-#ifndef TESTCUBESCENE_H
-#define TESTCUBESCENE_H
+#ifndef TETRISSCENE_H
+#define TETRISSCENE_H
 
 #include "gl/gl_scene.h"
 #include "gl/gl_worldobject.h"
 
 class ObjectEdgesTracker;
 
-class TestCubeScene:
+class TetrisScene:
         public GL_Scene
 {
     Q_OBJECT
@@ -14,7 +14,7 @@ class TestCubeScene:
     Q_PROPERTY(ObjectEdgesTracker* objectEdgesTracker READ objectEdgesTracker WRITE setObjectEdgesTracker
                NOTIFY objectEdgesTrackerChanged)
 public:
-    TestCubeScene();
+    TetrisScene();
 
     ObjectEdgesTracker * objectEdgesTracker() const;
     void setObjectEdgesTracker(ObjectEdgesTracker * objectEdgesTracker);
@@ -27,8 +27,8 @@ signals:
     void objectEdgesTrackerChanged();
 
 private:
-    GL_WorldObjectPtr m_cube;
+    GL_WorldObjectPtr m_house;
     ObjectEdgesTracker * m_tracker;
 };
 
-#endif // TESTCUBESCENE_H
+#endif // TETRISSCENE_H

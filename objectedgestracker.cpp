@@ -18,6 +18,7 @@
 #include "performancemonitor.h"
 #include "pinholecamera.h"
 #include "poseoptimizer.h"
+#include "poseoptimizer2.h"
 
 using namespace std;
 using namespace std::chrono;
@@ -25,13 +26,13 @@ using namespace Eigen;
 
 ObjectEdgesTracker::ObjectEdgesTracker(const QSharedPointer<PerformanceMonitor> & monitor):
     m_monitor(monitor),
-    m_controlPixelDistance(30.0f),
+    m_controlPixelDistance(10.0f),
     m_cannyThresholdA(50.0),
     m_cannyThresholdB(100.0),
-    m_model(ObjectModel::createCubikRubik())
+    m_model(ObjectModel::createBox(Vector3f(10.0f, 18.0f, 10.0f)))
 {
     m_R = Matrix3f::Identity();
-    m_t = Vector3f(0.0f, 0.0f, 5.0f);
+    m_t = Vector3f(0.0f, -8.0f, 70.0f);
 }
 
 float ObjectEdgesTracker::controlPixelDistance() const
@@ -119,6 +120,20 @@ void ObjectEdgesTracker::compute(cv::Mat image)
     assert(image.channels() == 1);
     assert(m_camera);
 
+    static cv::Mat binImage;
+    cv::threshold(image, binImage, m_cannyThresholdA, 255.0, cv::THRESH_BINARY_INV);
+
+    cv::medianBlur(binImage, binImage, 5);
+
+    cv::dilate(binImage, binImage, cv::getStructuringElement(cv::MORPH_DILATE, cv::Size(3, 3), cv::Point(1, 1)),
+               cv::Point(1, 1), 1);
+    cv::erode(binImage, binImage, cv::getStructuringElement(cv::MORPH_ERODE, cv::Size(3, 3), cv::Point(1, 1)),
+              cv::Point(1, 1), 1);
+
+    m_debugImage = binImage;
+    _tracking2(binImage);
+    return;
+
     m_monitor->startTimer("Canny");
     cv::Mat edges;
     cv::Canny(image, edges, m_cannyThresholdA, m_cannyThresholdB);
@@ -162,31 +177,45 @@ float ObjectEdgesTracker::_tracking1(const cv::Mat & edges)
     x.segment<3>(0) = m_t;
     x.segment<3>(3) = ln_rotationMatrix(m_R);
 
+    cv::Mat dImage;
+    cv::cvtColor(edges, dImage, cv::COLOR_GRAY2BGR);
+    {
+        cv::Mat d = dImage.clone();
+        m_model.draw(d, m_camera, m_R, m_t);
+        cv::imshow("w", d);
+        cv::waitKey(-1);
+    }
+
     m_monitor->startTimer("Tracking [1]");
 
-    for (int i = 0; i < 3; ++i)
+    controlModelPoints = m_model.getControlPoints(m_camera, m_controlPixelDistance,
+                                                  m_R, m_t);
+
+    for (int i = 0; i < 30; ++i)
     {
         string iterName = QString("    Tracking [1] iter_%1").arg(i).toStdString();
         m_monitor->startTimer(iterName);
-
-        controlModelPoints = m_model.getControlPoints(m_camera, m_controlPixelDistance,
-                                                      m_R, m_t);
-        if (controlModelPoints.size() < 4)
+        /*if (controlModelPoints.size() < 4)
         {
             E = numeric_limits<float>::max();
             break;
-        }
+        }*/
 
         E = optimize_pose(x,
-                          QThreadPool::globalInstance(), QThread::idealThreadCount(),
-                          distancesMap, m_camera, controlModelPoints, 20.0f, 6);
+                          QThreadPool::globalInstance(), 1,
+                          distancesMap, m_camera, controlModelPoints, 100.0f, 5);
 
         m_t = x.segment<3>(0);
         m_R = exp_rotationMatrix(x.segment<3>(3));
         m_monitor->endTimer(iterName);
+
+        cv::Mat d = dImage.clone();
+        m_model.draw(d, m_camera, m_R, m_t);
+        cv::imshow("w", d);
+        cv::waitKey(33);
     }
 
-    m_monitor->endTimer("Tracking [1]");
+     m_monitor->endTimer("Tracking [1]");
 
     Vector2f bb_min(numeric_limits<float>::max(), numeric_limits<float>::max());
     Vector2f bb_max(- numeric_limits<float>::max(), - numeric_limits<float>::max());
@@ -206,7 +235,7 @@ float ObjectEdgesTracker::_tracking1(const cv::Mat & edges)
     float area = (bb_max.x() - bb_min.x()) * (bb_max.y() - bb_min.y());
     if (area < 100.0f)
         E = numeric_limits<float>::max();
-    if (E > 7.0f)
+    if (E > 20.0f)
     {
         m_R = Matrix3f::Identity();
         m_t = Vector3f(0.0f, 0.0f, 5.0f);
@@ -247,42 +276,59 @@ float ObjectEdgesTracker::_tracking2(const cv::Mat & edges)
     x.segment<3>(0) = m_t;
     x.segment<3>(3) = ln_rotationMatrix(m_R);
 
+    cv::Mat dImage;
+    cv::cvtColor(edges, dImage, cv::COLOR_GRAY2BGR);
+    {
+        cv::Mat d = dImage.clone();
+        m_model.draw(d, m_camera, m_R, m_t);
+        cv::imshow("w", d);
+        cv::waitKey(-1);
+    }
+
     m_monitor->startTimer("Tracking [2]");
 
-    for (int i = 0; i < 2; ++i)
+    tie(controlModelPoints, imagePoints) = m_model.getControlAndImagePoints(m_camera, m_controlPixelDistance,
+                                                                            m_R, m_t);
+
+    for (size_t j = 0; j < controlModelPoints.size(); )
+    {
+        Vector2f & imagePoint = imagePoints[j];
+        Vector2i imagePoint_i = imagePoint.cast<int>();
+        auto it = index2point.find(labels.at<int>(imagePoint_i.y(), imagePoint_i.x()));
+        if (it == index2point.cend())
+        {
+            controlModelPoints.erase(controlModelPoints.begin() + j);
+            imagePoints.erase(imagePoints.begin() + j);
+            continue;
+        }
+        imagePoints[j] = it->second.cast<float>();
+        ++j;
+    }
+    controlModelPoints.resize(2);
+    imagePoints.resize(2);
+
+    for (int i = 0; i < 30; ++i)
     {
         string iterName = QString("    Tracking [2] iter_%1").arg(i).toStdString();
         m_monitor->startTimer(iterName);
 
-        tie(controlModelPoints, imagePoints) = m_model.getControlAndImagePoints(m_camera, m_controlPixelDistance,
-                                                                                m_R, m_t);
-
-        for (size_t j = 0; j < controlModelPoints.size(); )
-        {
-            Vector2f & imagePoint = imagePoints[j];
-            Vector2i imagePoint_i = imagePoint.cast<int>();
-            auto it = index2point.find(labels.at<int>(imagePoint_i.y(), imagePoint_i.x()));
-            if (it == index2point.cend())
-            {
-                controlModelPoints.erase(controlModelPoints.begin() + j);
-                imagePoints.erase(imagePoints.begin() + j);
-                continue;
-            }
-            ++j;
-        }
-
-        if (controlModelPoints.size() < 4)
+        /*if (controlModelPoints.size() < 4)
         {
             E = numeric_limits<float>::max();
             break;
-        }
+        }*/
 
-        E = optimize_pose(x, m_camera, controlModelPoints, imagePoints, 20.0f, 6);
+        E = optimize_pose(x, m_camera, controlModelPoints, imagePoints, 150.0f, 6);
 
         m_t = x.segment<3>(0);
         m_R = exp_rotationMatrix(x.segment<3>(3));
 
         m_monitor->endTimer(iterName);
+
+        cv::Mat d = dImage.clone();
+        m_model.draw(d, m_camera, m_R, m_t);
+        cv::imshow("w", d);
+        cv::waitKey(-1);
     }
 
     m_monitor->endTimer("Tracking [2]");

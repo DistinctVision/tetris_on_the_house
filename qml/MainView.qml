@@ -6,7 +6,10 @@ import Qt.labs.settings 1.0
 import mystuffs 1.0
 
 Item {
-    property string current_scene: "test_cube_scene"
+    width: 9 * 60
+    height: 16 * 60
+
+    property string current_scene: "tetris_scene"
 
     Settings {
         id: settings
@@ -18,9 +21,9 @@ Item {
 
     states: [
         State {
-            name: "test_cube_scene"
+            name: "tetris_scene"
             PropertyChanges {
-                target: testCubeScene
+                target: tetrisScene
                 enabled: true
             }
             PropertyChanges {
@@ -44,7 +47,7 @@ Item {
         State {
             name: "settings"
             PropertyChanges {
-                target: testCubeScene
+                target: tetrisScene
                 enabled: false
             }
             PropertyChanges {
@@ -67,27 +70,30 @@ Item {
         }
     ]
 
-    state: current_scene
+    state: "settings" //current_scene
 
-    Camera {
+    /*Camera {
         id: camera
 
         captureMode: Camera.CaptureVideo
 
         deviceId: QtMultimedia.availableCameras[0].deviceId
-    }
-
-    /*MediaPlayer {
-        id: player
-        source: "D:\\1.mp4"
-        autoPlay: true
     }*/
+
+    MediaPlayer {
+        id: player
+        source: "file:///D:/1.mp4"
+        autoPlay: true
+        loops: MediaPlayer.loops
+    }
 
     FrameHandler {
         id: frameHandler
         maxFrameSize: "600x600"
-        orientation: camera.orientation
-        flipHorizontally: (camera.position == Camera.BackFace) || (camera.position == Camera.UnspecifiedPosition)
+        //orientation: camera.orientation
+        orientation: 270
+        flipHorizontally: false
+        //flipHorizontally: (camera.position != Camera.FrontFace)
         focalLength: settings.focalLength
         opticalCenter: settings.opticalCenter
         objectEdgesTracker {
@@ -101,9 +107,10 @@ Item {
     VideoOutput {
         id: videoOutput
         fillMode: VideoOutput.PreserveAspectCrop
-        source: camera
+        source: player
         anchors.fill: parent
-        autoOrientation: true
+        //autoOrientation: true
+        orientation: 270
         filters: [ frameHandler ]
     }
 
@@ -115,7 +122,7 @@ Item {
         focalLength: frameHandler.objectEdgesTracker.focalLength
         opticalCenter: frameHandler.objectEdgesTracker.opticalCenter
 
-        scenes: [ debugImageScene, testCubeScene ]
+        scenes: [ debugImageScene, tetrisScene ]
     }
 
     GL_DebugImageScene {
@@ -124,8 +131,13 @@ Item {
         debugImageObject: frameHandler.objectEdgesTracker
     }
 
-    TestCubeScene {
+    /*TestCubeScene {
         id: testCubeScene
+        objectEdgesTracker: frameHandler.objectEdgesTracker
+    }*/
+
+    TetrisScene {
+        id: tetrisScene
         objectEdgesTracker: frameHandler.objectEdgesTracker
     }
 
@@ -147,7 +159,8 @@ Item {
         anchors.margins: 50
         anchors.fill: parent
 
-        color: "black"
+        //color: "black"
+        color: Qt.rgba(0.0, 0.0, 0.0, 0.0)
         opacity: 0.3
 
         ColumnLayout {

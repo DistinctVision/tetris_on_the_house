@@ -183,6 +183,7 @@ Vectors3f ObjectModel::getControlPoints(const std::shared_ptr<PinholeCamera> & c
             continue;
         controlModelPoints.push_back(v);
     }
+    return controlModelPoints;
     for (auto itEdge = setOfEdges.cbegin(); itEdge != setOfEdges.cend(); ++itEdge)
     {
         const Vector3f & v1 = m_vertices[itEdge->first];
@@ -252,6 +253,7 @@ tuple<Vectors3f, Vectors2f> ObjectModel::getControlAndImagePoints(const shared_p
         controlModelPoints.push_back(v);
         imagePoints.push_back(p);
     }
+    return make_tuple(controlModelPoints, imagePoints);
     for (auto itEdge = setOfEdges.cbegin(); itEdge != setOfEdges.cend(); ++itEdge)
     {
         Vector3f v1 = R * m_vertices[itEdge->first] + t;
