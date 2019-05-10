@@ -79,7 +79,7 @@ double optimize_pose(Matrix<double, 6, 1> & x,
 
     auto dif_weightFunction = [&] (double x) -> double
     {
-        return (x >= maxDistance) ? 1.0 : (weightFunction_k1 - 3.0 * weightFunction_k1 * weightFunction_k2 * x * x);
+        return (x >= maxDistance) ? 0.0 : (weightFunction_k1 - 3.0 * weightFunction_k1 * weightFunction_k2 * x * x);
     };
 
     auto get_x_weightFunction = [&] (double y) -> double

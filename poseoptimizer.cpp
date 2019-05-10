@@ -332,28 +332,28 @@ double optimize_pose(Matrix<double, 6, 1> &x,
                      double maxDistance,
                      int numberIterations)
 {
-    /*float weightFunction_k2 = 1.0f / (3.0f * maxDistance * maxDistance);
-    float weightFunction_k1 = 1.0f / (maxDistance * (1.0f - weightFunction_k2 * maxDistance * maxDistance));
+    /*double weightFunction_k2 = 1.0 / (3.0 * maxDistance * maxDistance);
+    double weightFunction_k1 = 1.0 / (maxDistance * (1.0 - weightFunction_k2 * maxDistance * maxDistance));
 
-    auto weightFunction = [&] (float x) -> float
+    auto weightFunction = [&] (double x) -> double
     {
-        return (x >= maxDistance) ? 1.0f : (weightFunction_k1 * x * (1.0f - (x * x) * weightFunction_k2));
+        return (x >= maxDistance) ? 1.0 : (weightFunction_k1 * x * (1.0 - (x * x) * weightFunction_k2));
     };
 
-    auto div_weightFunction = [&] (float x) -> float
+    auto dif_weightFunction = [&] (double x) -> double
     {
-        return (x >= maxDistance) ? 1.0f : (weightFunction_k1 - 3.0f * weightFunction_k1 * weightFunction_k2 * x * x);
+        return (x >= maxDistance) ? 0.0 : (weightFunction_k1 - 3.0 * weightFunction_k1 * weightFunction_k2 * x * x);
     };
 
-    auto get_x_weightFunction = [&] (float y) -> float
+    auto get_x_weightFunction = [&] (double y) -> double
     {
-        float b = - 1.0f / weightFunction_k2;
-        float c = y / (weightFunction_k1 * weightFunction_k2);
-        float Q = ( - 3.0f * b) / 9.0f;
-        float R = (27.0f * c) / 54.0f;
+        double b = - 1.0 / weightFunction_k2;
+        double c = y / (weightFunction_k1 * weightFunction_k2);
+        double Q = ( - 3.0 * b) / 9.0;
+        double R = (27.0 * c) / 54.0;
 
-        float t = acos(R / sqrt(Q * Q * Q)) / 3.0f;
-        float x = - 2.0f * sqrt(Q) * cos(t - (2.0f / 3.0f) * static_cast<float>(M_PI));
+        double t = acos(R / sqrt(Q * Q * Q)) / 3.0;
+        double x = - 2.0 * sqrt(Q) * cos(t - (2.0 / 3.0) * (M_PI));
 
         return x;
     };*/

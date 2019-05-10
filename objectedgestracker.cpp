@@ -29,10 +29,10 @@ ObjectEdgesTracker::ObjectEdgesTracker(const QSharedPointer<PerformanceMonitor> 
     m_controlPixelDistance(10.0f),
     m_cannyThresholdA(50.0),
     m_cannyThresholdB(100.0),
-    m_model(ObjectModel::createHouse(Vector3f(10.0f, 18.0f, 10.0f)))
+    m_model(ObjectModel::createHouse(Vector3f(10.0f, 18.0f, 15.0f)))
 {
-    m_R = Matrix3f::Identity();
-    m_t = Vector3f(0.0f, 8.0f, 40.0f);
+    m_R = Matrix3f::Identity() * exp_rotationMatrix(Vector3f(0.0f, 0.3f, 0.0f));
+    m_t = Vector3f(0.0f, 8.0f, 100.0f);
 }
 
 float ObjectEdgesTracker::controlPixelDistance() const
@@ -120,15 +120,46 @@ void ObjectEdgesTracker::compute(cv::Mat image)
     assert(image.channels() == 1);
     assert(m_camera);
 
-    static cv::Mat binImage;
-    cv::threshold(image, binImage, m_cannyThresholdA, 255.0, cv::THRESH_BINARY_INV);
+    cv::Mat binImage;
+    cv::threshold(image, binImage, m_cannyThresholdA, 255.0, cv::THRESH_BINARY);
 
-    cv::medianBlur(binImage, binImage, 5);
+    //cv::medianBlur(binImage, binImage, 5);
 
     cv::dilate(binImage, binImage, cv::getStructuringElement(cv::MORPH_DILATE, cv::Size(3, 3), cv::Point(1, 1)),
                cv::Point(1, 1), 1);
+
+    std::vector<std::vector<cv::Point>> contours;
+    cv::findContours(binImage, contours, cv::RETR_LIST, cv::CHAIN_APPROX_NONE);
+
+    for (size_t contourIdx = 0; contourIdx < contours.size(); ++contourIdx)
+    {
+        cv::Moments moms = cv::moments(contours[contourIdx]);
+        {
+            double area = moms.m00;
+            if (area < 50.0)
+            {
+                cv::drawContours(binImage, contours,
+                                 static_cast<int>(contourIdx), cv::Scalar(0), -1);
+                continue;
+            }
+        }
+
+        {
+            double area = moms.m00;
+            double perimeter = arcLength(contours[contourIdx], true);
+            double ratio = 4 * CV_PI * area / (perimeter * perimeter);
+            if (ratio > 0.25)
+            {
+                cv::drawContours(binImage, contours,
+                                 static_cast<int>(contourIdx), cv::Scalar(0), -1);
+                continue;
+            }
+        }
+    }
     cv::erode(binImage, binImage, cv::getStructuringElement(cv::MORPH_ERODE, cv::Size(3, 3), cv::Point(1, 1)),
               cv::Point(1, 1), 1);
+    cv::bitwise_not(binImage, binImage);
+    //cv::drawContours(m_debugImage, contours, -1, cv::Scalar(255, 0, 0), -1);
 
     m_debugImage = binImage;
     _tracking1(binImage);
@@ -188,7 +219,7 @@ float ObjectEdgesTracker::_tracking1(const cv::Mat & edges)
 
     m_monitor->startTimer("Tracking [1]");
 
-    for (int i = 0; i < 30; ++i)
+    for (int i = 0; i < 300; ++i)
     {
 
         string iterName = QString("    Tracking [1] iter_%1").arg(i).toStdString();
@@ -203,7 +234,7 @@ float ObjectEdgesTracker::_tracking1(const cv::Mat & edges)
 
         E = optimize_pose(x,
                           QThreadPool::globalInstance(), 1,
-                          distancesMap, m_camera, controlModelPoints, 30.0, 3);
+                          distancesMap, m_camera, controlModelPoints, 60.0, 3);
 
         m_t = x.segment<3>(0).cast<float>();
         m_R = exp_rotationMatrix(x.segment<3>(3).eval()).cast<float>();
