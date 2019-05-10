@@ -104,7 +104,7 @@ ObjectModel ObjectModel::createCubikRubik(float border)
                                            (v.y() + (i_border / 3.0f) - 0.5f) * axisY +
                                            axisZ * 0.5f);
                 model.m_polygons.push_back(Polygon { (VectorXi(4) << i_o + 0, i_o + 1, i_o + 2, i_o + 3).finished(),
-                                                     axisZ });
+                                                      axisZ });
             }
         }
     };
@@ -140,6 +140,57 @@ ObjectModel ObjectModel::createCubikRubik(float border)
     return model;
 }
 
+
+ObjectModel ObjectModel::createHouse(const Vector3f & size)
+{
+    Vector3f halfSize = size * 0.5f;
+
+    ObjectModel house;
+    house.m_vertices = {
+        Vector3f(- halfSize.x(), - halfSize.y(), halfSize.z()),
+        Vector3f(halfSize.x(), - halfSize.y(), halfSize.z()),
+        Vector3f(halfSize.x(), halfSize.y(), halfSize.z()),
+        Vector3f(- halfSize.x(), halfSize.y(), halfSize.z()),
+        Vector3f(- halfSize.x(), - halfSize.y(), - halfSize.z()),
+        Vector3f(halfSize.x(), - halfSize.y(), - halfSize.z()),
+        Vector3f(halfSize.x(), halfSize.y(), - halfSize.z()),
+        Vector3f(- halfSize.x(), halfSize.y(), - halfSize.z())
+    };
+    house.m_polygons = {
+        Polygon {
+            (VectorXi(4) << 0, 1, 2, 3).finished(),
+            Vector3f(0.0f, 0.0f, 1.0f)
+        },
+        Polygon {
+            (VectorXi(4) << 7, 6, 5, 4).finished(),
+            Vector3f(0.0f, 0.0f, -1.0f)
+        },
+        Polygon {
+            (VectorXi(4) << 1, 5, 6, 2).finished(),
+            Vector3f(1.0f, 0.0f, 0.0f)
+        },
+        Polygon {
+            (VectorXi(4) << 0, 3, 7, 4).finished(),
+            Vector3f(-1.0f, 0.0f, 0.0f)
+        },
+        Polygon {
+            (VectorXi(4) << 2, 6, 7, 3).finished(),
+            Vector3f(0.0f, 1.0f, 0.0f)
+        },
+        Polygon {
+            (VectorXi(4) << 0, 4, 5, 1).finished(),
+            Vector3f(0.0f, -1.0f, 0.0f)
+        }
+    };
+
+    house.m_disabledEdges.insert(make_pair(0, 3));
+    house.m_disabledEdges.insert(make_pair(1, 2));
+    house.m_disabledEdges.insert(make_pair(4, 7));
+    house.m_disabledEdges.insert(make_pair(5, 6));
+
+    return house;
+}
+
 const Vectors3f & ObjectModel::vertices() const
 {
     return m_vertices;
@@ -167,6 +218,8 @@ Vectors3f ObjectModel::getControlPoints(const std::shared_ptr<PinholeCamera> & c
                                          polygon.vertexIndices[(i + 1) % polygon.vertexIndices.size()]);
                 if (edge.first > edge.second)
                     std::swap(edge.first, edge.second);
+                if (m_disabledEdges.find(edge) != m_disabledEdges.cend())
+                    continue;
                 setOfEdges.insert(edge);
                 setOfVertices.insert(polygon.vertexIndices[i]);
             }
@@ -233,6 +286,8 @@ tuple<Vectors3f, Vectors2f> ObjectModel::getControlAndImagePoints(const shared_p
                                          polygon.vertexIndices[(i + 1) % polygon.vertexIndices.size()]);
                 if (edge.first > edge.second)
                     std::swap(edge.first, edge.second);
+                if (m_disabledEdges.find(edge) != m_disabledEdges.cend())
+                    continue;
                 setOfEdges.insert(edge);
                 setOfVertices.insert(polygon.vertexIndices[i]);
             }
@@ -316,8 +371,8 @@ void ObjectModel::draw(const cv::Mat & image,
 
     for (auto itEdge = setOfEdges.cbegin(); itEdge != setOfEdges.cend(); ++itEdge)
     {
-        const Vector3f & v1 = m_vertices[itEdge->first];
-        const Vector3f & v2 = m_vertices[itEdge->second];
+        const Vector3f & v1 = m_vertices[std::get<0>(*itEdge)];
+        const Vector3f & v2 = m_vertices[std::get<1>(*itEdge)];
 
         bool inViewFlag;
         Vector2f p1 = camera->project((R * v1 + t).eval(), inViewFlag);
@@ -327,8 +382,10 @@ void ObjectModel::draw(const cv::Mat & image,
         if (!inViewFlag)
             continue;
 
-        cv::line(image, cv::Point2f(p1.x(), p1.y()), cv::Point2f(p2.x(), p2.y()),
-                 cv::Scalar(255, 0, 0), 2);
+        cv::Scalar color = (m_disabledEdges.find(*itEdge) == m_disabledEdges.cend()) ? cv::Scalar(255, 0, 0) :
+                                                                                       cv::Scalar(100, 0, 0);
+
+        cv::line(image, cv::Point2f(p1.x(), p1.y()), cv::Point2f(p2.x(), p2.y()), color, 2);
     }
 }
 

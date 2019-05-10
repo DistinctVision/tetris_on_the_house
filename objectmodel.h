@@ -2,6 +2,7 @@
 #define OBJECTMODEL_H
 
 #include <vector>
+#include <set>
 #include <memory>
 #include <utility>
 #include <tuple>
@@ -29,6 +30,8 @@ public:
         }
     };
 
+    using FlagsVector = Eigen::Matrix<uchar, Eigen::Dynamic, 1>;
+
     struct Polygon
     {
          Eigen::VectorXi vertexIndices;
@@ -38,6 +41,7 @@ public:
 
     static ObjectModel createBox(const Eigen::Vector3f & size = Eigen::Vector3f(1.0f, 1.0f, 1.0f));
     static ObjectModel createCubikRubik(float border = 0.15f);
+    static ObjectModel createHouse(const Eigen::Vector3f & size);
 
     const Vectors3f & vertices() const;
     const Polygons & polygons() const;
@@ -60,6 +64,8 @@ private:
 
     Vectors3f m_vertices;
     Polygons m_polygons;
+
+    std::set<std::pair<int, int>> m_disabledEdges;
 };
 
 #endif // OBJECTMODEL_H

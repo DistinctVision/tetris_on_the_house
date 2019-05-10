@@ -15,9 +15,9 @@ Item {
         id: settings
         property double canny_thresholdA: 100
         property double canny_thresholdB: 150
-        property vector2d focalLength: Qt.vector2d(1.2, 1.2)
-        property vector2d opticalCenter: Qt.vector2d(0.5, 0.5)
     }
+    property vector2d focalLength: Qt.vector2d(0.8, 0.8)
+    property vector2d opticalCenter: Qt.vector2d(0.5, 0.5)
 
     states: [
         State {
@@ -94,8 +94,8 @@ Item {
         orientation: 270
         flipHorizontally: false
         //flipHorizontally: (camera.position != Camera.FrontFace)
-        focalLength: settings.focalLength
-        opticalCenter: settings.opticalCenter
+        focalLength: focalLength
+        opticalCenter: opticalCenter
         objectEdgesTracker {
             debugEnabled: true
             cannyThresholdA: settings.canny_thresholdA

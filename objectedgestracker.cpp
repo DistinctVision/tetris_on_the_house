@@ -29,10 +29,10 @@ ObjectEdgesTracker::ObjectEdgesTracker(const QSharedPointer<PerformanceMonitor> 
     m_controlPixelDistance(10.0f),
     m_cannyThresholdA(50.0),
     m_cannyThresholdB(100.0),
-    m_model(ObjectModel::createBox(Vector3f(10.0f, 18.0f, 10.0f)))
+    m_model(ObjectModel::createHouse(Vector3f(10.0f, 18.0f, 10.0f)))
 {
     m_R = Matrix3f::Identity();
-    m_t = Vector3f(0.0f, 8.0f, 70.0f);
+    m_t = Vector3f(0.0f, 8.0f, 40.0f);
 }
 
 float ObjectEdgesTracker::controlPixelDistance() const
@@ -188,12 +188,12 @@ float ObjectEdgesTracker::_tracking1(const cv::Mat & edges)
 
     m_monitor->startTimer("Tracking [1]");
 
-    controlModelPoints = m_model.getControlPoints(m_camera, m_controlPixelDistance,
-                                                  m_R, m_t);
-
     for (int i = 0; i < 30; ++i)
     {
+
         string iterName = QString("    Tracking [1] iter_%1").arg(i).toStdString();
+        controlModelPoints = m_model.getControlPoints(m_camera, m_controlPixelDistance,
+                                                      m_R, m_t);
         m_monitor->startTimer(iterName);
         /*if (controlModelPoints.size() < 4)
         {
@@ -203,7 +203,7 @@ float ObjectEdgesTracker::_tracking1(const cv::Mat & edges)
 
         E = optimize_pose(x,
                           QThreadPool::globalInstance(), 1,
-                          distancesMap, m_camera, controlModelPoints, 30.0, 5);
+                          distancesMap, m_camera, controlModelPoints, 30.0, 3);
 
         m_t = x.segment<3>(0).cast<float>();
         m_R = exp_rotationMatrix(x.segment<3>(3).eval()).cast<float>();
@@ -212,7 +212,7 @@ float ObjectEdgesTracker::_tracking1(const cv::Mat & edges)
         cv::Mat d = dImage.clone();
         m_model.draw(d, m_camera, m_R, m_t);
         cv::imshow("w", d);
-        cv::waitKey(33);
+        cv::waitKey(133);
     }
 
      m_monitor->endTimer("Tracking [1]");
