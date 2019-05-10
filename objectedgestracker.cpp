@@ -121,16 +121,21 @@ void ObjectEdgesTracker::compute(cv::Mat image)
     assert(m_camera);
 
     cv::Mat binImage;
+    m_monitor->startTimer("Threshold");
     cv::threshold(image, binImage, m_cannyThresholdA, 255.0, cv::THRESH_BINARY);
+    m_monitor->endTimer("Threshold");
 
-    //cv::medianBlur(binImage, binImage, 5);
+    m_monitor->startTimer("Dilate");
+    cv::dilate(binImage, binImage, cv::getStructuringElement(cv::MORPH_DILATE,
+                                                             cv::Size(3, 3), cv::Point(1, 1)), cv::Point(1, 1), 1);
+    m_monitor->endTimer("Dilate");
 
-    cv::dilate(binImage, binImage, cv::getStructuringElement(cv::MORPH_DILATE, cv::Size(3, 3), cv::Point(1, 1)),
-               cv::Point(1, 1), 1);
-
+    m_monitor->startTimer("Find contours");
     std::vector<std::vector<cv::Point>> contours;
     cv::findContours(binImage, contours, cv::RETR_LIST, cv::CHAIN_APPROX_NONE);
+    m_monitor->endTimer("Find contours");
 
+    m_monitor->startTimer("Filter contours");
     for (size_t contourIdx = 0; contourIdx < contours.size(); ++contourIdx)
     {
         cv::Moments moms = cv::moments(contours[contourIdx]);
@@ -156,37 +161,26 @@ void ObjectEdgesTracker::compute(cv::Mat image)
             }
         }
     }
-    cv::erode(binImage, binImage, cv::getStructuringElement(cv::MORPH_ERODE, cv::Size(3, 3), cv::Point(1, 1)),
-              cv::Point(1, 1), 1);
-    cv::bitwise_not(binImage, binImage);
-    //cv::drawContours(m_debugImage, contours, -1, cv::Scalar(255, 0, 0), -1);
-
-    m_debugImage = binImage;
-    _tracking1(binImage);
-    return;
-
-    m_monitor->startTimer("Canny");
-    cv::Mat edges;
-    cv::Canny(image, edges, m_cannyThresholdA, m_cannyThresholdB);
-    m_monitor->endTimer("Canny");
-
+    m_monitor->endTimer("Filter contours");
+    cv::erode(binImage, binImage, cv::getStructuringElement(cv::MORPH_ERODE,
+                                                            cv::Size(3, 3), cv::Point(1, 1)), cv::Point(1, 1), 1);
     m_monitor->startTimer("Inverting");
-    cv::bitwise_not(edges, edges);
+    cv::bitwise_not(binImage, binImage);
     m_monitor->endTimer("Inverting");
 
-    float E = _tracking1(edges);
+    m_debugImage = binImage;
+    return;
 
-    qDebug() << "Error =" << E << edges.cols << edges.rows;
-
+    float E1 = _tracking1(binImage);
+    qDebug() << "Error =" << E1;
+    m_debugImage = binImage;
     if (debugEnabled())
     {
         m_monitor->startTimer("Debug");
-        cv::cvtColor(edges, edges, cv::COLOR_GRAY2BGR);
-        m_model.draw(edges, m_camera, m_R, m_t);
-
+        cv::cvtColor(m_debugImage, m_debugImage, cv::COLOR_GRAY2BGR);
+        m_model.draw(m_debugImage, m_camera, m_R, m_t);
         m_monitor->endTimer("Debug");
     }
-    m_debugImage = edges;
 }
 
 cv::Mat ObjectEdgesTracker::debugImage() const
@@ -208,45 +202,31 @@ float ObjectEdgesTracker::_tracking1(const cv::Mat & edges)
     x.segment<3>(0) = m_t.cast<double>();
     x.segment<3>(3) = ln_rotationMatrix(m_R.cast<double>().eval());
 
-    cv::Mat dImage;
-    cv::cvtColor(edges, dImage, cv::COLOR_GRAY2BGR);
-    {
-        cv::Mat d = dImage.clone();
-        m_model.draw(d, m_camera, m_R, m_t);
-        cv::imshow("w", d);
-        cv::waitKey(-1);
-    }
 
     m_monitor->startTimer("Tracking [1]");
 
-    for (int i = 0; i < 300; ++i)
+    for (int i = 0; i < 3; ++i)
     {
 
         string iterName = QString("    Tracking [1] iter_%1").arg(i).toStdString();
         controlModelPoints = m_model.getControlPoints(m_camera, m_controlPixelDistance,
                                                       m_R, m_t);
         m_monitor->startTimer(iterName);
-        /*if (controlModelPoints.size() < 4)
+        if (controlModelPoints.size() < 4)
         {
             E = numeric_limits<float>::max();
             break;
-        }*/
+        }
 
-        E = optimize_pose(x,
-                          QThreadPool::globalInstance(), 1,
-                          distancesMap, m_camera, controlModelPoints, 60.0, 3);
+        E = static_cast<float>(optimize_pose(x,
+                          QThreadPool::globalInstance(), QThread::idealThreadCount(),
+                          distancesMap, m_camera, controlModelPoints, 30.0, 5));
 
         m_t = x.segment<3>(0).cast<float>();
         m_R = exp_rotationMatrix(x.segment<3>(3).eval()).cast<float>();
         m_monitor->endTimer(iterName);
-
-        cv::Mat d = dImage.clone();
-        m_model.draw(d, m_camera, m_R, m_t);
-        cv::imshow("w", d);
-        cv::waitKey(133);
     }
-
-     m_monitor->endTimer("Tracking [1]");
+    m_monitor->endTimer("Tracking [1]");
 
     Vector2f bb_min(numeric_limits<float>::max(), numeric_limits<float>::max());
     Vector2f bb_max(- numeric_limits<float>::max(), - numeric_limits<float>::max());
@@ -266,10 +246,10 @@ float ObjectEdgesTracker::_tracking1(const cv::Mat & edges)
     float area = (bb_max.x() - bb_min.x()) * (bb_max.y() - bb_min.y());
     if (area < 100.0f)
         E = numeric_limits<float>::max();
-    if (E > 20.0f)
+    if (E > 2.0f)
     {
-        m_R = Matrix3f::Identity();
-        m_t = Vector3f(0.0f, 0.0f, 5.0f);
+        m_R = Matrix3f::Identity() * exp_rotationMatrix(Vector3f(0.0f, 0.3f, 0.0f));
+        m_t = Vector3f(0.0f, 8.0f, 100.0f);
     }
 
     return E;
@@ -384,8 +364,8 @@ float ObjectEdgesTracker::_tracking2(const cv::Mat & edges)
         E = numeric_limits<float>::max();
     if (E > 7.0f)
     {
-        m_R = Matrix3f::Identity();
-        m_t = Vector3f(0.0f, 0.0f, 5.0f);
+        m_R = Matrix3f::Identity() * exp_rotationMatrix(Vector3f(0.0f, 0.3f, 0.0f));
+        m_t = Vector3f(0.0f, 8.0f, 100.0f);
     }
 
     return E;

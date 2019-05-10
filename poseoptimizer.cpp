@@ -543,7 +543,7 @@ double optimize_pose(Matrix<double, 6, 1> &x,
     double firstError = - 1.0;
 
     double Fsq = numeric_limits<double>::max();
-    double factor = 100.0;
+    double factor = 1e0;
 
     QSemaphore semaphore;
     size_t workPartSize = static_cast<size_t>(ceil(numberPoints / numberWorkThreads));
@@ -637,6 +637,8 @@ double optimize_pose(Matrix<double, 6, 1> &x,
         }
         if (n_try == 10)
             break;
+        assert(!std::isnan(Fsq));
+        assert(!std::isnan(Fsq_next));
         double deltaFsq = Fsq - Fsq_next;
         Fsq = Fsq_next;
         if (deltaFsq < 1e-6)
@@ -644,5 +646,7 @@ double optimize_pose(Matrix<double, 6, 1> &x,
             break;
         }
     }
-    return get_x_weightFunction(sqrt(Fsq));
+    double E = get_x_weightFunction(sqrt(Fsq));
+    assert(!std::isnan(E));
+    return E;
 }

@@ -11,7 +11,7 @@ GL_View::GL_View():
     m_focalLength(1.2f, 1.2f),
     m_opticalCenter(0.5f, 0.5f),
     m_nearPlane(0.1f),
-    m_farPlane(100.0f),
+    m_farPlane(1000.0f),
     m_inputeFrameSize(-1, -1),
     m_fillFrameMode(FillMode::PreserveAspectCrop),
     m_orderRender(1),

@@ -105,8 +105,6 @@ GL_Mesh GL_Mesh::createQuad(const QVector2D & size)
 
 GL_Mesh GL_Mesh::createCube(const QVector3D & size)
 {
-    QVector3D halfSize = size * 0.5f;
-
     GL_Mesh mesh;
     QVector<QVector3D> vertices;
     QVector<QVector2D> textureCoords;
@@ -115,23 +113,28 @@ GL_Mesh GL_Mesh::createCube(const QVector3D & size)
     textureCoords.reserve(vertices.size());
     indices.reserve(6 * 2 * 3);
 
-    QVector3D axisX(1.0f, 0.0f, 0.0f),
-              axisY(0.0f, 1.0f, 0.0f),
-              axisZ(0.0f, 0.0f, 1.0f);
+    QVector3D axisX(0.5f, 0.0f, 0.0f),
+              axisY(0.0f, 0.5f, 0.0f),
+              axisZ(0.0f, 0.0f, 0.5f);
+
+    auto mix = [] (const QVector3D & a, const QVector3D & b)
+    {
+        return QVector3D(a.x() * b.x(), a.y() * b.y(), a.z() * b.z());
+    };
 
     auto addSide = [&] ()
     {
         GLuint i_o = static_cast<GLuint>(vertices.size());
-        vertices.push_back((- halfSize.x()) * axisX + (- halfSize.y()) * axisY + halfSize.z() * axisZ);
-        vertices.push_back((halfSize.x()) * axisX + (- halfSize.y()) * axisY + halfSize.z() * axisZ);
-        vertices.push_back((halfSize.x()) * axisX + (halfSize.y()) * axisY + halfSize.z() * axisZ);
-        vertices.push_back((- halfSize.x()) * axisX + (halfSize.y()) * axisY + halfSize.z() * axisZ);
+        vertices.push_back(mix(- axisX - axisY + axisZ, size));
+        vertices.push_back(mix(axisX - axisY + axisZ, size));
+        vertices.push_back(mix(axisX + axisY + axisZ, size));
+        vertices.push_back(mix(- axisX + axisY + axisZ, size));
         textureCoords.push_back(QVector2D(0.0f, 0.0f));
         textureCoords.push_back(QVector2D(1.0f, 0.0f));
         textureCoords.push_back(QVector2D(1.0f, 1.0f));
         textureCoords.push_back(QVector2D(0.0f, 1.0f));
-        indices.append({ i_o + 0, i_o + 1, i_o + 2 });
-        indices.append({ i_o + 0, i_o + 2, i_o + 3 });
+        indices.append({ i_o + 0, i_o + 2, i_o + 1 });
+        indices.append({ i_o + 0, i_o + 3, i_o + 2 });
     };
 
     for (int k = 0; k < 4; ++k) // xy faces
@@ -141,9 +144,9 @@ GL_Mesh GL_Mesh::createCube(const QVector3D & size)
         axisZ = - axisZ;
     }
     {// -z face
-        axisX = QVector3D(0.0f, 0.0f, 1.0f);
-        axisY = QVector3D(0.0f, 1.0f, 0.0f);
-        axisZ = QVector3D(-1.0f, 0.0f, 0.0f);
+        axisX = QVector3D(0.0f, 0.0f, 0.5f);
+        axisY = QVector3D(0.0f, 0.5f, 0.0f);
+        axisZ = QVector3D(- 0.5f, 0.0f, 0.0f);
         addSide();
     }// z face
     {
