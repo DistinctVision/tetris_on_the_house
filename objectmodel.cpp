@@ -176,24 +176,25 @@ Vectors3f ObjectModel::getControlPoints(const std::shared_ptr<PinholeCamera> & c
     Vectors3f controlModelPoints;
     for (auto it = setOfVertices.cbegin(); it != setOfVertices.cend(); ++it)
     {
-        const Vector3f & v = m_vertices[*it];
+        const Vector3f & vertex = m_vertices[*it];
         bool inViewFlag;
-        Vector2f p = camera->project((R * v + t).eval(), inViewFlag);
+        Vector2f p = camera->project((R * vertex + t).eval(), inViewFlag);
+        (void)(p);
         if (!inViewFlag)
             continue;
-        controlModelPoints.push_back(v);
+        controlModelPoints.push_back(vertex);
     }
-    return controlModelPoints;
+
     for (auto itEdge = setOfEdges.cbegin(); itEdge != setOfEdges.cend(); ++itEdge)
     {
-        const Vector3f & v1 = m_vertices[itEdge->first];
-        const Vector3f & v2 = m_vertices[itEdge->second];
+        const Vector3f & vertex1 = m_vertices[itEdge->first];
+        const Vector3f & vertex2 = m_vertices[itEdge->second];
 
         bool inViewFlag;
-        Vector2f p1 = camera->project((R * v1 + t).eval(), inViewFlag);
+        Vector2f p1 = camera->project((R * vertex1 + t).eval(), inViewFlag);
         if (!inViewFlag)
             continue;
-        Vector2f p2 = camera->project((R * v2 + t).eval(), inViewFlag);
+        Vector2f p2 = camera->project((R * vertex2 + t).eval(), inViewFlag);
         if (!inViewFlag)
             continue;
 
@@ -202,12 +203,12 @@ Vectors3f ObjectModel::getControlPoints(const std::shared_ptr<PinholeCamera> & c
         if (n <= 1)
             continue;
 
-        Vector3f delta = v2 - v1;
+        Vector3f delta = vertex2 - vertex1;
         float step = 1.0f / static_cast<float>(n);
         for (int i = 1; i < n; ++i)
         {
             float k = i * step;
-            Vector3f v = v1 + delta * k;
+            Vector3f v = vertex1 + delta * k;
             //Vector2f p = camera->project((R * v + t).eval());
             controlModelPoints.push_back(v);
         }
@@ -242,24 +243,26 @@ tuple<Vectors3f, Vectors2f> ObjectModel::getControlAndImagePoints(const shared_p
     Vectors2f imagePoints;
     for (auto it = setOfVertices.cbegin(); it != setOfVertices.cend(); ++it)
     {
-        Vector3f v = R * m_vertices[*it] + t;
+        const Vector3f & vertex = m_vertices[*it];
+        Vector3f v = R * vertex + t;
         if (v.z() < numeric_limits<float>::epsilon())
             continue;
         bool inViewFlag;
-        Vector2f view = v.segment<2>(0) / v.z();
-        Vector2f p = camera->project(view, inViewFlag);
+        Vector2f p = camera->project(v, inViewFlag);
         if (!inViewFlag)
             continue;
-        controlModelPoints.push_back(v);
+        controlModelPoints.push_back(vertex);
         imagePoints.push_back(p);
     }
-    return make_tuple(controlModelPoints, imagePoints);
+
     for (auto itEdge = setOfEdges.cbegin(); itEdge != setOfEdges.cend(); ++itEdge)
     {
-        Vector3f v1 = R * m_vertices[itEdge->first] + t;
+        const Vector3f & vertex1 = m_vertices[itEdge->first];
+        Vector3f v1 = R * vertex1 + t;
         if (v1.z() < numeric_limits<float>::epsilon())
             continue;
-        Vector3f v2 = R * m_vertices[itEdge->second] + t;
+        const Vector3f & vertex2 = m_vertices[itEdge->second];
+        Vector3f v2 = R * vertex2 + t;
         if (v2.z() < numeric_limits<float>::epsilon())
             continue;
 
@@ -276,13 +279,13 @@ tuple<Vectors3f, Vectors2f> ObjectModel::getControlAndImagePoints(const shared_p
         if (n <= 1)
             continue;
 
-        Vector3f delta = v2 - v1;
+        Vector3f delta = vertex2 - vertex1;
         float step = 1.0f / static_cast<float>(n);
         for (int i = 1; i < n; ++i)
         {
             float k = i * step;
-            Vector3f v = R * (v1 + delta * k) + t;
-            Vector2f p = camera->project(v);
+            Vector3f v = vertex1 + delta * k;
+            Vector2f p = camera->project((R * v + t).eval());
             controlModelPoints.push_back(v);
             imagePoints.push_back(p);
         }

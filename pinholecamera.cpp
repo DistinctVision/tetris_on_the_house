@@ -64,7 +64,7 @@ Vector2f PinholeCamera::project(const Vector3f & v, bool & inViewFlag) const
     if (v.z() < std::numeric_limits<float>::epsilon())
     {
         inViewFlag = false;
-        return Vector2f::Zero();
+        return Vector2f(-1.0f, -1.0f);
     }
     return project((v.segment<2>(0) / v.z()).eval(), inViewFlag);
 }
@@ -75,7 +75,7 @@ Vector2f PinholeCamera::project(const Vector2f & view, bool & inViewFlag) const
     if (!imagePointInView(p))
     {
         inViewFlag = false;
-        return Vector2f::Zero();
+        return Vector2f(-1.0f, -1.0f);
     }
     inViewFlag = true;
     return p;

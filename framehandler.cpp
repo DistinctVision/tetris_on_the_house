@@ -215,7 +215,7 @@ QVideoFrame FrameHandlerRunnable::run(QVideoFrame * videoFrame,
         QVector2D opticalCenter = m_parent->opticalCenter();
         Vector2i v_imageSize(frame.cols, frame.rows);
         Vector2f v_focalLength(frame.cols * focalLength.x() / viewScale.x(),
-                               frame.cols * focalLength.y() / viewScale.x());
+                               - frame.cols * focalLength.y() / viewScale.x());
         Vector2f v_opticalCenter(frame.cols * ((opticalCenter.x() - 0.5f) / viewScale.x() + 0.5f),
                                  frame.rows * ((opticalCenter.y() - 0.5f) / viewScale.y() + 0.5f));
         ObjectEdgesTracker * objectEdgesTracking = m_parent->objectEdgesTracker();

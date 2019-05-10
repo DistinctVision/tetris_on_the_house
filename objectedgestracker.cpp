@@ -32,7 +32,7 @@ ObjectEdgesTracker::ObjectEdgesTracker(const QSharedPointer<PerformanceMonitor> 
     m_model(ObjectModel::createBox(Vector3f(10.0f, 18.0f, 10.0f)))
 {
     m_R = Matrix3f::Identity();
-    m_t = Vector3f(0.0f, -8.0f, 70.0f);
+    m_t = Vector3f(0.0f, 8.0f, 70.0f);
 }
 
 float ObjectEdgesTracker::controlPixelDistance() const
@@ -131,7 +131,7 @@ void ObjectEdgesTracker::compute(cv::Mat image)
               cv::Point(1, 1), 1);
 
     m_debugImage = binImage;
-    _tracking2(binImage);
+    _tracking1(binImage);
     return;
 
     m_monitor->startTimer("Canny");
@@ -173,9 +173,9 @@ float ObjectEdgesTracker::_tracking1(const cv::Mat & edges)
     Vectors3f controlModelPoints;
     float E = numeric_limits<float>::max();
 
-    Matrix<float, 6, 1> x;
-    x.segment<3>(0) = m_t;
-    x.segment<3>(3) = ln_rotationMatrix(m_R);
+    Matrix<double, 6, 1> x;
+    x.segment<3>(0) = m_t.cast<double>();
+    x.segment<3>(3) = ln_rotationMatrix(m_R.cast<double>().eval());
 
     cv::Mat dImage;
     cv::cvtColor(edges, dImage, cv::COLOR_GRAY2BGR);
@@ -203,10 +203,10 @@ float ObjectEdgesTracker::_tracking1(const cv::Mat & edges)
 
         E = optimize_pose(x,
                           QThreadPool::globalInstance(), 1,
-                          distancesMap, m_camera, controlModelPoints, 100.0f, 5);
+                          distancesMap, m_camera, controlModelPoints, 30.0, 5);
 
-        m_t = x.segment<3>(0);
-        m_R = exp_rotationMatrix(x.segment<3>(3));
+        m_t = x.segment<3>(0).cast<float>();
+        m_R = exp_rotationMatrix(x.segment<3>(3).eval()).cast<float>();
         m_monitor->endTimer(iterName);
 
         cv::Mat d = dImage.clone();
@@ -272,18 +272,9 @@ float ObjectEdgesTracker::_tracking2(const cv::Mat & edges)
     Vectors2f imagePoints;
     float E = numeric_limits<float>::max();
 
-    Matrix<float, 6, 1> x;
-    x.segment<3>(0) = m_t;
-    x.segment<3>(3) = ln_rotationMatrix(m_R);
-
-    cv::Mat dImage;
-    cv::cvtColor(edges, dImage, cv::COLOR_GRAY2BGR);
-    {
-        cv::Mat d = dImage.clone();
-        m_model.draw(d, m_camera, m_R, m_t);
-        cv::imshow("w", d);
-        cv::waitKey(-1);
-    }
+    Matrix<double, 6, 1> x;
+    x.segment<3>(0) = m_t.cast<double>();
+    x.segment<3>(3) = ln_rotationMatrix(m_R).cast<double>();
 
     m_monitor->startTimer("Tracking [2]");
 
@@ -304,8 +295,16 @@ float ObjectEdgesTracker::_tracking2(const cv::Mat & edges)
         imagePoints[j] = it->second.cast<float>();
         ++j;
     }
-    controlModelPoints.resize(2);
-    imagePoints.resize(2);
+
+    cv::Mat dImage;
+    cv::cvtColor(edges, dImage, cv::COLOR_GRAY2RGB);
+    {
+        cv::Mat d = dImage.clone();
+        m_model.draw(d, m_camera, m_R, m_t);
+        draw_residuals(d, m_R, m_t, m_camera, controlModelPoints, imagePoints);
+        cv::imshow("w", d);
+        cv::waitKey(33);
+    }
 
     for (int i = 0; i < 30; ++i)
     {
@@ -320,13 +319,14 @@ float ObjectEdgesTracker::_tracking2(const cv::Mat & edges)
 
         E = optimize_pose(x, m_camera, controlModelPoints, imagePoints, 150.0f, 6);
 
-        m_t = x.segment<3>(0);
-        m_R = exp_rotationMatrix(x.segment<3>(3));
+        m_t = x.segment<3>(0).cast<float>();
+        m_R = exp_rotationMatrix(x.segment<3>(3).eval()).cast<float>();
 
         m_monitor->endTimer(iterName);
 
         cv::Mat d = dImage.clone();
         m_model.draw(d, m_camera, m_R, m_t);
+        draw_residuals(d, m_R, m_t, m_camera, controlModelPoints, imagePoints);
         cv::imshow("w", d);
         cv::waitKey(-1);
     }

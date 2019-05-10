@@ -4,8 +4,26 @@
 
 #include "pinholecamera.h"
 
+#include <opencv2/imgproc.hpp>
+
 using namespace std;
 using namespace Eigen;
+
+void draw_residuals(const cv::Mat & image,
+                    Matrix3f & R, Vector3f & t,
+                    const shared_ptr<const PinholeCamera> & camera,
+                    const Vectors3f & controlModelPoints, const Vectors2f & imagePoints)
+{
+    assert(controlModelPoints.size() == imagePoints.size());
+    for (size_t i = 0; i < controlModelPoints.size(); ++i)
+    {
+        const Vector3f & point = controlModelPoints[i];
+        const Vector2f & imagePoint1 = imagePoints[i];
+        Vector2f imagePoint2 = camera->project((R * point + t).eval());
+        cv::line(image, cv::Point2f(imagePoint1.x(), imagePoint1.y()),
+                        cv::Point2f(imagePoint2.x(), imagePoint2.y()), cv::Scalar(0, 0, 255), 2);
+    }
+}
 
 void test_exp()
 {
@@ -33,146 +51,126 @@ float optimize_pose(Matrix3f & R, Vector3f & t,
                     float maxDistance,
                     int numberIterations)
 {
-    Matrix<float, 6, 1> x;
-    x.segment<3>(0) = t;
-    x.segment<3>(3) = ln_rotationMatrix(R);
-    float E = optimize_pose(x, camera, controlModelPoints, imagePoints, maxDistance, numberIterations);
-    t = x.segment<3>(0);
-    R = exp_rotationMatrix(x.segment<3>(3));
-    return E;
+    Matrix<double, 6, 1> x;
+    x.segment<3>(0) = t.cast<double>();
+    x.segment<3>(3) = ln_rotationMatrix(R).cast<double>();
+    double E = optimize_pose(x, camera, controlModelPoints, imagePoints,
+                             static_cast<double>(maxDistance), numberIterations);
+    t = x.segment<3>(0).cast<float>();
+    R = exp_rotationMatrix(x.segment<3>(3).eval()).cast<float>();
+    return static_cast<float>(E);
 }
 
 
-float optimize_pose(Matrix<float, 6, 1> & x,
-                    const std::shared_ptr<const PinholeCamera> & camera,
-                    const Vectors3f & modelPoints,
-                    const Vectors2f & imagePoints,
-                    float maxDistance,
-                    int numberIterations)
+double optimize_pose(Matrix<double, 6, 1> & x,
+                     const std::shared_ptr<const PinholeCamera> & camera,
+                     const Vectors3f & modelPoints,
+                     const Vectors2f & imagePoints,
+                     double maxDistance,
+                     int numberIterations)
 {
-    /*float weightFunction_k2 = 1.0f / (3.0f * maxDistance * maxDistance);
-    float weightFunction_k1 = 1.0f / (maxDistance * (1.0f - weightFunction_k2 * maxDistance * maxDistance));
+    double weightFunction_k2 = 1.0 / (3.0 * (maxDistance * maxDistance));
+    double weightFunction_k1 = 1.0 / ((maxDistance) * (1.0 - weightFunction_k2 * (maxDistance * maxDistance)));
 
-    auto weightFunction = [&] (float x) -> float
+    auto weightFunction = [&] (double x) -> double
     {
-        return (x >= maxDistance) ? 1.0f : (weightFunction_k1 * x * (1.0f - (x * x) * weightFunction_k2));
+        return (x >= maxDistance) ? 1.0 : (weightFunction_k1 * x * (1.0 - (x * x) * weightFunction_k2));
     };
 
-    auto dif_weightFunction = [&] (float x) -> float
+    auto dif_weightFunction = [&] (double x) -> double
     {
-        return (x >= maxDistance) ? 1.0f : (weightFunction_k1 - 3.0f * weightFunction_k1 * weightFunction_k2 * x * x);
+        return (x >= maxDistance) ? 1.0 : (weightFunction_k1 - 3.0 * weightFunction_k1 * weightFunction_k2 * x * x);
     };
 
-    auto get_x_weightFunction = [&] (float y) -> float
+    auto get_x_weightFunction = [&] (double y) -> double
     {
-        float b = - 1.0f / weightFunction_k2;
-        float c = y / (weightFunction_k1 * weightFunction_k2);
-        float Q = ( - 3.0f * b) / 9.0f;
-        float R = (27.0f * c) / 54.0f;
+        double b = - 1.0 / weightFunction_k2;
+        double c = y / (weightFunction_k1 * weightFunction_k2);
+        double Q = ( - 3.0 * b) / 9.0;
+        double R = (27.0 * c) / 54.0;
 
-        float t = acos(R / sqrt(Q * Q * Q)) / 3.0f;
-        float x = - 2.0f * sqrt(Q) * cos(t - (2.0f / 3.0f) * static_cast<float>(M_PI));
+        double t = acos(R / sqrt(Q * Q * Q)) / 3.0;
+        double x = - 2.0 * sqrt(Q) * cos(t - (2.0 / 3.0) * (M_PI));
 
-        return x;
-    };*/
-
-    auto weightFunction = [&] (float x) -> float
-    {
         return x;
     };
 
-    auto dif_weightFunction = [&] (float x) -> float
+    /*auto weightFunction = [&] (double x) -> double
     {
-        return 1.0f;
+        return x;
     };
 
-    auto get_x_weightFunction = [&] (float y) -> float
+    auto dif_weightFunction = [&] (double x) -> double
+    {
+        return 1.0;
+    };
+
+    auto get_x_weightFunction = [&] (double y) -> double
     {
         return y;
-    };
+    };*/
 
     size_t numberPoints = modelPoints.size();
 
-    Vector2f focalLength = camera->pixelFocalLength();
-    Vector2f opticaCenter = camera->pixelOpticalCenter();
+    Vector2d focalLength = camera->pixelFocalLength().cast<double>();
+    Vector2d opticaCenter = camera->pixelOpticalCenter().cast<double>();
 
-    Vector3f w;
-    Matrix3f R;
-    Vector3f t;
-    Matrix3f rW;
+    Vector3d w;
+    Matrix3d R;
+    Vector3d t;
+    Matrix3d rW;
 
     auto getJacobianAndResidual = [&]
-            (Matrix<float, 1, 6> & J_x, Matrix<float, 1, 6> & J_y, Vector2f & e,
+            (Matrix<double, 1, 6> & J_x, Matrix<double, 1, 6> & J_y, Vector2d & e,
              const Vector3f & point, const Vector2f & imagePoint) -> bool
     {
-        //Matrix3f rJ = R * skewMatrix(point) * rW;
-        Matrix3f rJ = exp_jacobian(w, point);
+        Matrix3d rJ = R * skewMatrix(point.cast<double>().eval()) * rW;
+        //Matrix3d rJ = exp_jacobian(w, point.cast<double>());
 
-        Vector3f v = R * point + t;
-        if (v.z() < 1e-5f)
+        Vector3d v = R * point.cast<double>() + t;
+        if (v.z() < 1e-5)
             return false;
 
-        float z_inv = 1.0f / v.z();
-        float z_inv_squared = z_inv * z_inv;
+        double z_inv = 1.0 / v.z();
+        double z_inv_squared = z_inv * z_inv;
 
-        Vector2f f = v.segment<2>(0) * z_inv;
+        Vector2d f = v.segment<2>(0) * z_inv;
 
-        e = Vector2f(f.x() * focalLength.x() + opticaCenter.x(),
-                     f.y() * focalLength.y() + opticaCenter.y()) - imagePoint;
+        e = Vector2d(f.x() * focalLength.x() + opticaCenter.x(),
+                     f.y() * focalLength.y() + opticaCenter.y()) - imagePoint.cast<double>();
 
-        Vector2f k(dif_weightFunction(e.x()) * focalLength.x(),
+        Vector2d k(dif_weightFunction(e.x()) * focalLength.x(),
                    dif_weightFunction(e.y()) * focalLength.y());
         e.x() = weightFunction(e.x());
         e.y() = weightFunction(e.y());
 
-        /*J_x(0) = - z_inv;                 // - 1 / z
-        J_x(1) = 0.0;                     // 0
-        J_x(2) = x * z_inv_squared;       // x / z^2
-        J_x(3) = y * J_x(2);              // x * y / z^2
-        J_x(4) = - (1.0 + x * J_x(2));    // -(1.0 + x^2 / z^2)
-        J_x(5) = y * z_inv;               // y / z
-
-        J_y(0) = 0.0;                     // 0
-        J_y(1) = - z_inv;                 // - 1 / z
-        J_y(2) = y * z_inv_squared;       // y / z^2
-        J_y(3) = 1.0 + y * J_y(2);        // 1.0 + y^2 / z^2
-        J_y(4) = - J_x(3);                // -x * y / z^2
-        J_y(5) = - x * z_inv;             // - x / z*/
-
         J_x(0) = z_inv * k.x();
-        J_x(1) = 0.0f;
+        J_x(1) = 0.0;
         J_x(2) = - v.x() * z_inv_squared * k.x();
-        J_x(3) = (- (v.x() * v.y()) / (v.z() * v.z())) * k.x();
-        J_x(4) = (1.0f + (v.x() * v.x()) / (v.z() * v.z())) * k.x();
-        J_x(5) = (- v.y() / v.z()) * k.x();
-        //J_x(3) = (rJ(0, 0) * v.z() - v.x() * rJ(2, 0)) * z_inv_squared * k.x();
-        //J_x(4) = (rJ(0, 1) * v.z() - v.x() * rJ(2, 1)) * z_inv_squared * k.x();
-        //J_x(5) = (rJ(0, 2) * v.z() - v.x() * rJ(2, 2)) * z_inv_squared * k.x();
+        J_x(3) = (rJ(0, 0) * v.z() - v.x() * rJ(2, 0)) * z_inv_squared * k.x();
+        J_x(4) = (rJ(0, 1) * v.z() - v.x() * rJ(2, 1)) * z_inv_squared * k.x();
+        J_x(5) = (rJ(0, 2) * v.z() - v.x() * rJ(2, 2)) * z_inv_squared * k.x();
 
-        J_y(0) = 0.0f;
+        J_y(0) = 0.0;
         J_y(1) = z_inv * k.y();
         J_y(2) = - v.y() * z_inv_squared * k.y();
-        J_y(3) = - (1.0f + (v.y() * v.y()) / (v.z() * v.z())) * k.y();
-        J_y(4) = ((v.x() * v.y()) / (v.z() * v.z())) * k.y();
-        J_y(5) = (v.x() / v.z()) * k.y();
-        //J_y(3) = (rJ(1, 0) * v.z() - v.y() * rJ(2, 0)) * z_inv_squared * k.y();
-        //J_y(4) = (rJ(1, 1) * v.z() - v.y() * rJ(2, 1)) * z_inv_squared * k.y();
-        //J_y(5) = (rJ(1, 2) * v.z() - v.y() * rJ(2, 2)) * z_inv_squared * k.y();
+        J_y(3) = (rJ(1, 0) * v.z() - v.y() * rJ(2, 0)) * z_inv_squared * k.y();
+        J_y(4) = (rJ(1, 1) * v.z() - v.y() * rJ(2, 1)) * z_inv_squared * k.y();
+        J_y(5) = (rJ(1, 2) * v.z() - v.y() * rJ(2, 2)) * z_inv_squared * k.y();
 
          return true;
     };
 
-    auto getResidual = [&] (Vector2f & e, const Vector3f & point, const Vector2f & imagePoint) -> bool
+    auto getResidual = [&] (Vector2d & e, const Vector3f & point, const Vector2f & imagePoint) -> bool
     {
-        Vector3f v = R * point + t;
-        if (v.z() < 1e-5f)
+        Vector3d v = R * point.cast<double>() + t;
+        if (v.z() < 1e-5)
             return false;
 
-        Vector2f f = v.segment<2>(0) / v.z();
+        Vector2d f = v.segment<2>(0) / v.z();
 
-
-        e = Vector2f(f.x() * focalLength.x() + opticaCenter.x(),
-                     f.y() * focalLength.y() + opticaCenter.y()) - imagePoint;
+        e = Vector2d(f.x() * focalLength.x() + opticaCenter.x(),
+                     f.y() * focalLength.y() + opticaCenter.y()) - imagePoint.cast<double>();
         e.x() = weightFunction(e.x());
         e.y() = weightFunction(e.y());
 
@@ -181,15 +179,15 @@ float optimize_pose(Matrix<float, 6, 1> & x,
         return true;
     };
 
-    using MinimizationInfo = tuple<Matrix<float, 6, 6>, Matrix<float, 6, 1>, float, size_t>;
+    using MinimizationInfo = tuple<Matrix<double, 6, 6>, Matrix<double, 6, 1>, double, size_t>;
     auto computeMinimzationInfo = [&] (size_t begin_index, size_t end_index) -> MinimizationInfo
     {
         size_t count = 0;
-        Matrix<float, 6, 6> JtJ = Matrix<float, 6, 6>::Zero();
-        Matrix<float, 6, 1> Je = Matrix<float, 6, 1>::Zero();
-        float Fsq = 0.0f;
-        Matrix<float, 1, 6> J_i_x, J_i_y;
-        Vector2f e;
+        Matrix<double, 6, 6> JtJ = Matrix<double, 6, 6>::Zero();
+        Matrix<double, 6, 1> Je = Matrix<double, 6, 1>::Zero();
+        double Fsq = 0.0;
+        Matrix<double, 1, 6> J_i_x, J_i_y;
+        Vector2d e;
         for (size_t i = begin_index; i < end_index; ++i)
         {
             if (!getJacobianAndResidual(J_i_x, J_i_y, e, modelPoints[i], imagePoints[i]))
@@ -203,11 +201,11 @@ float optimize_pose(Matrix<float, 6, 1> & x,
         }
         return make_tuple(JtJ, Je, Fsq, count);
     };
-    auto computeResiduals = [&] (size_t begin_index, size_t end_index) -> tuple<float, size_t>
+    auto computeResiduals = [&] (size_t begin_index, size_t end_index) -> tuple<double, size_t>
     {
         size_t count = 0;
-        float Fsq = 0.0f;
-        Vector2f e;
+        double Fsq = 0.0;
+        Vector2d e;
         for (size_t i = begin_index; i < end_index; ++i)
         {
             if (!getResidual(e, modelPoints[i], imagePoints[i]))
@@ -218,10 +216,10 @@ float optimize_pose(Matrix<float, 6, 1> & x,
         return make_tuple(Fsq, count);
     };
 
-    float firstError = - 1.0f;
+    double firstError = - 1.0;
 
-    float Fsq = numeric_limits<float>::max();
-    float factor = 1e-5f;
+    double Fsq = numeric_limits<double>::max();
+    double factor = 10.0;
 
     //QSemaphore semaphore;
     //size_t workPartSize = static_cast<size_t>(ceil(numberPoints / numberWorkThreads));
@@ -231,42 +229,42 @@ float optimize_pose(Matrix<float, 6, 1> & x,
         t = x.segment<3>(0);
         w = x.segment<3>(3);
         R = exp_rotationMatrix(w);
-        float lw = w.dot(w);
-        if (lw < 1e-5f)
+        double lw = w.dot(w);
+        if (lw < 1e-5)
         {
-            R = Matrix3f::Identity();
-            rW = - Matrix3f::Identity();
+            R = Matrix3d::Identity();
+            rW = - Matrix3d::Identity();
         }
         else
         {
-            rW = ((w * w.transpose() + (R.transpose() - Matrix3f::Identity()) * skewMatrix(w)) / (- lw));
+            rW = ((w * w.transpose() + (R.transpose() - Matrix3d::Identity()) * skewMatrix(w)) / (- lw));
         }
 
-        Matrix<float, 6, 6> JtJ;
-        Matrix<float, 6, 1> Je;
+        Matrix<double, 6, 6> JtJ;
+        Matrix<double, 6, 1> Je;
         size_t count;
         {
             tie(JtJ, Je, Fsq, count) = computeMinimzationInfo(0, numberPoints);
         }
-        Fsq /= static_cast<float>(count);
-        if (firstError < 0.0f)
+        Fsq /= static_cast<double>(count);
+        if (firstError < 0.0)
             firstError = Fsq;
-        float Fsq_next = Fsq;
+        double Fsq_next = Fsq;
         for (int n_try = 0; n_try < 10; ++n_try)
         {
-            JtJ.diagonal() += Matrix<float, 6, 1>::Ones() * factor;
-            Matrix<float, 6, 1> dx = JtJ.ldlt().solve(Je).eval();
-            Matrix<float, 6, 1> x_next = x - dx;
+            JtJ.diagonal() += Matrix<double, 6, 1>::Ones() * factor;
+            Matrix<double, 6, 1> dx = JtJ.ldlt().solve(Je);
+            Matrix<double, 6, 1> x_next = x - dx;
 
             t = x_next.segment<3>(0);
-            R = exp_rotationMatrix(x_next.segment<3>(3));
+            R = exp_rotationMatrix(x_next.segment<3>(3).eval());
 
             count = 0;
             Fsq_next = 0.0;
             {
                 tie(Fsq_next, count) = computeResiduals(0, numberPoints);
             }
-            Fsq_next /= static_cast<float>(count);
+            Fsq_next /= static_cast<double>(count);
 
             if (Fsq_next < Fsq)
             {
@@ -275,12 +273,12 @@ float optimize_pose(Matrix<float, 6, 1> & x,
             }
             else
             {
-                factor *= 2.0f;
+                factor *= 2.0;
             }
         }
-        float deltaFsq = Fsq - Fsq_next;
+        double deltaFsq = Fsq - Fsq_next;
         Fsq = Fsq_next;
-        if (deltaFsq < numeric_limits<float>::epsilon())
+        if (deltaFsq < numeric_limits<double>::epsilon())
         {
             break;
         }
