@@ -13,8 +13,9 @@ Item {
 
     Settings {
         id: settings
-        property double canny_thresholdA: 100
-        property double canny_thresholdB: 150
+        property double binaryThreshold: 100.0
+        property double minBlobArea: 30.0
+        property double maxBlobCircularity: 0.25
     }
 
     states: [
@@ -80,7 +81,7 @@ Item {
 
     MediaPlayer {
         id: player
-        source: "file:///D:/1.mp4"
+        source: "file:///D:/1/3.mp4"
         autoPlay: true
         loops: MediaPlayer.Infinite
     }
@@ -88,16 +89,17 @@ Item {
     FrameHandler {
         id: frameHandler
         maxFrameSize: "600x600"
-        //orientation: camera.orientation
         orientation: 270
         flipHorizontally: false
+        //orientation: camera.orientation
         //flipHorizontally: (camera.position != Camera.FrontFace)
-        focalLength: Qt.vector2d(2.5, 2.5)
+        focalLength: Qt.vector2d(1.4, 1.4)
         opticalCenter: Qt.vector2d(0.5, 0.5)
         objectEdgesTracker {
             debugEnabled: true
-            cannyThresholdA: settings.canny_thresholdA
-            cannyThresholdB: settings.canny_thresholdB
+            binaryThreshold: settings.binaryThreshold
+            minBlobArea: settings.minBlobArea
+            maxBlobCircularity: settings.maxBlobCircularity
         }
         gl_view: gl_view
     }
@@ -157,8 +159,8 @@ Item {
         anchors.margins: 50
         anchors.fill: parent
 
-        //color: "black"
-        color: Qt.rgba(0.0, 0.0, 0.0, 0.0)
+        color: "black"
+        //color: Qt.rgba(0.0, 0.0, 0.0, 0.0)
         opacity: 0.3
 
         ColumnLayout {
@@ -168,8 +170,8 @@ Item {
 
             Text {
                 Layout.fillWidth: true
-                text: "Canny"
-                font.pointSize: 23
+                text: "Tracker parameters"
+                font.pointSize: 12
                 color: "white"
                 horizontalAlignment: Text.AlignHCenter
             }
@@ -180,18 +182,18 @@ Item {
 
                 Text {
                     Layout.fillWidth: true
-                    text: "Threshold A"
-                    font.pointSize: 23
+                    text: "Binary threshold"
+                    font.pointSize: 12
                     color: "white"
                 }
 
                 Slider {
                     Layout.fillWidth: true
-                    from: 0
-                    to: 500
-                    value: settings.canny_thresholdA
+                    from: 0.0
+                    to: 255.0
+                    value: settings.binaryThreshold
                     onValueChanged: {
-                        settings.canny_thresholdA = value
+                        settings.binaryThreshold = value
                     }
                 }
             }
@@ -202,19 +204,40 @@ Item {
 
                 Text {
                     Layout.fillWidth: true
-                    text: "Threshold B"
-                    font.pointSize: 23
+                    text: "Min blob area"
+                    font.pointSize: 12
                     color: "white"
                 }
 
                 Slider {
-                    id: sliderB
                     Layout.fillWidth: true
-                    from: 0
-                    to: 500
-                    value: settings.canny_thresholdB
+                    from: 0.0
+                    to: 100.0
+                    value: settings.minBlobArea
                     onValueChanged: {
-                        settings.canny_thresholdB = value
+                        settings.minBlobArea = value
+                    }
+                }
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 10
+
+                Text {
+                    Layout.fillWidth: true
+                    text: "Max blob circularity"
+                    font.pointSize: 12
+                    color: "white"
+                }
+
+                Slider {
+                    Layout.fillWidth: true
+                    from: 0.0
+                    to: 1.0
+                    value: settings.maxBlobCircularity
+                    onValueChanged: {
+                        settings.maxBlobCircularity = value
                     }
                 }
             }

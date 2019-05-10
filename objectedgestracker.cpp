@@ -26,13 +26,17 @@ using namespace Eigen;
 
 ObjectEdgesTracker::ObjectEdgesTracker(const QSharedPointer<PerformanceMonitor> & monitor):
     m_monitor(monitor),
-    m_controlPixelDistance(10.0f),
-    m_cannyThresholdA(50.0),
-    m_cannyThresholdB(100.0),
-    m_model(ObjectModel::createHouse(Vector3f(10.0f, 18.0f, 15.0f)))
+    m_controlPixelDistance(20.0f),
+    m_binaryThreshold(50.0),
+    m_minBlobArea(30.0),
+    m_maxBlobCircularity(0.25),
+    m_model(ObjectModel::createHouse(Vector3f(11.0f, 18.0f, 6.0f)))
 {
-    m_R = Matrix3f::Identity() * exp_rotationMatrix(Vector3f(0.0f, 0.3f, 0.0f));
-    m_t = Vector3f(0.0f, 8.0f, 100.0f);
+    m_reset_R = exp_rotationMatrix(Vector3f(0.0f, -0.7f, 0.0f));
+    m_reset_t = Vector3f(0.0f, -4.0f, 28.0f);
+
+    m_R = m_reset_R;
+    m_t = m_reset_t;
 }
 
 float ObjectEdgesTracker::controlPixelDistance() const
@@ -48,30 +52,43 @@ void ObjectEdgesTracker::setControlPixelDistance(float controlPixelDistance)
     emit controlPixelDistanceChanged();
 }
 
-double ObjectEdgesTracker::cannyThresholdA() const
+double ObjectEdgesTracker::binaryThreshold() const
 {
-    return m_cannyThresholdA;
+    return m_binaryThreshold;
 }
 
-void ObjectEdgesTracker::setCannyThresholdA(double cannyThresholdA)
+void ObjectEdgesTracker::setBinaryThreshold(double binaryThreshold)
 {
-    if (m_cannyThresholdA == cannyThresholdA)
+    if (m_binaryThreshold == binaryThreshold)
         return;
-    m_cannyThresholdA = cannyThresholdA;
-    emit cannyThresholdAChanged();
+    m_binaryThreshold = binaryThreshold;
+    emit binaryThresholdChanged();
 }
 
-double ObjectEdgesTracker::cannyThresholdB() const
+double ObjectEdgesTracker::maxBlobCircularity() const
 {
-    return m_cannyThresholdB;
+    return m_maxBlobCircularity;
 }
 
-void ObjectEdgesTracker::setCannyThresholdB(double cannyThresholdB)
+void ObjectEdgesTracker::setMaxBlobCircularity(double maxBlobCircularity)
 {
-    if (m_cannyThresholdB == cannyThresholdB)
+    if (maxBlobCircularity == m_maxBlobCircularity)
         return;
-    m_cannyThresholdB = cannyThresholdB;
-    emit cannyThresholdBChanged();
+    m_maxBlobCircularity = maxBlobCircularity;
+    emit maxBlobCircularityChanged();
+}
+
+double ObjectEdgesTracker::minBlobArea() const
+{
+    return m_minBlobArea;
+}
+
+void ObjectEdgesTracker::setMinBlobArea(double minBlobArea)
+{
+    if (minBlobArea == m_minBlobArea)
+        return;
+    m_minBlobArea = minBlobArea;
+    emit minBlobAreaChanged();
 }
 
 shared_ptr<PinholeCamera> ObjectEdgesTracker::camera() const
@@ -122,7 +139,7 @@ void ObjectEdgesTracker::compute(cv::Mat image)
 
     cv::Mat binImage;
     m_monitor->startTimer("Threshold");
-    cv::threshold(image, binImage, m_cannyThresholdA, 255.0, cv::THRESH_BINARY);
+    cv::threshold(image, binImage, m_binaryThreshold, 255.0, cv::THRESH_BINARY);
     m_monitor->endTimer("Threshold");
 
     m_monitor->startTimer("Dilate");
@@ -141,7 +158,7 @@ void ObjectEdgesTracker::compute(cv::Mat image)
         cv::Moments moms = cv::moments(contours[contourIdx]);
         {
             double area = moms.m00;
-            if (area < 50.0)
+            if (area < m_minBlobArea)
             {
                 cv::drawContours(binImage, contours,
                                  static_cast<int>(contourIdx), cv::Scalar(0), -1);
@@ -152,8 +169,8 @@ void ObjectEdgesTracker::compute(cv::Mat image)
         {
             double area = moms.m00;
             double perimeter = arcLength(contours[contourIdx], true);
-            double ratio = 4 * CV_PI * area / (perimeter * perimeter);
-            if (ratio > 0.25)
+            double ratio = 4.0 * M_PI * area / (perimeter * perimeter);
+            if (ratio > m_maxBlobCircularity)
             {
                 cv::drawContours(binImage, contours,
                                  static_cast<int>(contourIdx), cv::Scalar(0), -1);
@@ -168,11 +185,7 @@ void ObjectEdgesTracker::compute(cv::Mat image)
     cv::bitwise_not(binImage, binImage);
     m_monitor->endTimer("Inverting");
 
-    m_debugImage = binImage;
-    return;
-
-    float E1 = _tracking1(binImage);
-    qDebug() << "Error =" << E1;
+    qDebug() << "Error =" << _tracking1(binImage);
     m_debugImage = binImage;
     if (debugEnabled())
     {
@@ -202,10 +215,9 @@ float ObjectEdgesTracker::_tracking1(const cv::Mat & edges)
     x.segment<3>(0) = m_t.cast<double>();
     x.segment<3>(3) = ln_rotationMatrix(m_R.cast<double>().eval());
 
-
     m_monitor->startTimer("Tracking [1]");
 
-    for (int i = 0; i < 3; ++i)
+    for (int i = 0; i < 2; ++i)
     {
 
         string iterName = QString("    Tracking [1] iter_%1").arg(i).toStdString();
@@ -220,7 +232,7 @@ float ObjectEdgesTracker::_tracking1(const cv::Mat & edges)
 
         E = static_cast<float>(optimize_pose(x,
                           QThreadPool::globalInstance(), QThread::idealThreadCount(),
-                          distancesMap, m_camera, controlModelPoints, 30.0, 5));
+                          distancesMap, m_camera, controlModelPoints, 30.0, 10));
 
         m_t = x.segment<3>(0).cast<float>();
         m_R = exp_rotationMatrix(x.segment<3>(3).eval()).cast<float>();
@@ -246,10 +258,10 @@ float ObjectEdgesTracker::_tracking1(const cv::Mat & edges)
     float area = (bb_max.x() - bb_min.x()) * (bb_max.y() - bb_min.y());
     if (area < 100.0f)
         E = numeric_limits<float>::max();
-    if (E > 2.0f)
+    if (E > 7.0f)
     {
-        m_R = Matrix3f::Identity() * exp_rotationMatrix(Vector3f(0.0f, 0.3f, 0.0f));
-        m_t = Vector3f(0.0f, 8.0f, 100.0f);
+        m_R = m_reset_R;
+        m_t = m_reset_t;
     }
 
     return E;
@@ -364,8 +376,8 @@ float ObjectEdgesTracker::_tracking2(const cv::Mat & edges)
         E = numeric_limits<float>::max();
     if (E > 7.0f)
     {
-        m_R = Matrix3f::Identity() * exp_rotationMatrix(Vector3f(0.0f, 0.3f, 0.0f));
-        m_t = Vector3f(0.0f, 8.0f, 100.0f);
+        m_R = m_reset_R;
+        m_t = m_reset_t;
     }
 
     return E;

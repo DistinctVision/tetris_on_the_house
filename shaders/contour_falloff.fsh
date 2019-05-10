@@ -17,7 +17,7 @@ void main(void)
         return;
     }
 
-    highp float v = 1.0 - max(- dot(normalize(position), normalize(normal)), 0.0);
+    highp float v = 1.0 - max(dot(normalize(position), normalize(normal)), 0.0);
     v = 1.0 - (1.0 - v) * (1.0 - v);
     color = vec4(mix(fallOff_color.xyz, vec3(1.0), v), fallOff_color.w * v);
 }

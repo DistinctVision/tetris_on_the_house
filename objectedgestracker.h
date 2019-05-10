@@ -24,9 +24,13 @@ class ObjectEdgesTracker:
 {
     Q_OBJECT
 
-    Q_PROPERTY(float controlPixelDistance READ controlPixelDistance WRITE setControlPixelDistance NOTIFY controlPixelDistanceChanged)
-    Q_PROPERTY(float cannyThresholdA READ cannyThresholdA WRITE setCannyThresholdA NOTIFY cannyThresholdAChanged)
-    Q_PROPERTY(float cannyThresholdB READ cannyThresholdB WRITE setCannyThresholdB NOTIFY cannyThresholdBChanged)
+    Q_PROPERTY(float controlPixelDistance READ controlPixelDistance WRITE setControlPixelDistance
+               NOTIFY controlPixelDistanceChanged)
+    Q_PROPERTY(double binaryThreshold READ binaryThreshold WRITE setBinaryThreshold
+               NOTIFY binaryThresholdChanged)
+    Q_PROPERTY(double minBlobArea READ minBlobArea WRITE setMinBlobArea NOTIFY minBlobAreaChanged)
+    Q_PROPERTY(double maxBlobCircularity READ maxBlobCircularity WRITE setMaxBlobCircularity
+               NOTIFY maxBlobCircularityChanged)
     Q_PROPERTY(QVector2D focalLength READ focalLength NOTIFY cameraChanged)
     Q_PROPERTY(QVector2D opticalCenter READ opticalCenter NOTIFY cameraChanged)
     Q_PROPERTY(QSize frameSize READ frameSize NOTIFY cameraChanged)
@@ -36,11 +40,14 @@ public:
     float controlPixelDistance() const;
     void setControlPixelDistance(float controlPixelDistance);
 
-    double cannyThresholdA() const;
-    void setCannyThresholdA(double cannyThresholdA);
+    double binaryThreshold() const;
+    void setBinaryThreshold(double binaryThreshold);
 
-    double cannyThresholdB() const;
-    void setCannyThresholdB(double cannyThresholdB);
+    double minBlobArea() const;
+    void setMinBlobArea(double minBlobArea);
+
+    double maxBlobCircularity() const;
+    void setMaxBlobCircularity(double maxBlobCircularity);
 
     std::shared_ptr<PinholeCamera> camera() const;
     void setCamera(const std::shared_ptr<PinholeCamera> & camera);
@@ -57,19 +64,24 @@ public:
 
 signals:
     void controlPixelDistanceChanged();
-    void cannyThresholdAChanged();
-    void cannyThresholdBChanged();
+    void binaryThresholdChanged();
+    void minBlobAreaChanged();
+    void maxBlobCircularityChanged();
     void cameraChanged();
 
 private:
     QSharedPointer<PerformanceMonitor> m_monitor;
 
     float m_controlPixelDistance;
-    double m_cannyThresholdA;
-    double m_cannyThresholdB;
+    double m_binaryThreshold;
+    double m_minBlobArea;
+    double m_maxBlobCircularity;
 
     ObjectModel m_model;
     std::shared_ptr<PinholeCamera> m_camera;
+
+    Eigen::Matrix3f m_reset_R;
+    Eigen::Vector3f m_reset_t;
 
     Eigen::Matrix3f m_R;
     Eigen::Vector3f m_t;

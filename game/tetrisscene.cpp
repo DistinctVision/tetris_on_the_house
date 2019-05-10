@@ -22,8 +22,12 @@ void TetrisScene::setObjectEdgesTracker(ObjectEdgesTracker * objectEdgesTracker)
 
 void TetrisScene::init(GL_ViewRenderer * view)
 {
-    m_house = GL_WorldObjectPtr::create(GL_MeshPtr::create(GL_Mesh::createCube(QVector3D(10.0f, 18.0f, 10.0f))),
+    m_house = GL_WorldObjectPtr::create(GL_MeshPtr::create(GL_Mesh::createCube(QVector3D(11.0f, 18.0f, 6.0f))),
                                         view->createMaterial(MaterialType::ContourFallOff));
+    QMatrix4x4 transfrom;
+    transfrom.translate(0.0f, 9.0f, 0.0f);
+    m_house->setWorldMatrix(transfrom);
+    m_house->material()->setValue("border_size", 0.01f);
 }
 
 void TetrisScene::destroy(GL_ViewRenderer * view)

@@ -143,18 +143,16 @@ ObjectModel ObjectModel::createCubikRubik(float border)
 
 ObjectModel ObjectModel::createHouse(const Vector3f & size)
 {
-    Vector3f halfSize = size * 0.5f;
-
     ObjectModel house;
     house.m_vertices = {
-        Vector3f(- halfSize.x(), - halfSize.y(), halfSize.z()),
-        Vector3f(halfSize.x(), - halfSize.y(), halfSize.z()),
-        Vector3f(halfSize.x(), halfSize.y(), halfSize.z()),
-        Vector3f(- halfSize.x(), halfSize.y(), halfSize.z()),
-        Vector3f(- halfSize.x(), - halfSize.y(), - halfSize.z()),
-        Vector3f(halfSize.x(), - halfSize.y(), - halfSize.z()),
-        Vector3f(halfSize.x(), halfSize.y(), - halfSize.z()),
-        Vector3f(- halfSize.x(), halfSize.y(), - halfSize.z())
+        Vector3f(- size.x() * 0.5f, 0.0f, size.z() * 0.5f),
+        Vector3f(size.x() * 0.5f, 0.0f, size.z() * 0.5f),
+        Vector3f(size.x() * 0.5f, size.y(), size.z() * 0.5f),
+        Vector3f(- size.x() * 0.5f, size.y(), size.z() * 0.5f),
+        Vector3f(- size.x() * 0.5f, 0.0f, - size.z() * 0.5f),
+        Vector3f(size.x() * 0.5f, 0.0f, - size.z() * 0.5f),
+        Vector3f(size.x() * 0.5f, size.y(), - size.z() * 0.5f),
+        Vector3f(- size.x() * 0.5f, size.y(), - size.z() * 0.5f)
     };
     house.m_polygons = {
         Polygon {
@@ -237,19 +235,20 @@ Vectors3f ObjectModel::getControlPoints(const std::shared_ptr<PinholeCamera> & c
             continue;
         controlModelPoints.push_back(vertex);
     }
-
     for (auto itEdge = setOfEdges.cbegin(); itEdge != setOfEdges.cend(); ++itEdge)
     {
         const Vector3f & vertex1 = m_vertices[itEdge->first];
         const Vector3f & vertex2 = m_vertices[itEdge->second];
 
-        bool inViewFlag;
-        Vector2f p1 = camera->project((R * vertex1 + t).eval(), inViewFlag);
-        if (!inViewFlag)
+        Vector3f v1 = (R * vertex1 + t);
+        if (v1.z() < numeric_limits<float>::epsilon())
             continue;
-        Vector2f p2 = camera->project((R * vertex2 + t).eval(), inViewFlag);
-        if (!inViewFlag)
+        Vector3f v2 = (R * vertex2 + t);
+        if (v2.z() < numeric_limits<float>::epsilon())
             continue;
+
+        Vector2f p1 = camera->project(v1);
+        Vector2f p2 = camera->project(v2);
 
         float distance = (p2 - p1).norm();
         int n = static_cast<int>(ceil(distance / controlPixelDistance));
@@ -262,7 +261,11 @@ Vectors3f ObjectModel::getControlPoints(const std::shared_ptr<PinholeCamera> & c
         {
             float k = i * step;
             Vector3f v = vertex1 + delta * k;
-            //Vector2f p = camera->project((R * v + t).eval());
+            bool inViewFlag;
+            Vector2f p = camera->project((R * v + t).eval(), inViewFlag);
+            (void)(p);
+            if (!inViewFlag)
+                continue;
             controlModelPoints.push_back(v);
         }
     }
@@ -371,19 +374,20 @@ void ObjectModel::draw(const cv::Mat & image,
 
     for (auto itEdge = setOfEdges.cbegin(); itEdge != setOfEdges.cend(); ++itEdge)
     {
-        const Vector3f & v1 = m_vertices[std::get<0>(*itEdge)];
-        const Vector3f & v2 = m_vertices[std::get<1>(*itEdge)];
-
-        bool inViewFlag;
-        Vector2f p1 = camera->project((R * v1 + t).eval(), inViewFlag);
-        if (!inViewFlag)
+        const Vector3f & vertex1 = m_vertices[std::get<0>(*itEdge)];
+        Vector3f v1 = R * vertex1 + t;
+        if (v1.z() < numeric_limits<float>::epsilon())
             continue;
-        Vector2f p2 = camera->project((R * v2 + t).eval(), inViewFlag);
-        if (!inViewFlag)
+        const Vector3f & vertex2 = m_vertices[itEdge->second];
+        Vector3f v2 = R * vertex2 + t;
+        if (v2.z() < numeric_limits<float>::epsilon())
             continue;
 
-        cv::Scalar color = (m_disabledEdges.find(*itEdge) == m_disabledEdges.cend()) ? cv::Scalar(255, 0, 0) :
-                                                                                       cv::Scalar(100, 0, 0);
+        Vector2f p1 = camera->project(v1);
+        Vector2f p2 = camera->project(v2);
+
+        cv::Scalar color = (m_disabledEdges.find(*itEdge) == m_disabledEdges.cend()) ? cv::Scalar(0, 255, 0) :
+                                                                                       cv::Scalar(255, 0, 0);
 
         cv::line(image, cv::Point2f(p1.x(), p1.y()), cv::Point2f(p2.x(), p2.y()), color, 2);
     }

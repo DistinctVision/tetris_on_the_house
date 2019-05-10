@@ -514,7 +514,11 @@ double optimize_pose(Matrix<double, 6, 1> &x,
         for (size_t i = begin_index; i < end_index; ++i)
         {
             if (!getJacobianAndResidual(J_i, e, modelPoints[i]))
+            {
+                //Fsq += maxDistance * maxDistance;
+                //++count;
                 continue;
+            }
             JtJ += J_i.transpose() * J_i;
             Je += J_i.transpose() * e;
             Fsq += e * e;
@@ -530,8 +534,8 @@ double optimize_pose(Matrix<double, 6, 1> &x,
         {
             if (!getResidual(e, modelPoints[i]))
             {
-                Fsq += maxDistance * maxDistance;
-                ++count;
+                //Fsq += maxDistance * maxDistance;
+                //++count;
                 continue;
             }
             Fsq += e * e;
@@ -543,10 +547,10 @@ double optimize_pose(Matrix<double, 6, 1> &x,
     double firstError = - 1.0;
 
     double Fsq = numeric_limits<double>::max();
-    double factor = 1e0;
+    double factor = 1e2;
 
     QSemaphore semaphore;
-    size_t workPartSize = static_cast<size_t>(ceil(numberPoints / numberWorkThreads));
+    size_t workPartSize = static_cast<size_t>(ceil(numberPoints / static_cast<float>(numberWorkThreads)));
 
     for (int iter = 0; iter < numberIterations; ++iter)
     {
