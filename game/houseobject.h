@@ -41,6 +41,7 @@ private:
     Eigen::Vector3f m_borderSecond;
 
     QVector<_FloorInfo> m_floorInfos;
+    QVector<QVector2D> m_textureCoords;
 
     GL_ScreenObjectPtr m_screenTempObject;
 

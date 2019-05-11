@@ -29,6 +29,8 @@ public:
                               const QVector<QVector2D> & textureCoords,
                               const QVector<GLuint> & indices);
 
+    void updateTextureCoords(const QVector<QVector2D> & textureCoords);
+
     void draw(QOpenGLFunctions * gl, const GL_ShaderMaterial & shaderMaterial);
 
 private:

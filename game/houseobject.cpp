@@ -31,6 +31,25 @@ void HouseObject::draw(GL_ViewRenderer * view, const QMatrix4x4 & viewMatrix,
     m_material->setValue("matrixMVP", matrixMVP);
     m_material->setValue("matrixView2FrameUV", invUvTransfrom);
     m_material->setTexture("screen_texture", frameTextureId);
+
+    {
+        static float t = 0.0f;
+        for (int i = 1; i < m_floorInfos.size() - 1; ++i)
+        {
+            for (int j = 0; j < 4; ++j)
+            {
+                const QVector<GLuint> & indices = m_floorInfos[i].i_sides[j];
+                for (int k = 0; k < indices.size(); ++k)
+                {
+                    float kk = k / static_cast<float>(indices.size());
+                    m_textureCoords[indices[k]].setY(std::sin(t + kk * 0.1f));
+                }
+            }
+        }
+        t += 0.05f;
+        m_mesh->updateTextureCoords(m_textureCoords);
+    }
+
     m_mesh->draw(view, *m_material);
 }
 
@@ -139,4 +158,5 @@ void HouseObject::_createMesh()
     QVector<QVector2D> textureCoords(vertices.size(), QVector2D(0.0f, 0.0f));
 
     m_mesh = GL_MeshPtr::create(GL_Mesh::createMesh(vertices, textureCoords, indices));
+    m_textureCoords = std::move(textureCoords);
 }

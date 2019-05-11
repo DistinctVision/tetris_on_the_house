@@ -264,8 +264,6 @@ QVideoFrame FrameHandlerRunnable::run(QVideoFrame * videoFrame,
                 ((v_focalLength - prevCamera->pixelFocalLength()).array().sum() > 1e-4f) ||
                 ((v_opticalCenter - prevCamera->pixelOpticalCenter()).array().sum() > 1e-4f))
         {
-            qDebug() << "!!!! setting of camera";
-
             objectEdgesTracking->setCamera(std::make_shared<PinholeCamera>(v_imageSize,
                                                                            v_focalLength,
                                                                            v_opticalCenter));
