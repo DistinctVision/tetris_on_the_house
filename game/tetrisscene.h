@@ -3,6 +3,7 @@
 
 #include "gl/gl_scene.h"
 #include "gl/gl_worldobject.h"
+#include "houseobject.h"
 
 class ObjectEdgesTracker;
 
@@ -27,7 +28,7 @@ signals:
     void objectEdgesTrackerChanged();
 
 private:
-    GL_WorldObjectPtr m_house;
+    HouseObjectPtr m_house;
     ObjectEdgesTracker * m_tracker;
 };
 

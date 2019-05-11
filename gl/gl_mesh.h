@@ -25,6 +25,9 @@ public:
     static GL_Mesh createQuad(const QVector2D & size = QVector2D(1.0f, 1.0f));
     static GL_Mesh createCube(const QVector3D & size = QVector3D(1.0f, 1.0f, 1.0f));
     static GL_Mesh createCubikRubik(float border = 0.075f);
+    static GL_Mesh createMesh(const QVector<QVector3D> & vertices,
+                              const QVector<QVector2D> & textureCoords,
+                              const QVector<GLuint> & indices);
 
     void draw(QOpenGLFunctions * gl, const GL_ShaderMaterial & shaderMaterial);
 

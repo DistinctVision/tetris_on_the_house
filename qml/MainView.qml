@@ -93,7 +93,7 @@ Item {
         flipHorizontally: false
         //orientation: camera.orientation
         //flipHorizontally: (camera.position != Camera.FrontFace)
-        focalLength: Qt.vector2d(1.4, 1.4)
+        focalLength: Qt.vector2d(1.5, 1.5)
         opticalCenter: Qt.vector2d(0.5, 0.5)
         objectEdgesTracker {
             debugEnabled: true

@@ -55,7 +55,7 @@ PoseFilter::Pose PoseFilter::Pose::mix(const PoseFilter::Pose & pose, double k_p
 }
 
 PoseFilter::PoseFilter():
-    m_positionWeights(3.0, 1.0),
+    m_positionWeights(10.0, 1.0),
     m_rotationWeights(10.0, 1.0)
 {
     reset();

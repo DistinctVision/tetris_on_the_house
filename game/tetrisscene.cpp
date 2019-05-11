@@ -2,6 +2,8 @@
 
 #include "objectedgestracker.h"
 
+using namespace Eigen;
+
 TetrisScene::TetrisScene():
     m_tracker(nullptr)
 {
@@ -22,12 +24,10 @@ void TetrisScene::setObjectEdgesTracker(ObjectEdgesTracker * objectEdgesTracker)
 
 void TetrisScene::init(GL_ViewRenderer * view)
 {
-    m_house = GL_WorldObjectPtr::create(GL_MeshPtr::create(GL_Mesh::createCube(QVector3D(11.0f, 18.0f, 6.0f))),
-                                        view->createMaterial(MaterialType::ContourFallOff));
-    QMatrix4x4 transfrom;
-    transfrom.translate(0.0f, 9.0f, 0.0f);
-    m_house->setWorldMatrix(transfrom);
-    m_house->material()->setValue("border_size", 0.01f);
+    m_house = HouseObjectPtr::create(view, Vector3i(10, 18, 5),
+                                           Vector3f(11.0f, 18.5f, 6.0f),
+                                           Vector3f(0.5f, 0.0f, 0.5f),
+                                           Vector3f(0.5f, 0.5f, 0.5f));
 }
 
 void TetrisScene::destroy(GL_ViewRenderer * view)

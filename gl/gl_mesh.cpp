@@ -247,6 +247,29 @@ GL_Mesh GL_Mesh::createCubikRubik(float border)
     return mesh;
 }
 
+GL_Mesh GL_Mesh::createMesh(const QVector<QVector3D> & vertices,
+                            const QVector<QVector2D> & textureCoords,
+                            const QVector<GLuint> & indices)
+{
+    assert(vertices.size() == textureCoords.size());
+    assert(indices.size() % 3 == 0);
+
+    GL_Mesh mesh;
+    QVector<QVector3D> normals = computeNormals(vertices, indices);
+
+    mesh.m_vertexBuffer.bind();
+    mesh.m_vertexBuffer.allocate(vertices.data(), static_cast<int>(sizeof(QVector3D)) * vertices.size());
+    mesh.m_textureCoordsBuffer.bind();
+    mesh.m_textureCoordsBuffer.allocate(textureCoords.data(), static_cast<int>(sizeof(QVector2D)) * textureCoords.size());
+    mesh.m_normalsBuffer.bind();
+    mesh.m_normalsBuffer.allocate(normals.data(), static_cast<int>(sizeof(QVector3D)) * normals.size());
+    mesh.m_normalsBuffer.release();
+    mesh.m_indicesBuffer.bind();
+    mesh.m_indicesBuffer.allocate(indices.data(), static_cast<int>(sizeof(GLuint)) * indices.size());
+    mesh.m_numberElements = indices.size();
+    return mesh;
+}
+
 void GL_Mesh::draw(QOpenGLFunctions * gl, const GL_ShaderMaterial & shaderMaterial)
 {
     shaderMaterial.bind(gl);

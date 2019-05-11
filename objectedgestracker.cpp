@@ -30,7 +30,7 @@ ObjectEdgesTracker::ObjectEdgesTracker(const QSharedPointer<PerformanceMonitor> 
     m_binaryThreshold(50.0),
     m_minBlobArea(30.0),
     m_maxBlobCircularity(0.25),
-    m_model(ObjectModel::createHouse(Vector3f(11.0f, 18.0f, 6.0f)))
+    m_model(ObjectModel::createHouse(Vector3f(11.0f, 18.5f, 6.0f)))
 {
     m_resetCameraPose = Pose(Vector3d(-12.0, 4.0, -28.0), Quaterniond(AngleAxisd(0.4, Vector3d(0.0, 1.0, 0.0))));
     m_poseFilter.reset(m_resetCameraPose);
