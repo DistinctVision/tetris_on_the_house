@@ -210,13 +210,20 @@ void GL_View::setOrderRender(int orderRender)
 GL_ViewRenderer::GL_ViewRenderer(GL_View * parent):
     m_parent(parent)
 {
-    connect(m_parent->window(), &QQuickWindow::beforeRendering, this, &GL_ViewRenderer::_beforeSlotDraw, Qt::DirectConnection);
-    connect(m_parent->window(), &QQuickWindow::afterRendering, this, &GL_ViewRenderer::_afterSlotDraw, Qt::DirectConnection);
+    connect(m_parent->window(), &QQuickWindow::beforeRendering, this,
+            &GL_ViewRenderer::_beforeSlotDraw, Qt::DirectConnection);
+    connect(m_parent->window(), &QQuickWindow::afterRendering, this,
+            &GL_ViewRenderer::_afterSlotDraw, Qt::DirectConnection);
     initializeOpenGLFunctions();
     _initEmptyTexture();
     _loadShaders();
     if (m_parent->viewportSize() != viewportSize())
         m_parent->_setViewportSize(viewportSize());
+}
+
+GL_View * GL_ViewRenderer::parent() const
+{
+    return m_parent;
 }
 
 GL_ShaderMaterialPtr GL_ViewRenderer::createMaterial(MaterialType::Enum type) const
@@ -423,6 +430,18 @@ void GL_ViewRenderer::_loadShaders()
                                                               { "fallOff_color", QColor(255, 215, 0, 200) },
                                                               { "border_size", 0.1f },
                                                               { "border_color", QColor(255, 255, 255, 255) }
+                                                          }));
+    programPtr = loadShader(":/shaders/morph.vsh",
+                             ":/shaders/morph.fsh");
+    m_shaderMaterials.insert(MaterialType::Morph,
+                             GL_ShaderMaterialPtr::create(programPtr,
+                                                          QVariantMap {
+                                                              { "matrixMVP", QMatrix4x4() },
+                                                              //{ "matrixMV", QMatrix4x4() },
+                                                              { "matrixView2FrameUV", QMatrix4x4() }
+                                                          },
+                                                          QMap<QString, GLuint> {
+                                                              { "screen_texture", m_emptyTextureId }
                                                           }));
 }
 

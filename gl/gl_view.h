@@ -25,7 +25,8 @@ public:
     {
         Color,
         Texture,
-        ContourFallOff
+        ContourFallOff,
+        Morph
     };
     Q_ENUM(Enum)
 };
@@ -136,6 +137,8 @@ public:
                                                            const QString & fragmentPath);
 
     GL_ViewRenderer(GL_View * parent);
+
+    GL_View * parent() const;
 
     GL_ShaderMaterialPtr createMaterial(MaterialType::Enum type) const;
 

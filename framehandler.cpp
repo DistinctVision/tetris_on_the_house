@@ -9,6 +9,7 @@
 #include "objectedgestracker.h"
 #include "texture2grayimageconvertor.h"
 #include "gl/gl_view.h"
+#include "texturereceiver.h"
 
 #include <opencv2/imgproc.hpp>
 
@@ -21,7 +22,8 @@ FrameHandler::FrameHandler():
     m_flipHorizontally(false),
     m_focalLength(1.0f, 1.0f),
     m_opticalCenter(0.5f, 0.5f),
-    m_gl_view(nullptr)
+    m_gl_view(nullptr),
+    m_textureReceiver(nullptr)
 {
     m_monitor = QSharedPointer<PerformanceMonitor>::create();
     m_objectEdgesTracker = QSharedPointer<ObjectEdgesTracker>::create(m_monitor);
@@ -125,6 +127,19 @@ void FrameHandler::setGl_view(GL_View * gl_view)
     emit gl_viewChanged();
 }
 
+TextureReceiver * FrameHandler::textureReceiver() const
+{
+    return m_textureReceiver;
+}
+
+void FrameHandler::setTextureReceiver(TextureReceiver * textureReceiver)
+{
+    if (m_textureReceiver == textureReceiver)
+        return;
+    m_textureReceiver = textureReceiver;
+    emit textureReceiverChanged();
+}
+
 void FrameHandler::_setFrameSize(const QSize & frameSize)
 {
     if (frameSize == m_frameSize)
@@ -134,9 +149,18 @@ void FrameHandler::_setFrameSize(const QSize & frameSize)
 }
 
 FrameHandlerRunnable::FrameHandlerRunnable(FrameHandler * parent):
-    m_parent(parent)
+    m_parent(parent),
+    m_frameTextureId(0)
 {
     initializeOpenGLFunctions();
+}
+
+FrameHandlerRunnable::~FrameHandlerRunnable()
+{
+    if (m_frameTextureId > 0)
+    {
+        glDeleteTextures(1, &m_frameTextureId);
+    }
 }
 
 QVideoFrame FrameHandlerRunnable::run(QVideoFrame * videoFrame,
@@ -149,6 +173,7 @@ QVideoFrame FrameHandlerRunnable::run(QVideoFrame * videoFrame,
     QVector2D viewScale(1.0f, 1.0f);
 
     QSharedPointer<PerformanceMonitor> monitor = m_parent->monitor();
+    TextureReceiver * textureReceiver = m_parent->textureReceiver();
 
     monitor->start();
     monitor->startTimer("Getting frame");
@@ -167,8 +192,18 @@ QVideoFrame FrameHandlerRunnable::run(QVideoFrame * videoFrame,
         {
             qFatal("Coudn't read video frame");
         }
-        cv::cvtColor(frame, frame, cv::COLOR_BGRA2GRAY);
         _transformImage(frame);
+        if (textureReceiver != nullptr)
+        {
+            if (m_frameTextureId == 0)
+                glGenTextures(1, &m_frameTextureId);
+            glBindTexture(GL_TEXTURE_2D, m_frameTextureId);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, frame.cols, frame.rows,
+                         0, GL_RGBA, GL_UNSIGNED_BYTE, frame.data);
+            glGenerateMipmap(GL_TEXTURE_2D);
+            textureReceiver->setTextureId(m_frameTextureId, QSize(frame.cols, frame.rows));
+        }
+        cv::cvtColor(frame, frame, cv::COLOR_BGRA2GRAY);
         QSize maxSize = m_parent->maxFrameSize();
         double scale1 = maxSize.width() / static_cast<double>(frame.cols);
         double scale2 = maxSize.height() / static_cast<double>(frame.rows);
@@ -178,6 +213,11 @@ QVideoFrame FrameHandlerRunnable::run(QVideoFrame * videoFrame,
     }
     else if (surfaceFormat.handleType() == QAbstractVideoBuffer::GLTextureHandle)
     {
+        if (textureReceiver != nullptr)
+        {
+            textureReceiver->setTextureId(videoFrame->handle().toUInt(), videoFrame->size());
+        }
+
         if (!m_texture2GrayImageConverter)
             m_texture2GrayImageConverter = QSharedPointer<Texture2GrayImageConvertor>::create();
 

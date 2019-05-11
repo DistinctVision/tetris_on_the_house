@@ -86,6 +86,10 @@ Item {
         loops: MediaPlayer.Infinite
     }
 
+    TextureReceiver {
+        id: frameTextureReceiver
+    }
+
     FrameHandler {
         id: frameHandler
         maxFrameSize: "600x600"
@@ -102,6 +106,7 @@ Item {
             maxBlobCircularity: settings.maxBlobCircularity
         }
         gl_view: gl_view
+        textureReceiver: frameTextureReceiver
     }
 
     VideoOutput {
@@ -139,6 +144,7 @@ Item {
     TetrisScene {
         id: tetrisScene
         objectEdgesTracker: frameHandler.objectEdgesTracker
+        textureReceiver: frameTextureReceiver
     }
 
     ToolButton {

@@ -1,11 +1,13 @@
 #include "tetrisscene.h"
 
 #include "objectedgestracker.h"
+#include "texturereceiver.h"
 
 using namespace Eigen;
 
 TetrisScene::TetrisScene():
-    m_tracker(nullptr)
+    m_tracker(nullptr),
+    m_textureReceiver(nullptr)
 {
 }
 
@@ -20,6 +22,19 @@ void TetrisScene::setObjectEdgesTracker(ObjectEdgesTracker * objectEdgesTracker)
         return;
     m_tracker = objectEdgesTracker;
     emit objectEdgesTrackerChanged();
+}
+
+TextureReceiver * TetrisScene::textureReceiver() const
+{
+    return m_textureReceiver;
+}
+
+void TetrisScene::setTextureReceiver(TextureReceiver * textureReceiver)
+{
+    if (m_textureReceiver == textureReceiver)
+        return;
+    m_textureReceiver = textureReceiver;
+    emit textureReceiverChanged();
 }
 
 void TetrisScene::init(GL_ViewRenderer * view)
@@ -40,10 +55,16 @@ void TetrisScene::draw(GL_ViewRenderer * view)
 {
     if (!m_tracker)
     {
-        qCritical() << Q_FUNC_INFO << "Object edges tracker is not set!";
+        qCritical() << Q_FUNC_INFO << ": Object edges tracker is not set!";
+        return;
+    }
+    if (!m_textureReceiver)
+    {
+        qCritical() << Q_FUNC_INFO << ": texture receiver is not set!";
         return;
     }
     view->glEnable(GL_BLEND);
     view->glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    m_house->draw(view, m_tracker->viewMatrix());
+    m_house->draw(view, m_tracker->viewMatrix(),
+                  m_textureReceiver->textureId(), m_textureReceiver->textureSize());
 }

@@ -13,19 +13,24 @@ HouseObject::HouseObject(GL_ViewRenderer * view,
     m_borderSecond(borderSecond)
 {
     _createMesh();
-    m_material = view->createMaterial(MaterialType::Color);
+    m_material = view->createMaterial(MaterialType::Morph);
+    m_screenTempObject = GL_ScreenObjectPtr::create(GL_MeshPtr(), GL_ShaderMaterialPtr());
 }
 
-void HouseObject::draw(GL_ViewRenderer * view, const QMatrix4x4 & viewMatrix)
+void HouseObject::draw(GL_ViewRenderer * view, const QMatrix4x4 & viewMatrix,
+                       GLuint frameTextureId, const QSize & frameTextureSize)
 {
-    if (m_material->containsValue("matrixMV"))
-    {
-        m_material->setValue("matrixMV", viewMatrix);
-    }
-    if (m_material->containsValue("matrixMVP"))
-    {
-        m_material->setValue("matrixMVP", view->projectionMatrix() * viewMatrix);
-    }
+    m_screenTempObject->setFillMode(view->parent()->fillFrameMode());
+    m_screenTempObject->setOrigin(Vector2f(0.0f, 0.0f));
+    m_screenTempObject->setSize(Vector2f(frameTextureSize.width(), frameTextureSize.height()));
+
+    QMatrix4x4 matrixMVP = view->projectionMatrix() * viewMatrix;
+    QMatrix4x4 scaleFrameTransform;
+    scaleFrameTransform.scale(1.0f / frameTextureSize.width(), 1.0f / frameTextureSize.height());
+    QMatrix4x4 invUvTransfrom = m_screenTempObject->getMatrixMVP(view->viewportSize()).inverted();
+    m_material->setValue("matrixMVP", matrixMVP);
+    m_material->setValue("matrixView2FrameUV", invUvTransfrom);
+    m_material->setTexture("screen_texture", frameTextureId);
     m_mesh->draw(view, *m_material);
 }
 

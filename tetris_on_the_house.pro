@@ -21,7 +21,8 @@ HEADERS += \
     poseoptimizer.h \
     texture2grayimageconvertor.h \
     poseoptimizer2.h \
-    posefilter.h
+    posefilter.h \
+    texturereceiver.h
 
 SOURCES += \
     debugimageobject.cpp \
@@ -34,7 +35,8 @@ SOURCES += \
     poseoptimizer.cpp \
     texture2grayimageconvertor.cpp \
     poseoptimizer2.cpp \
-    posefilter.cpp
+    posefilter.cpp \
+    texturereceiver.cpp
 
 RESOURCES += \
     qml.qrc \

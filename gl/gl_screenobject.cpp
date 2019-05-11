@@ -116,7 +116,7 @@ QMatrix4x4 GL_ScreenObject::getMatrixMVP(const QSize & viewportSize) const
     imageTransform(1, 1) = size.y();
     imageTransform(1, 3) = origin.y();
     QMatrix4x4 orto;
-    orto.ortho(0.0f, viewportSize.width(), viewportSize.height(), 0.0f, 0.0f, 1.0f);
+    orto.ortho(0.0f, viewportSize.width(), viewportSize.height(), 0.0f, 0.0f, 1000.0f);
     return orto * imageTransform;
 }
 

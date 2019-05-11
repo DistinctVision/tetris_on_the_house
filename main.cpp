@@ -10,6 +10,7 @@
 #include "game/testcubescene.h"
 #include "game/tetrisscene.h"
 #include "objectedgestracker.h"
+#include "texturereceiver.h"
 
 void regsiterQmlTypes()
 {
@@ -22,6 +23,7 @@ void regsiterQmlTypes()
     qmlRegisterType<GL_DebugImageScene>("mystuffs", 1, 0, "GL_DebugImageScene");
     qmlRegisterType<TestCubeScene>("mystuffs", 1, 0, "TestCubeScene");
     qmlRegisterType<TetrisScene>("mystuffs", 1, 0, "TetrisScene");
+    qmlRegisterType<TextureReceiver>("mystuffs", 1, 0, "TextureReceiver");
 }
 
 int main(int argc, char* argv[])

@@ -15,6 +15,7 @@ class PerformanceMonitor;
 class ObjectEdgesTracker;
 class Texture2GrayImageConvertor;
 class GL_View;
+class TextureReceiver;
 
 class FrameHandlerRunnable;
 
@@ -30,6 +31,8 @@ class FrameHandler: public QAbstractVideoFilter
     Q_PROPERTY(QVector2D focalLength READ focalLength WRITE setFocalLength NOTIFY focalLengthChanged)
     Q_PROPERTY(QVector2D opticalCenter READ opticalCenter WRITE setOpticalCenter NOTIFY opticalCenterChanged)
     Q_PROPERTY(GL_View * gl_view READ gl_view WRITE setGl_view NOTIFY gl_viewChanged)
+    Q_PROPERTY(TextureReceiver * textureReceiver READ textureReceiver WRITE setTextureReceiver
+               NOTIFY textureReceiverChanged)
 
 public:
     FrameHandler();
@@ -60,6 +63,9 @@ public:
     GL_View * gl_view() const;
     void setGl_view(GL_View * gl_view);
 
+    TextureReceiver * textureReceiver() const;
+    void setTextureReceiver(TextureReceiver * textureReceiver);
+
 signals:
     void frameSizeChanged();
     void maxFrameSizeChanged();
@@ -68,6 +74,7 @@ signals:
     void focalLengthChanged();
     void opticalCenterChanged();
     void gl_viewChanged();
+    void textureReceiverChanged();
 
 private:
     friend class FrameHandlerRunnable;
@@ -83,6 +90,7 @@ private:
     QVector2D m_opticalCenter;
 
     GL_View * m_gl_view;
+    TextureReceiver * m_textureReceiver;
 
     void _setFrameSize(const QSize & frameSize);
 };
@@ -91,6 +99,7 @@ class FrameHandlerRunnable: public QVideoFilterRunnable, QOpenGLFunctions
 {
 public:
     FrameHandlerRunnable(FrameHandler * parent);
+    ~FrameHandlerRunnable() override;
 
     QVideoFrame run(QVideoFrame * videoFrame,
                     const QVideoSurfaceFormat &surfaceFormat,
@@ -98,6 +107,7 @@ public:
 
 private:
     FrameHandler * m_parent;
+    GLuint m_frameTextureId;
     QSharedPointer<Texture2GrayImageConvertor> m_texture2GrayImageConverter;
     void _transformImage(cv::Mat & image) const;
 };

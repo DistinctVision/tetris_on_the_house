@@ -8,5 +8,7 @@
         <file>shaders/contour_falloff.fsh</file>
         <file>shaders/contour_falloff.vsh</file>
         <file>shaders/packed_gray_image.fsh</file>
+        <file>shaders/morph.fsh</file>
+        <file>shaders/morph.vsh</file>
     </qresource>
 </RCC>

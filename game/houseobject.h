@@ -11,6 +11,7 @@
 #include "gl/gl_view.h"
 #include "gl/gl_mesh.h"
 #include "gl/gl_shadermaterial.h"
+#include "gl/gl_screenobject.h"
 
 class HouseObject
 {
@@ -21,7 +22,8 @@ public:
                 const Eigen::Vector3f & borderFirst,
                 const Eigen::Vector3f & borderSecond);
 
-    void draw(GL_ViewRenderer * view, const QMatrix4x4 & viewMatrix);
+    void draw(GL_ViewRenderer * view, const QMatrix4x4 & viewMatrix,
+              GLuint frameTextureId, const QSize & frameTextureSize);
 
 private:
     struct _FloorInfo
@@ -39,6 +41,8 @@ private:
     Eigen::Vector3f m_borderSecond;
 
     QVector<_FloorInfo> m_floorInfos;
+
+    GL_ScreenObjectPtr m_screenTempObject;
 
     void _createMesh();
 };
