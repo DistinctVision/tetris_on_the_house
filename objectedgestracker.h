@@ -15,6 +15,7 @@
 
 #include "objectmodel.h"
 #include "debugimageobject.h"
+#include "posefilter.h"
 
 class PerformanceMonitor;
 class PinholeCamera;
@@ -35,6 +36,8 @@ class ObjectEdgesTracker:
     Q_PROPERTY(QVector2D opticalCenter READ opticalCenter NOTIFY cameraChanged)
     Q_PROPERTY(QSize frameSize READ frameSize NOTIFY cameraChanged)
 public:
+    using Pose = PoseFilter::Pose;
+
     ObjectEdgesTracker(const QSharedPointer<PerformanceMonitor> & monitor);
 
     float controlPixelDistance() const;
@@ -71,6 +74,7 @@ signals:
 
 private:
     QSharedPointer<PerformanceMonitor> m_monitor;
+    PoseFilter m_poseFilter;
 
     float m_controlPixelDistance;
     double m_binaryThreshold;
@@ -80,13 +84,12 @@ private:
     ObjectModel m_model;
     std::shared_ptr<PinholeCamera> m_camera;
 
-    Eigen::Matrix3f m_reset_R;
-    Eigen::Vector3f m_reset_t;
-
-    Eigen::Matrix3f m_R;
-    Eigen::Vector3f m_t;
+    Pose m_resetCameraPose;
 
     cv::Mat m_debugImage;
+
+    Eigen::Matrix<double, 6, 1> _pose2x(const Pose & pose) const;
+    Pose _x2pose(const Eigen::Matrix<double, 6, 1> & x) const;
 
     float _tracking1(const cv::Mat & edges);
     float _tracking2(const cv::Mat & edges);

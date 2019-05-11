@@ -20,7 +20,8 @@ HEADERS += \
     performancemonitor.h \
     poseoptimizer.h \
     texture2grayimageconvertor.h \
-    poseoptimizer2.h
+    poseoptimizer2.h \
+    posefilter.h
 
 SOURCES += \
     debugimageobject.cpp \
@@ -32,7 +33,8 @@ SOURCES += \
     performancemonitor.cpp \
     poseoptimizer.cpp \
     texture2grayimageconvertor.cpp \
-    poseoptimizer2.cpp
+    poseoptimizer2.cpp \
+    posefilter.cpp
 
 RESOURCES += \
     qml.qrc \
