@@ -1,4 +1,4 @@
-#ifndef HOUSEOBJECT_H
+﻿#ifndef HOUSEOBJECT_H
 #define HOUSEOBJECT_H
 
 #include <QVector>
@@ -32,20 +32,25 @@ private:
         QVector<GLuint> i_sides[4];
     };
 
-    GL_MeshPtr m_mesh;
-    GL_ShaderMaterialPtr m_material;
-
     Eigen::Vector3i m_n_size;
     Eigen::Vector3f m_size;
     Eigen::Vector3f m_borderFirst;
     Eigen::Vector3f m_borderSecond;
 
+    GL_MeshPtr m_meshForward;
+    GL_ShaderMaterialPtr m_materialForward;
     QVector<_FloorInfo> m_floorInfos;
-    QVector<QVector2D> m_textureCoords;
+    QVector<QVector2D> m_houseTextureCoords;
+
+    GL_MeshPtr m_meshBackward;
+    GL_ShaderMaterialPtr m_materialBackward;
 
     GL_ScreenObjectPtr m_screenTempObject;
 
-    void _createMesh();
+    void _createMeshForward();
+    void _createMeshBackward();
+
+    void _moveFloors(float dy);
 };
 
 using HouseObjectPtr = QSharedPointer<HouseObject>;

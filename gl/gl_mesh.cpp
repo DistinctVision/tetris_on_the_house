@@ -274,6 +274,14 @@ GL_Mesh GL_Mesh::createMesh(const QVector<QVector3D> & vertices,
     return mesh;
 }
 
+void GL_Mesh::updateVertices(const QVector<QVector3D> & vertices, bool updateNormals)
+{
+    m_vertexBuffer.bind();
+    m_vertexBuffer.allocate(vertices.data(),
+                            static_cast<int>(sizeof(QVector3D)) * vertices.size());
+    m_vertexBuffer.release();
+}
+
 void GL_Mesh::updateTextureCoords(const QVector<QVector2D> & textureCoords)
 {
     m_textureCoordsBuffer.bind();

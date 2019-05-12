@@ -29,6 +29,7 @@ public:
                               const QVector<QVector2D> & textureCoords,
                               const QVector<GLuint> & indices);
 
+    void updateVertices(const QVector<QVector3D> & vertices, bool updateNormals = false);
     void updateTextureCoords(const QVector<QVector2D> & textureCoords);
 
     void draw(QOpenGLFunctions * gl, const GL_ShaderMaterial & shaderMaterial);

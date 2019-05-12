@@ -641,8 +641,6 @@ double optimize_pose(Matrix<double, 6, 1> &x,
         }
         if (n_try == 10)
             break;
-        assert(!std::isnan(Fsq));
-        assert(!std::isnan(Fsq_next));
         double deltaFsq = Fsq - Fsq_next;
         Fsq = Fsq_next;
         if (deltaFsq < 1e-6)
@@ -651,6 +649,5 @@ double optimize_pose(Matrix<double, 6, 1> &x,
         }
     }
     double E = get_x_weightFunction(sqrt(Fsq));
-    assert(!std::isnan(E));
     return E;
 }

@@ -12,8 +12,11 @@ HouseObject::HouseObject(GL_ViewRenderer * view,
     m_borderFirst(borderFirst),
     m_borderSecond(borderSecond)
 {
-    _createMesh();
-    m_material = view->createMaterial(MaterialType::Morph);
+    _createMeshForward();
+    _createMeshBackward();
+    m_materialForward = view->createMaterial(MaterialType::Morph);
+    m_materialBackward = view->createMaterial(MaterialType::Color);
+    m_materialBackward->setValue("mainColor", QColor(0, 0, 0, 255));
     m_screenTempObject = GL_ScreenObjectPtr::create(GL_MeshPtr(), GL_ShaderMaterialPtr());
 }
 
@@ -28,32 +31,23 @@ void HouseObject::draw(GL_ViewRenderer * view, const QMatrix4x4 & viewMatrix,
     QMatrix4x4 scaleFrameTransform;
     scaleFrameTransform.scale(1.0f / frameTextureSize.width(), 1.0f / frameTextureSize.height());
     QMatrix4x4 invUvTransfrom = m_screenTempObject->getMatrixMVP(view->viewportSize()).inverted();
-    m_material->setValue("matrixMVP", matrixMVP);
-    m_material->setValue("matrixView2FrameUV", invUvTransfrom);
-    m_material->setTexture("screen_texture", frameTextureId);
+    m_materialForward->setValue("matrixMVP", matrixMVP);
+    m_materialForward->setValue("matrixView2FrameUV", invUvTransfrom);
+    m_materialForward->setTexture("screen_texture", frameTextureId);
 
     {
         static float t = 0.0f;
-        for (int i = 1; i < m_floorInfos.size(); ++i)
-        {
-            for (int j = 2; j < 3; ++j)
-            {
-                const QVector<GLuint> & indices = m_floorInfos[i].i_sides[j];
-                for (int k = 2; k < indices.size() - 2; ++k)
-                {
-                    float kk = k / static_cast<float>(indices.size());
-                    m_textureCoords[indices[k]].setY(std::sin(t + kk * 0.0f) * 3.0f);
-                }
-            }
-        }
         t += 0.05f;
-        m_mesh->updateTextureCoords(m_textureCoords);
+        _moveFloors(std::sin(t) * 3.0f);
     }
 
-    m_mesh->draw(view, *m_material);
+    m_meshForward->draw(view, *m_materialForward);
+
+    m_materialBackward->setValue("matrixMVP", matrixMVP);
+    m_meshBackward->draw(view, *m_materialBackward);
 }
 
-void HouseObject::_createMesh()
+void HouseObject::_createMeshForward()
 {
     QVector<QVector3D> vertices;
 
@@ -155,14 +149,78 @@ void HouseObject::_createMesh()
         }
     }
 
-    m_floorInfos = floors;
-
-    /*m_floorInfos.resize(m_n_size.y() + 1);
-    for (int i = 0; i < m_n_size.y(); ++i)
-        m_floorInfos[i] = floors[i + 1];*/
+    m_floorInfos = std::move(floors);
 
     QVector<QVector2D> textureCoords(vertices.size(), QVector2D(0.0f, 0.0f));
 
-    m_mesh = GL_MeshPtr::create(GL_Mesh::createMesh(vertices, textureCoords, indices));
-    m_textureCoords = std::move(textureCoords);
+    m_meshForward = GL_MeshPtr::create(GL_Mesh::createMesh(vertices, textureCoords, indices));
+    m_houseTextureCoords = std::move(textureCoords);
+}
+
+void HouseObject::_createMeshBackward()
+{
+    QVector<QVector3D> vertices;
+    QVector<GLuint> indices;
+
+    GLuint i_o = static_cast<GLuint>(vertices.size());
+    vertices.push_back(QVector3D(- m_size.x() * 0.5f, 0.0f, - m_size.z() * 0.5f));
+    vertices.push_back(QVector3D(m_size.x() * 0.5f, 0.0f, - m_size.z() * 0.5f));
+    vertices.push_back(QVector3D(m_size.x() * 0.5f, 0.0f, m_size.z() * 0.5f));
+    vertices.push_back(QVector3D(- m_size.x() * 0.5f, 0.0f, m_size.z() * 0.5f));
+    indices.append({ i_o + 0, i_o + 1, i_o + 2, i_o + 0, i_o + 2, i_o + 3 });
+
+    i_o = static_cast<GLuint>(vertices.size());
+    vertices.push_back(QVector3D(- m_size.x() * 0.5f, m_size.y(), - m_size.z() * 0.5f));
+    vertices.push_back(QVector3D(m_size.x() * 0.5f, m_size.y(), - m_size.z() * 0.5f));
+    vertices.push_back(QVector3D(m_size.x() * 0.5f, m_size.y(), m_size.z() * 0.5f));
+    vertices.push_back(QVector3D(- m_size.x() * 0.5f, m_size.y(), m_size.z() * 0.5f));
+    indices.append({ i_o + 0, i_o + 2, i_o + 1, i_o + 0, i_o + 3, i_o + 2 });
+
+    i_o = static_cast<GLuint>(vertices.size());
+    vertices.push_back(QVector3D(- m_size.x() * 0.5f, m_size.y(), m_size.z() * 0.5f));
+    vertices.push_back(QVector3D(m_size.x() * 0.5f, m_size.y(), m_size.z() * 0.5f));
+    vertices.push_back(QVector3D(m_size.x() * 0.5f, 0.0f, m_size.z() * 0.5f));
+    vertices.push_back(QVector3D(- m_size.x() * 0.5f, 0.0f, m_size.z() * 0.5f));
+    indices.append({ i_o + 0, i_o + 2, i_o + 1, i_o + 0, i_o + 3, i_o + 2 });
+
+    i_o = static_cast<GLuint>(vertices.size());
+    vertices.push_back(QVector3D(- m_size.x() * 0.5f, m_size.y(), - m_size.z() * 0.5f));
+    vertices.push_back(QVector3D(- m_size.x() * 0.5f, m_size.y(), m_size.z() * 0.5f));
+    vertices.push_back(QVector3D(- m_size.x() * 0.5f, 0.0f, m_size.z() * 0.5f));
+    vertices.push_back(QVector3D(- m_size.x() * 0.5f, 0.0f, - m_size.z() * 0.5f));
+    indices.append({ i_o + 0, i_o + 2, i_o + 1, i_o + 0, i_o + 3, i_o + 2 });
+
+    i_o = static_cast<GLuint>(vertices.size());
+    vertices.push_back(QVector3D(m_size.x() * 0.5f, m_size.y(), m_size.z() * 0.5f));
+    vertices.push_back(QVector3D(m_size.x() * 0.5f, m_size.y(), - m_size.z() * 0.5f));
+    vertices.push_back(QVector3D(m_size.x() * 0.5f, 0.0f, - m_size.z() * 0.5f));
+    vertices.push_back(QVector3D(m_size.x() * 0.5f, 0.0f, m_size.z() * 0.5f));
+    indices.append({ i_o + 0, i_o + 2, i_o + 1, i_o + 0, i_o + 3, i_o + 2 });
+
+    QVector<QVector2D> textureCoords(vertices.size());
+    for (int i = 0; i < textureCoords.size(); i += 4)
+    {
+        textureCoords[i + 0] = QVector2D(0.0f, 0.0f);
+        textureCoords[i + 1] = QVector2D(1.0f, 0.0f);
+        textureCoords[i + 2] = QVector2D(1.0f, 1.0f);
+        textureCoords[i + 3] = QVector2D(0.0f, 1.0f);
+    }
+    m_meshBackward = GL_MeshPtr::create(GL_Mesh::createMesh(vertices, textureCoords, indices));
+}
+
+void HouseObject::_moveFloors(float dy)
+{
+    for (int i = 0; i < m_floorInfos.size(); ++i)
+    {
+        float floor_y = m_floorInfos[i].y;
+        for (int j = 2; j < 3; ++j)
+        {
+            const QVector<GLuint> & indices = m_floorInfos[i].i_sides[j];
+            for (int k = 2; k < indices.size() - 2; ++k)
+            {
+                m_houseTextureCoords[indices[k]].setY(std::max(dy, - floor_y));
+            }
+        }
+    }
+    m_meshForward->updateTextureCoords(m_houseTextureCoords);
 }

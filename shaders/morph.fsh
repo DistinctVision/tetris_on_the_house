@@ -13,8 +13,9 @@ highp vec3 v_project(highp vec4 v)
 
 highp vec3 to_gray(highp vec3 v)
 {
+    return v.zyx;
     highp float c = (v.x + v.y + v.z) / 3.0;
-    return vec4(c, c, c, 1.0);
+    return vec3(c, c, c);
 }
 
 void main(void)
