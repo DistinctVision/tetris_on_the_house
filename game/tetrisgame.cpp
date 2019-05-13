@@ -1,6 +1,7 @@
 #include "tetrisgame.h"
 
 #include <chrono>
+#include <algorithm>
 
 using namespace std;
 using namespace std::chrono;
@@ -11,7 +12,6 @@ const Vector2i TetrisGame::figureAnchor = Vector2i(2, 2);
 TetrisGame::TetrisGame(const Vector2i & fieldSize):
     m_fieldSize(fieldSize),
     m_field(fieldSize.x(), fieldSize.y() + Figure::ColsAtCompileTime),
-    m_moveField(m_field.rows(), m_field.cols()),
     m_rnd(0, 10000)
 {
     _generateFigureSet();
@@ -26,14 +26,112 @@ Vector2i TetrisGame::fieldSize() const
 void TetrisGame::reset()
 {
     m_field.setZero();
-    m_moveField.setZero();
-    m_currentAction.type = ActionType::FigureEntry;
-    m_userAction.type = ActionType::NoAction;
-    m_figurePos_current.setZero();
-    m_figurePos_next = m_figurePos_current;
-    m_currentFigure.setZero();
     _updateRandom();
+    m_currentFigure = _createRandomFigure();
     m_nextFigure = _createRandomFigure();
+    m_figurePos = _createRandomStartPos(m_currentFigure);
+    m_newFigureTimer = newFigureTime;
+    m_userActionTimer = 0;
+    m_stepTimer = 0;
+    m_removalLinesTimer = 0;
+    m_linesForRemoval.clear();
+    m_numberRemovedLines = 0;
+}
+
+TetrisGame::Figure TetrisGame::currentFigure() const
+{
+    return m_currentFigure;
+}
+
+TetrisGame::Figure TetrisGame::nextFigure() const
+{
+    return m_nextFigure;
+}
+
+Vector2i TetrisGame::figurePos() const
+{
+    return m_figurePos;
+}
+
+float TetrisGame::currentFigureState() const
+{
+    if (m_removalLinesTimer > 0)
+        return 0.0f;
+    if (m_newFigureTimer > 0)
+        return 1.0f - m_newFigureTimer / static_cast<float>(newFigureTime);
+    return 1.0f;
+}
+
+void TetrisGame::for_each_blocks(const std::function<void (const Vector2i &)> & lambda) const
+{
+    for (int i = 0; i < m_fieldSize.y(); ++i)
+    {
+        for (int j = 0; j < m_fieldSize.x(); ++j)
+        {
+            if (m_field(i, j) > 0)
+            {
+                lambda(Vector2i(j, i));
+            }
+        }
+    }
+}
+
+TetrisGame::EventType TetrisGame::step()
+{
+    if (!m_linesForRemoval.empty())
+    {
+        if (m_removalLinesTimer > 0)
+        {
+            int end_x = static_cast<int>(ceil((m_removalLinesTimer /
+                                               static_cast<float>(removalLinesTime)) * m_fieldSize.x()));
+            for (int y : m_linesForRemoval)
+            {
+                for (int x = 0; x < end_x; ++x)
+                    m_field(y, x) = 0;
+            }
+            --m_removalLinesTimer;
+        }
+        else
+        {
+            sort(m_linesForRemoval.begin(), m_linesForRemoval.end(), greater<int>());
+            for (int y: m_linesForRemoval)
+            {
+                _removeLine(y);
+                ++m_numberRemovedLines;
+            }
+            m_linesForRemoval.clear();
+        }
+        return EventType::RemovingLines;
+    }
+    if (m_userActionTimer > 0)
+        --m_userActionTimer;
+    if (m_newFigureTimer > 0)
+    {
+        --m_newFigureTimer;
+        if (m_newFigureTimer <= 0)
+            m_stepTimer = stepTime;
+        return EventType::NewFigure;
+    }
+    if (m_stepTimer > 0)
+    {
+        --m_stepTimer;
+        if (m_stepTimer > 0)
+            return EventType::WaitStep;
+    }
+    if (_checkIntersect(m_currentFigure, Vector2i(m_figurePos.x(), m_figurePos.y() - 1)))
+    {
+        if (!_insertCurrentFigure())
+        {
+            return EventType::Lose;
+        }
+        m_currentFigure = m_nextFigure;
+        m_figurePos = _createRandomStartPos(m_currentFigure);
+        m_nextFigure = _createRandomFigure();
+        m_newFigureTimer = newFigureTime;
+        return EventType::FigureInserting;
+    }
+    --m_figurePos.y();
+    return EventType::FigureFalling;
 }
 
 void TetrisGame::_updateRandom()
@@ -51,6 +149,15 @@ TetrisGame::Figure TetrisGame::_createRandomFigure() const
         figure = _rotated(figure);
     }
     return figure;
+}
+
+Vector2i TetrisGame::_createRandomStartPos(const TetrisGame::Figure & figure) const
+{
+    pair<Vector2i, Vector2i> bb = _getFigureBoundedBox(figure);
+    int begin_x = - bb.first.x(), end_x = m_fieldSize.x() - bb.second.x();
+    Vector2i pos(begin_x + m_rnd(m_rnd_gen) % (end_x - begin_x),
+                 m_fieldSize.y() - bb.first.y());
+    return pos;
 }
 
 void TetrisGame::_generateFigureSet()
@@ -111,66 +218,6 @@ void TetrisGame::_generateFigureSet()
     }
 }
 
-bool TetrisGame::_beginAction(ActionType actionType)
-{
-    switch (actionType)
-    {
-    case ActionType::NoAction:
-        return true;
-    case ActionType::FigureEntry:
-    {
-        m_currentFigure = m_nextFigure;
-        m_nextFigure = _createRandomFigure();
-        pair<Vector2i, Vector2i> bb = _getFigureBoundedBox(m_nextFigure);
-        int begin_x = bb.first.x();
-        int end_x = m_fieldSize.x() - (bb.second.x());
-        m_figurePos_current.x() = begin_x + static_cast<int>(m_rnd(m_rnd_gen)) % (end_x - begin_x);
-        m_figurePos_current.y() = bb.first.y() + m_fieldSize.y();
-        m_figurePos_next = m_figurePos_current;
-    } return true;
-    case ActionType::LinesRemoval:
-    {
-
-    } return true;
-    case ActionType::FigureFall:
-    {
-        Vector2i nextPos = m_figurePos_current + Vector2i(0, 1);
-        if (!_checkIntersect(m_currentFigure, nextPos))
-            return false;
-        do {
-            m_figurePos_next = nextPos;
-            nextPos = nextPos + Vector2i(0, 1);
-        } while (!_checkIntersect(m_currentFigure, nextPos));
-    } return true;
-    case ActionType::MoveFigureLeft:
-    {
-        Vector2i nextPos = m_figurePos_current + Vector2i(-1, 0);
-        if (!_checkIntersect(m_currentFigure, nextPos))
-            return false;
-        m_figurePos_next = nextPos;
-    } return true;
-    case ActionType::MoveFigureRight:
-    {
-        Vector2i nextPos = m_figurePos_current + Vector2i(1, 0);
-        if (!_checkIntersect(m_currentFigure, nextPos))
-            return false;
-        m_figurePos_next = nextPos;
-    } return true;
-    case ActionType::MoveFigureDown:
-    {
-        Vector2i nextPos = m_figurePos_current + Vector2i(0, 1);
-        if (!_checkIntersect(m_currentFigure, nextPos))
-            return false;
-        m_figurePos_next = nextPos;
-    } return true;
-    case ActionType::RotateFigure:
-        return !_checkIntersect(_rotated(m_currentFigure), m_figurePos_current);
-    default:
-        break;
-    }
-    return false;
-}
-
 TetrisGame::Figure TetrisGame::_rotated(const TetrisGame::Figure & figure) const
 {
     std::size_t k = 0;
@@ -207,6 +254,8 @@ std::pair<Vector2i, Vector2i> TetrisGame::_getFigureBoundedBox(const TetrisGame:
             }
         }
     }
+    bb.first -= figureAnchor;
+    bb.second -= figureAnchor;
     return bb;
 }
 
@@ -220,7 +269,7 @@ bool TetrisGame::_checkIntersect(const TetrisGame::Figure & figure, const Vector
             if (figure(i, j) > 0)
             {
                 int y = begin.y() + i;
-                if ((y < 0) || (y > m_fieldSize.y()))
+                if ((y < 0))
                     return true;
                 int x = begin.x() + j;
                 if ((x < 0) || (x > m_fieldSize.x()))
@@ -233,34 +282,47 @@ bool TetrisGame::_checkIntersect(const TetrisGame::Figure & figure, const Vector
     return false;
 }
 
-vector<int> TetrisGame::_findFullLines() const
+bool TetrisGame::_insertCurrentFigure()
 {
-    std::vector<int> lines;
-    lines.reserve(Figure::RowsAtCompileTime);
-    int begin_y = m_figurePos_current.y() - figureAnchor.y();
-    if (begin_y < 0)
-        begin_y = 0;
-    int end_y = m_figurePos_current.y() + Figure::RowsAtCompileTime - figureAnchor.y();
-    if (end_y > m_fieldSize.y())
-        end_y = m_fieldSize.y();
-    for (int y = end_y - 1; y >= begin_y; --y)
+    pair<Vector2i, Vector2i> bb = _getFigureBoundedBox(m_currentFigure);
+    bb.first += m_figurePos;
+    bb.second += m_figurePos;
+    if (bb.second.y() >= m_fieldSize.y())
+        return false;
+    for (int i = 0; i < Figure::RowsAtCompileTime; ++i)
     {
-        bool fullLine = true;
-        for (int x = 0; x < Figure::ColsAtCompileTime; ++x)
+        int y = i + figureAnchor.y() + m_figurePos.y();
+        for (int j = 0; j < Figure::ColsAtCompileTime; ++j)
+        {
+            if (m_currentFigure(i, j) > 0)
+            {
+                int x = j + figureAnchor.x() + m_figurePos.x();
+                m_field(y, x) = 1;
+            }
+        }
+    }
+    m_linesForRemoval.clear();
+    for (int y = bb.first.y(); y <= bb.second.y(); ++y)
+    {
+        bool fullLineFlag = true;
+        for (int x = 0; x < m_fieldSize.x(); ++x)
         {
             if (m_field(y, x) <= 0)
             {
-                fullLine = false;
+                fullLineFlag = false;
                 break;
             }
         }
-        if (fullLine)
-            lines.push_back(y);
+        if (fullLineFlag)
+            m_linesForRemoval.push_back(y);
     }
-    return lines;
+    if (!m_linesForRemoval.empty())
+        m_removalLinesTimer = removalLinesTime;
+    return true;
 }
 
-void TetrisGame::_fillMoveFieldForLinesRemoval(const vector<int> & lines) const
+void TetrisGame::_removeLine(int y)
 {
-
+    for (int i = y; i < m_fieldSize.y(); ++i)
+        m_field.row(i) = m_field.row(i + 1);
 }

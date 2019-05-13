@@ -5,39 +5,46 @@
 #include <array>
 #include <set>
 #include <random>
+#include <functional>
 
 #include <Eigen/Eigen>
 
 class TetrisGame
 {
 public:
+    static const int removalLinesTime = 10;
+    static const int userActionTime = 5;
+    static const int stepTime = 15;
+    static const int newFigureTime = 5;
+
     using Figure = Eigen::Matrix<int, 5, 5>;
     static const Eigen::Vector2i figureAnchor;
+
+    enum class EventType
+    {
+        RemovingLines,
+        NewFigure,
+        WaitStep,
+        Lose,
+        FigureInserting,
+        FigureFalling
+    };
 
     TetrisGame(const Eigen::Vector2i & fieldSize);
 
     Eigen::Vector2i fieldSize() const;
 
+    Figure currentFigure() const;
+    Figure nextFigure() const;
+    Eigen::Vector2i figurePos() const;
+
+    float currentFigureState() const;
+
+    void for_each_blocks(const std::function<void(const Eigen::Vector2i &)> & lambda) const;
+
     void reset();
 
-    enum class ActionType
-    {
-        NoAction,
-        FigureEntry,
-        LinesRemoval,
-        FigureFall,
-        MoveFigureLeft,
-        MoveFigureRight,
-        MoveFigureDown,
-        RotateFigure
-    };
-
-    struct Action
-    {
-        ActionType type;
-        int currentTime;
-        int timer;
-    };
+    EventType step();
 
 private:
     std::vector<Figure, Eigen::aligned_allocator<Figure>> m_figureSet;
@@ -45,31 +52,33 @@ private:
 
     Eigen::Vector2i m_fieldSize;
     Eigen::MatrixXi m_field;
-    Eigen::MatrixXi m_moveField;
 
-    Action m_userAction;
-    Action m_currentAction;
     Figure m_currentFigure;
     Figure m_nextFigure;
-    Eigen::Vector2i m_figurePos_current;
-    Eigen::Vector2i m_figurePos_next;
+    Eigen::Vector2i m_figurePos;
 
     std::mt19937 m_rnd_gen;
     std::uniform_int_distribution<std::size_t> m_rnd;
 
+    std::vector<int> m_linesForRemoval;
+    int m_numberRemovedLines;
+
+    int m_removalLinesTimer;
+    int m_newFigureTimer;
+    int m_userActionTimer;
+    int m_stepTimer;
+
     void _updateRandom();
     Figure _createRandomFigure() const;
+    Eigen::Vector2i _createRandomStartPos(const Figure & figure) const;
 
     void _generateFigureSet();
-    bool _beginAction(ActionType actionType);
-    bool _endAction(const Action & action);
 
     Figure _rotated(const Figure & figure) const;
     std::pair<Eigen::Vector2i, Eigen::Vector2i> _getFigureBoundedBox(const Figure & figure) const;
     bool _checkIntersect(const Figure & figure, const Eigen::Vector2i & pos) const;
-
-    std::vector<int> _findFullLines() const;
-    void _fillMoveFieldForLinesRemoval(const std::vector<int> & lines) const;
+    bool _insertCurrentFigure();
+    void _removeLine(int y);
 };
 
 #endif // TETRISGAME_H
