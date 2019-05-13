@@ -332,6 +332,8 @@ double optimize_pose(Matrix<double, 6, 1> &x,
                      double maxDistance,
                      int numberIterations)
 {
+    //TODO optimize with prev position
+
     /*double weightFunction_k2 = 1.0 / (3.0 * maxDistance * maxDistance);
     double weightFunction_k1 = 1.0 / (maxDistance * (1.0 - weightFunction_k2 * maxDistance * maxDistance));
 
