@@ -100,6 +100,7 @@ TetrisGame::EventType TetrisGame::step()
                 ++m_numberRemovedLines;
             }
             m_linesForRemoval.clear();
+            m_stepTimer = stepTime;
         }
         return EventType::RemovingLines;
     }
@@ -131,7 +132,67 @@ TetrisGame::EventType TetrisGame::step()
         return EventType::FigureInserting;
     }
     --m_figurePos.y();
+    m_stepTimer = stepTime;
     return EventType::FigureFalling;
+}
+
+bool TetrisGame::moveFigureLeft()
+{
+    if (m_userActionTimer > 0)
+        return false;
+    if (m_stepTimer <= 0)
+        return false;
+    Vector2i pos(m_figurePos.x() - 1, m_figurePos.y());
+    if (_checkIntersect(m_currentFigure, pos))
+        return false;
+    m_figurePos = pos;
+    m_userActionTimer = userActionTime;
+    return true;
+}
+
+bool TetrisGame::moveFigureRight()
+{
+    if (m_userActionTimer > 0)
+        return false;
+    if (m_stepTimer <= 0)
+        return false;
+    Vector2i pos(m_figurePos.x() + 1, m_figurePos.y());
+    if (_checkIntersect(m_currentFigure, pos))
+        return false;
+    m_figurePos = pos;
+    m_userActionTimer = userActionTime;
+    return true;
+}
+
+bool TetrisGame::moveFigureDown()
+{
+    if (m_userActionTimer > 0)
+        return false;
+    if (m_stepTimer <= 0)
+        return false;
+    Vector2i pos(m_figurePos.x(), m_figurePos.y() - 1);
+    if (_checkIntersect(m_currentFigure, pos))
+        return false;
+    do {
+        m_figurePos = pos;
+        pos = Vector2i(m_figurePos.x(), m_figurePos.y() - 1);
+    } while (!_checkIntersect(m_currentFigure, pos));
+    m_userActionTimer = userActionTime;
+    return true;
+}
+
+bool TetrisGame::rotateFigure()
+{
+    if (m_userActionTimer > 0)
+        return false;
+    if (m_stepTimer <= 0)
+        return false;
+    Figure f = _rotated(m_currentFigure);
+    if (_checkIntersect(f, m_figurePos))
+        return false;
+    m_currentFigure = f;
+    m_userActionTimer = userActionTime;
+    return true;
 }
 
 void TetrisGame::_updateRandom()
