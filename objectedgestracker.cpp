@@ -280,7 +280,7 @@ float ObjectEdgesTracker::_tracking1(const cv::Mat & edges)
     float area = (bb_max.x() - bb_min.x()) * (bb_max.y() - bb_min.y());
     if (area < 100.0f)
         E = numeric_limits<float>::max();
-    if (E > 2.0f)
+    if (E > 2000000.0f)
     {
         m_poseFilter.reset(m_resetCameraPose);
     }
