@@ -25,6 +25,11 @@ public:
     void draw(GL_ViewRenderer * view, const QMatrix4x4 & viewMatrix,
               GLuint frameTextureId, const QSize & frameTextureSize);
 
+    Eigen::Vector3f size() const;
+    Eigen::Vector3i n_size() const;
+    Eigen::Vector3f borderFirst() const;
+    Eigen::Vector3f borderSecond() const;
+
 private:
     struct _FloorInfo
     {

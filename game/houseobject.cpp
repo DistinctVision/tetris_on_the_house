@@ -20,6 +20,26 @@ HouseObject::HouseObject(GL_ViewRenderer * view,
     m_screenTempObject = GL_ScreenObjectPtr::create(GL_MeshPtr(), GL_ShaderMaterialPtr());
 }
 
+Vector3f HouseObject::size() const
+{
+    return m_size;
+}
+
+Vector3i HouseObject::n_size() const
+{
+    return m_n_size;
+}
+
+Vector3f HouseObject::borderFirst() const
+{
+    return m_borderFirst;
+}
+
+Vector3f HouseObject::borderSecond() const
+{
+    return m_borderSecond;
+}
+
 void HouseObject::draw(GL_ViewRenderer * view, const QMatrix4x4 & viewMatrix,
                        GLuint frameTextureId, const QSize & frameTextureSize)
 {
@@ -50,7 +70,7 @@ void HouseObject::draw(GL_ViewRenderer * view, const QMatrix4x4 & viewMatrix,
 void HouseObject::_createMeshForward()
 {
     QVector<QVector3D> vertices;
-
+    
     QVector3D floorSize(m_size.x() - (m_borderFirst.x() + m_borderSecond.x()),
                         m_size.y() - (m_borderFirst.y() + m_borderSecond.y()),
                         m_size.z() - (m_borderFirst.z() + m_borderSecond.z()));

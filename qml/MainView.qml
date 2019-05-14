@@ -146,6 +146,18 @@ Item {
         id: tetrisScene
         objectEdgesTracker: frameHandler.objectEdgesTracker
         textureReceiver: frameTextureReceiver
+
+        Keys.onPressed: {
+            if (event.key === Qt.Key_Left) {
+                moveFigureLeft()
+            } else if (event.key === Qt.Key_Right) {
+                moveFigureRight()
+            } else if (event.key === Qt.Key_Down) {
+                moveFigureDown()
+            } else if (event.key === Qt.Key_Space) {
+                rotateFigure()
+            }
+        }
     }
 
     ToolButton {
