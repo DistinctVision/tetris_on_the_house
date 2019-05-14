@@ -55,11 +55,11 @@ void HouseObject::draw(GL_ViewRenderer * view, const QMatrix4x4 & viewMatrix,
     m_materialForward->setValue("matrixView2FrameUV", invUvTransfrom);
     m_materialForward->setTexture("screen_texture", frameTextureId);
 
-    /*{
+    {
         static float t = 0.0f;
         t += 0.05f;
         _moveFloors(std::sin(t) * 3.0f);
-    }*/
+    }
 
     m_meshForward->draw(view, *m_materialForward);
 

@@ -332,11 +332,8 @@ double optimize_pose(Matrix<double, 6, 1> &x,
                      double maxDistance,
                      int numberIterations)
 {
-    double lambdaViewPos = 0.0;
-    double lambdaViewRotation = 0.0;
-
-    //TODO optimize with prev position
-
+    double lambdaViewPos = 0.05;
+    double lambdaViewRotation = 0.01;
     Vector3d prevViewPostion = - exp_rotationMatrix((- x.segment<3>(3)).eval()) * x.segment<3>(0);
     Vector3d prevW = x.segment<3>(3);
 
@@ -606,9 +603,9 @@ double optimize_pose(Matrix<double, 6, 1> &x,
                 Vector3d d = (prevViewPostion + R_inv * t);
                 Matrix3d rJ = exp_jacobian((- w).eval(), t);
                 Matrix<double, 1, 6> J;
-                J(0) = 2.0 * lambdaViewPos * (d.x() * R_inv(0, 0) + d.y() * R_inv(0, 1) + d.z() * R_inv(0, 2));
-                J(1) = 2.0 * lambdaViewPos * (d.x() * R_inv(1, 0) + d.y() * R_inv(1, 1) + d.z() * R_inv(1, 2));
-                J(2) = 2.0 * lambdaViewPos * (d.x() * R_inv(2, 0) + d.y() * R_inv(2, 1) + d.z() * R_inv(2, 2));
+                J(0) = 2.0 * lambdaViewPos * (d.x() * R_inv(0, 0) + d.y() * R_inv(1, 0) + d.z() * R_inv(2, 0));
+                J(1) = 2.0 * lambdaViewPos * (d.x() * R_inv(0, 1) + d.y() * R_inv(1, 1) + d.z() * R_inv(2, 1));
+                J(2) = 2.0 * lambdaViewPos * (d.x() * R_inv(0, 2) + d.y() * R_inv(1, 2) + d.z() * R_inv(2, 2));
                 J(3) = - 2.0 * lambdaViewPos * (d.x() * rJ(0, 0) + d.y() * rJ(1, 0) + d.z() * rJ(2, 0));
                 J(4) = - 2.0 * lambdaViewPos * (d.x() * rJ(0, 1) + d.y() * rJ(1, 1) + d.z() * rJ(2, 1));
                 J(5) = - 2.0 * lambdaViewPos * (d.x() * rJ(0, 2) + d.y() * rJ(1, 2) + d.z() * rJ(2, 2));
@@ -620,7 +617,7 @@ double optimize_pose(Matrix<double, 6, 1> &x,
 
                 Fsq += e;
             }
-            {
+            /*{
                 Vector3d d = (w - prevW);
                 Matrix<double, 1, 6> J;
                 J(0) = 0.0;
@@ -636,7 +633,7 @@ double optimize_pose(Matrix<double, 6, 1> &x,
                 Je += J.transpose() * e;
 
                 Fsq += e;
-            }
+            }*/
         }
         if (firstError < 0.0)
             firstError = Fsq;
@@ -679,11 +676,11 @@ double optimize_pose(Matrix<double, 6, 1> &x,
                 double e = d.dot(d) * lambdaViewPos;
                 Fsq_next += e;
             }
-            {
+            /*{
                 Vector3d d = (w - prevW);
                 double e = d.dot(d) * lambdaViewRotation;
                 Fsq_next += e;
-            }
+            }*/
 
             if (Fsq_next < Fsq)
             {

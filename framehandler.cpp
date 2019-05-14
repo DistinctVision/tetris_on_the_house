@@ -272,7 +272,7 @@ QVideoFrame FrameHandlerRunnable::run(QVideoFrame * videoFrame,
     }
 
     monitor->end();
-    //qDebug().noquote() << QString::fromStdString(monitor->report());
+    qDebug().noquote() << QString::fromStdString(monitor->report());
 
     return QVideoFrame(*videoFrame);
 }

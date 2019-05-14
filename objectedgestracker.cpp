@@ -30,9 +30,9 @@ ObjectEdgesTracker::ObjectEdgesTracker(const QSharedPointer<PerformanceMonitor> 
     m_binaryThreshold(50.0),
     m_minBlobArea(30.0),
     m_maxBlobCircularity(0.25),
-    m_model(ObjectModel::createHouse(Vector3f(11.0f, 18.5f, 6.0f)))
+    m_model(ObjectModel::createHouse())
 {
-    m_resetCameraPose = Pose(Vector3d(-12.0, 4.0, -28.0), Quaterniond(AngleAxisd(0.4, Vector3d(0.0, 1.0, 0.0))));
+    m_resetCameraPose = Pose(Vector3d(0.0, 10.0, -100.0), Quaterniond(1.0, 0.0, 0.0, 0.0));
     m_poseFilter.reset(m_resetCameraPose);
 }
 
@@ -139,13 +139,13 @@ void ObjectEdgesTracker::compute(cv::Mat image)
 
     cv::Mat binImage;
     m_monitor->startTimer("Threshold");
-    cv::threshold(image, binImage, m_binaryThreshold, 255.0, cv::THRESH_BINARY);
+    cv::adaptiveThreshold(image, binImage, 255.0, cv::ADAPTIVE_THRESH_MEAN_C, cv::THRESH_BINARY, 33, m_binaryThreshold - 128.0);
+    //cv::threshold(image, binImage, m_binaryThreshold, 255.0, cv::THRESH_BINARY);
     m_monitor->endTimer("Threshold");
 
     m_monitor->startTimer("Dilate");
-    cv::dilate(binImage, binImage, cv::getStructuringElement(cv::MORPH_DILATE,
-                                                             cv::Size(3, 3), cv::Point(1, 1)), cv::Point(1, 1), 1);
-    m_monitor->endTimer("Dilate");
+    cv::dilate(binImage, binImage, cv::getStructuringElement(cv::MORPH_DILATE, cv::Size(3, 3), cv::Point(1, 1)), cv::Point(1, 1), 1);
+    m_monitor->startTimer("Dilate");
 
     m_monitor->startTimer("Find contours");
     std::vector<std::vector<cv::Point>> contours;
@@ -179,8 +179,11 @@ void ObjectEdgesTracker::compute(cv::Mat image)
         }
     }
     m_monitor->endTimer("Filter contours");
-    cv::erode(binImage, binImage, cv::getStructuringElement(cv::MORPH_ERODE,
-                                                            cv::Size(3, 3), cv::Point(1, 1)), cv::Point(1, 1), 1);
+
+    m_monitor->startTimer("Erode");
+    cv::erode(binImage, binImage, cv::getStructuringElement(cv::MORPH_ERODE, cv::Size(3, 3), cv::Point(1, 1)), cv::Point(1, 1), 1);
+    m_monitor->endTimer("Erode");
+
     m_monitor->startTimer("Inverting");
     cv::bitwise_not(binImage, binImage);
     m_monitor->endTimer("Inverting");
@@ -240,7 +243,7 @@ float ObjectEdgesTracker::_tracking1(const cv::Mat & edges)
 
     m_monitor->startTimer("Tracking [1]");
 
-    for (int i = 0; i < 2; ++i)
+    for (int i = 0; i < 1; ++i)
     {
         string iterName = QString("    Tracking [1] iter_%1").arg(i).toStdString();
         m_monitor->startTimer(iterName);

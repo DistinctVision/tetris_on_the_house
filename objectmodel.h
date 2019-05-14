@@ -41,7 +41,11 @@ public:
 
     static ObjectModel createBox(const Eigen::Vector3f & size = Eigen::Vector3f(1.0f, 1.0f, 1.0f));
     static ObjectModel createCubikRubik(float border = 0.15f);
-    static ObjectModel createHouse(const Eigen::Vector3f & size);
+    static ObjectModel createHouse();
+
+    static ObjectModel mirroredX(const ObjectModel & model);
+
+    ObjectModel & merge(const ObjectModel & model);
 
     const Vectors3f & vertices() const;
     const Polygons & polygons() const;

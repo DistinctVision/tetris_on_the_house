@@ -141,52 +141,117 @@ ObjectModel ObjectModel::createCubikRubik(float border)
 }
 
 
-ObjectModel ObjectModel::createHouse(const Vector3f & size)
+ObjectModel ObjectModel::createHouse()
 {
-    ObjectModel house;
-    house.m_vertices = {
-        Vector3f(- size.x() * 0.5f, 0.0f, size.z() * 0.5f),
-        Vector3f(size.x() * 0.5f, 0.0f, size.z() * 0.5f),
-        Vector3f(size.x() * 0.5f, size.y(), size.z() * 0.5f),
-        Vector3f(- size.x() * 0.5f, size.y(), size.z() * 0.5f),
-        Vector3f(- size.x() * 0.5f, 0.0f, - size.z() * 0.5f),
-        Vector3f(size.x() * 0.5f, 0.0f, - size.z() * 0.5f),
-        Vector3f(size.x() * 0.5f, size.y(), - size.z() * 0.5f),
-        Vector3f(- size.x() * 0.5f, size.y(), - size.z() * 0.5f)
+    float k_floor = 2.6f;
+
+    ObjectModel model;
+    model.m_vertices = {
+        Vector3f(- 31.0f, 8.0f * k_floor, 0.0f),       // 0
+        Vector3f(- 31.0f, 19.0f * k_floor, 0.0f),      // 1
+        Vector3f(- 31.0f, 19.0f * k_floor, -3.0f),     // 2
+        Vector3f(- 31.0f, 8.0f * k_floor, -3.0f),      // 3
+
+        Vector3f(- 24.0f, 19.0f * k_floor, -3.0f),     // 4
+        Vector3f(- 24.0f, 8.0f * k_floor,  -3.0f),     // 5
+
+        Vector3f( - 23.0f, 0.0f, - 2.0f),              // 6
+        Vector3f( - 23.0f, 19.0f * k_floor, - 2.0f),   // 7
+        Vector3f( - 20.0f, 19.0f * k_floor, - 2.0f),   // 8
+        Vector3f( - 20.0f, 0.0f, - 2.0f),              // 9
+
+        Vector3f(- 19.0f, 8.0f * k_floor, -3.0f),      // 10
+        Vector3f(- 19.0f, 19.0f * k_floor,  -3.0f),    // 11
+        Vector3f(- 12.0f, 19.0f * k_floor, -3.0f),     // 12
+        Vector3f(- 12.0f, 8.0f * k_floor,  -3.0f),     // 13
+
+        Vector3f(- 12.0f, 8.0f * k_floor, 0.0f),       // 14
+        Vector3f(- 12.0f, 19.0f * k_floor,  0.0f),     // 15
     };
-    house.m_polygons = {
+    model.m_polygons = {
         Polygon {
             (VectorXi(4) << 0, 1, 2, 3).finished(),
-            Vector3f(0.0f, 0.0f, 1.0f)
-        },
-        Polygon {
-            (VectorXi(4) << 7, 6, 5, 4).finished(),
-            Vector3f(0.0f, 0.0f, -1.0f)
-        },
-        Polygon {
-            (VectorXi(4) << 1, 5, 6, 2).finished(),
-            Vector3f(1.0f, 0.0f, 0.0f)
-        },
-        Polygon {
-            (VectorXi(4) << 0, 3, 7, 4).finished(),
             Vector3f(-1.0f, 0.0f, 0.0f)
         },
         Polygon {
-            (VectorXi(4) << 2, 6, 7, 3).finished(),
-            Vector3f(0.0f, 1.0f, 0.0f)
+            (VectorXi(4) << 3, 2, 4, 5).finished(),
+            Vector3f(0.0f, 0.0f, -1.0f)
         },
         Polygon {
-            (VectorXi(4) << 0, 4, 5, 1).finished(),
-            Vector3f(0.0f, -1.0f, 0.0f)
-        }
+            (VectorXi(4) << 6, 7, 8, 9).finished(),
+            Vector3f(0.0f, 0.0f, -1.0f)
+        },
+        Polygon {
+            (VectorXi(4) << 10, 11, 12, 13).finished(),
+            Vector3f(0.0f, 0.0f, -1.0f)
+        },
+        Polygon {
+            (VectorXi(4) << 12, 15, 14, 13).finished(),
+            Vector3f(1.0f, 0.0f, 0.0f)
+        },
     };
 
-    house.m_disabledEdges.insert(make_pair(0, 3));
-    house.m_disabledEdges.insert(make_pair(1, 2));
-    house.m_disabledEdges.insert(make_pair(4, 7));
-    house.m_disabledEdges.insert(make_pair(5, 6));
+    model.m_disabledEdges.insert(make_pair(0, 1));
+    model.m_disabledEdges.insert(make_pair(2, 3));
+    model.m_disabledEdges.insert(make_pair(4, 5));
+    model.m_disabledEdges.insert(make_pair(7, 8));
+    model.m_disabledEdges.insert(make_pair(6, 9));
+    model.m_disabledEdges.insert(make_pair(10, 11));
+    model.m_disabledEdges.insert(make_pair(12, 13));
+    model.m_disabledEdges.insert(make_pair(13, 14));
+    model.m_disabledEdges.insert(make_pair(14, 15));
 
-    return house;
+    model.merge(mirroredX(model));
+
+    const Vectors3f & v = model.m_vertices;
+    for (size_t i = 0; i < model.polygons().size(); ++i)
+    {
+        const Polygon & polygon = model.polygons()[i];
+        const VectorXi & vi = polygon.vertexIndices;
+        Vector3f n = (v[vi[2]] - v[vi[1]]).cross(v[vi[0]] - v[vi[1]]).normalized();
+        float nd = polygon.normal.dot(n);
+        float dd = polygon.normal.dot(v[vi[3]] - v[vi[0]]);
+        assert(fabs(nd - 1.0f) < std::numeric_limits<float>::epsilon());
+        assert(fabs(dd) < std::numeric_limits<float>::epsilon());
+    }
+
+    return model;
+}
+
+ObjectModel ObjectModel::mirroredX(const ObjectModel & model)
+{
+    ObjectModel r(model);
+    for (Vector3f & v : r.m_vertices)
+    {
+        v.x() = - v.x();
+    }
+    for (Polygon & polygon : r.m_polygons)
+    {
+        polygon.normal.x() = - polygon.normal.x();
+        VectorXi vertexIndices(polygon.vertexIndices);
+        for (int i = 0; i < polygon.vertexIndices.size(); ++i)
+            vertexIndices[i] = polygon.vertexIndices[polygon.vertexIndices.size() - 1 - i];
+        polygon.vertexIndices = move(vertexIndices);
+    }
+    return r;
+}
+
+ObjectModel & ObjectModel::merge(const ObjectModel & model)
+{
+    int offset_v = static_cast<int>(m_vertices.size());
+    Polygons new_polygons = model.m_polygons;
+    for (Polygon & polygon: new_polygons)
+    {
+        for (int i = 0; i < polygon.vertexIndices.size(); ++i)
+        {
+            polygon.vertexIndices[i] += offset_v;
+        }
+    }
+    m_vertices.insert(m_vertices.end(), model.m_vertices.cbegin(), model.m_vertices.cend());
+    m_polygons.insert(m_polygons.end(), new_polygons.cbegin(), new_polygons.cend());
+    for (const pair<int, int> & i_d_edge : model.m_disabledEdges)
+        m_disabledEdges.insert(make_pair(i_d_edge.first + offset_v, i_d_edge.second + offset_v));
+    return (*this);
 }
 
 const Vectors3f & ObjectModel::vertices() const
