@@ -146,17 +146,17 @@ Item {
         id: tetrisScene
         objectEdgesTracker: frameHandler.objectEdgesTracker
         textureReceiver: frameTextureReceiver
+    }
 
-        Keys.onPressed: {
-            if (event.key === Qt.Key_Left) {
-                moveFigureLeft()
-            } else if (event.key === Qt.Key_Right) {
-                moveFigureRight()
-            } else if (event.key === Qt.Key_Down) {
-                moveFigureDown()
-            } else if (event.key === Qt.Key_Space) {
-                rotateFigure()
-            }
+    Keys.onPressed: {
+        if (event.key === Qt.Key_Left) {
+            tetrisScene.moveFigureLeft()
+        } else if (event.key === Qt.Key_Right) {
+            tetrisScene.moveFigureRight()
+        } else if (event.key === Qt.Key_Down) {
+            tetrisScene.moveFigureDown()
+        } else if (event.key === Qt.Key_Up) {
+            tetrisScene.rotateFigure()
         }
     }
 

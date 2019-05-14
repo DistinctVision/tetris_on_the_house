@@ -11,7 +11,7 @@ const Vector2i TetrisGame::figureAnchor = Vector2i(2, 2);
 
 TetrisGame::TetrisGame(const Vector2i & fieldSize):
     m_fieldSize(fieldSize),
-    m_field(fieldSize.x(), fieldSize.y() + Figure::ColsAtCompileTime),
+    m_field(fieldSize.y() + Figure::RowsAtCompileTime, fieldSize.x()),
     m_rnd(0, 10000)
 {
     _generateFigureSet();
@@ -82,8 +82,9 @@ TetrisGame::EventType TetrisGame::step()
     {
         if (m_removalLinesTimer > 0)
         {
-            int end_x = static_cast<int>(ceil((m_removalLinesTimer /
-                                               static_cast<float>(removalLinesTime)) * m_fieldSize.x()));
+            int end_x = static_cast<int>(ceil((1.0f - (m_removalLinesTimer /
+                                               static_cast<float>(removalLinesTime))) *
+                                              m_fieldSize.x()));
             for (int y : m_linesForRemoval)
             {
                 for (int x = 0; x < end_x; ++x)
@@ -215,9 +216,9 @@ TetrisGame::Figure TetrisGame::_createRandomFigure() const
 Vector2i TetrisGame::_createRandomStartPos(const TetrisGame::Figure & figure) const
 {
     pair<Vector2i, Vector2i> bb = _getFigureBoundedBox(figure);
-    int begin_x = - bb.first.x(), end_x = m_fieldSize.x() - bb.second.x();
+    int begin_x = - bb.first.x(), end_x = m_fieldSize.x() - 1 - bb.second.x();
     Vector2i pos(begin_x + m_rnd(m_rnd_gen) % (end_x - begin_x),
-                 m_fieldSize.y() - bb.first.y());
+                 m_fieldSize.y() - bb.first.y() + 1);
     return pos;
 }
 
@@ -296,7 +297,7 @@ TetrisGame::Figure TetrisGame::_rotated(const TetrisGame::Figure & figure) const
 
 std::pair<Vector2i, Vector2i> TetrisGame::_getFigureBoundedBox(const TetrisGame::Figure & figure) const
 {
-    std::pair<Vector2i, Vector2i> bb(Vector2i(m_fieldSize),
+    std::pair<Vector2i, Vector2i> bb(Vector2i(figure.cols(), figure.rows()),
                                      Vector2i(0, 0));
     for (int i = 0; i < figure.rows(); ++i)
     {
@@ -304,13 +305,13 @@ std::pair<Vector2i, Vector2i> TetrisGame::_getFigureBoundedBox(const TetrisGame:
         {
             if (figure(i, j) > 0)
             {
-                if (j > bb.first.x())
+                if (j < bb.first.x())
                     bb.first.x() = j;
-                if (i > bb.first.y())
+                if (i < bb.first.y())
                     bb.first.y() = i;
-                if (j < bb.second.x())
+                if (j > bb.second.x())
                     bb.second.x() = j;
-                if (i < bb.second.y())
+                if (i > bb.second.y())
                     bb.second.y() = i;
             }
         }
@@ -333,7 +334,7 @@ bool TetrisGame::_checkIntersect(const TetrisGame::Figure & figure, const Vector
                 if ((y < 0))
                     return true;
                 int x = begin.x() + j;
-                if ((x < 0) || (x > m_fieldSize.x()))
+                if ((x < 0) || (x >= m_fieldSize.x()))
                     return true;
                 if (m_field(y, x) > 0)
                     return true;
@@ -352,12 +353,12 @@ bool TetrisGame::_insertCurrentFigure()
         return false;
     for (int i = 0; i < Figure::RowsAtCompileTime; ++i)
     {
-        int y = i + figureAnchor.y() + m_figurePos.y();
+        int y = i - figureAnchor.y() + m_figurePos.y();
         for (int j = 0; j < Figure::ColsAtCompileTime; ++j)
         {
             if (m_currentFigure(i, j) > 0)
             {
-                int x = j + figureAnchor.x() + m_figurePos.x();
+                int x = j - figureAnchor.x() + m_figurePos.x();
                 m_field(y, x) = 1;
             }
         }

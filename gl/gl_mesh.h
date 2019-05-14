@@ -22,14 +22,16 @@ public:
     static QVector<QVector3D> computeNormals(const QVector<QVector3D> & vertices,
                                              const QVector<GLuint> & indices);
 
-    static GL_Mesh createQuad(const QVector2D & size = QVector2D(1.0f, 1.0f));
+    static GL_Mesh createQuad(const QVector2D & size = QVector2D(1.0f, 1.0f),
+                              const QVector2D & anchor = QVector2D(0.0f, 0.0f),
+                              bool flip = false);
     static GL_Mesh createCube(const QVector3D & size = QVector3D(1.0f, 1.0f, 1.0f));
     static GL_Mesh createCubikRubik(float border = 0.075f);
     static GL_Mesh createMesh(const QVector<QVector3D> & vertices,
                               const QVector<QVector2D> & textureCoords,
                               const QVector<GLuint> & indices);
 
-    void updateVertices(const QVector<QVector3D> & vertices, bool updateNormals = false);
+    void updateVertices(const QVector<QVector3D> & vertices);
     void updateTextureCoords(const QVector<QVector2D> & textureCoords);
 
     void draw(QOpenGLFunctions * gl, const GL_ShaderMaterial & shaderMaterial);

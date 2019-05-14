@@ -6,6 +6,7 @@
 #include <QVector2D>
 #include <QVector3D>
 #include <QMatrix4x4>
+#include <QOpenGLFramebufferObject>
 
 #include "gl/gl_scene.h"
 #include "gl/gl_worldobject.h"
@@ -58,7 +59,12 @@ private:
 
     std::shared_ptr<TetrisGame> m_game;
 
+    QOpenGLFramebufferObject * m_glowBuffer;
+    QOpenGLFramebufferObject * m_tempGlowBuffer;
+
     void _drawBlocks(GL_ViewRenderer * view, const QMatrix4x4 & projMatrix, const QMatrix4x4 & viewMatrix);
+
+    void _drawGlow(GL_ViewRenderer * view);
 };
 
 #endif // TETRISSCENE_H

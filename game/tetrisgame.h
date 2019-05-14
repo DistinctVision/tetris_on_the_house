@@ -12,10 +12,10 @@
 class TetrisGame
 {
 public:
-    static const int removalLinesTime = 10;
-    static const int userActionTime = 5;
-    static const int stepTime = 15;
-    static const int newFigureTime = 5;
+    static const int removalLinesTime = 5;
+    static const int userActionTime = 2;
+    static const int stepTime = 3;
+    static const int newFigureTime = 10;
 
     using Figure = Eigen::Matrix<int, 5, 5>;
     static const Eigen::Vector2i figureAnchor;
@@ -62,7 +62,7 @@ private:
     Figure m_nextFigure;
     Eigen::Vector2i m_figurePos;
 
-    std::mt19937 m_rnd_gen;
+    mutable std::mt19937 m_rnd_gen;
     std::uniform_int_distribution<std::size_t> m_rnd;
 
     std::vector<int> m_linesForRemoval;

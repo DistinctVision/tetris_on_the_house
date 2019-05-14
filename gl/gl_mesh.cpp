@@ -70,14 +70,16 @@ QVector<QVector3D> GL_Mesh::computeNormals(const QVector<QVector3D> & vertices, 
     return normals;
 }
 
-GL_Mesh GL_Mesh::createQuad(const QVector2D & size)
+GL_Mesh GL_Mesh::createQuad(const QVector2D & size, const QVector2D & anchor, bool flip)
 {
     GL_Mesh mesh;
+    QVector2D begin = - anchor;
+    QVector2D end = size - anchor;
     QVector<QVector3D> vertices = {
-        QVector3D(0.0f,     0.0f,     0.0f),
-        QVector3D(size.x(), 0.0f,     0.0f),
-        QVector3D(size.x(), size.y(), 0.0f),
-        QVector3D(0.0f,     size.y(), 0.0f)
+        QVector3D(begin.x(), begin.y(), 0.0f),
+        QVector3D(end.x(),   begin.y(), 0.0f),
+        QVector3D(end.x(),   end.y(),   0.0f),
+        QVector3D(begin.x(), end.y(),   0.0f)
     };
     QVector<QVector2D> textureCoords = {
         QVector2D(0.0f, 0.0),
@@ -89,6 +91,11 @@ GL_Mesh GL_Mesh::createQuad(const QVector2D & size)
         0, 2, 1,
         0, 3, 2
     };
+    if (flip)
+    {
+        qSwap(indices[1], indices[2]);
+        qSwap(indices[4], indices[5]);
+    }
     mesh.m_vertexBuffer.bind();
     mesh.m_vertexBuffer.allocate(vertices.data(), static_cast<int>(sizeof(QVector3D)) * vertices.size());
     mesh.m_textureCoordsBuffer.bind();
@@ -274,7 +281,7 @@ GL_Mesh GL_Mesh::createMesh(const QVector<QVector3D> & vertices,
     return mesh;
 }
 
-void GL_Mesh::updateVertices(const QVector<QVector3D> & vertices, bool updateNormals)
+void GL_Mesh::updateVertices(const QVector<QVector3D> & vertices)
 {
     m_vertexBuffer.bind();
     m_vertexBuffer.allocate(vertices.data(),
