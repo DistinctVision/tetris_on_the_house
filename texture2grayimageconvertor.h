@@ -43,7 +43,7 @@ private:
     QSharedPointer<QOpenGLFramebufferObject> m_fboPackedGray;
 
     QSize _getImageSize(const QSize & textureSize,
-                        QSize maxImageSize) const;
+                        QSize maxImageSize, bool k4fixFlag) const;
     QMatrix4x4 _getRotation(int orientation) const;
     QMatrix4x4 _getViewMatrix(float scaleX, float scaleY) const;
 

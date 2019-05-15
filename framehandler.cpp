@@ -198,7 +198,7 @@ QVideoFrame FrameHandlerRunnable::run(QVideoFrame * videoFrame,
             if (m_frameTextureId == 0)
                 glGenTextures(1, &m_frameTextureId);
             glBindTexture(GL_TEXTURE_2D, m_frameTextureId);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, frame.cols, frame.rows,
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, frame.cols, frame.rows,
                          0, GL_RGBA, GL_UNSIGNED_BYTE, frame.data);
             glGenerateMipmap(GL_TEXTURE_2D);
             textureReceiver->setTextureId(m_frameTextureId, QSize(frame.cols, frame.rows));

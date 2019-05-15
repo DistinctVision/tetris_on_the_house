@@ -20,6 +20,6 @@ highp vec3 to_gray(highp vec3 v)
 
 void main(void)
 {
-    vec2 uv = v_project(matrixView2FrameUV * view_position).xy;
+    highp vec2 uv = v_project(matrixView2FrameUV * view_position).xy;
     color = vec4(to_gray(texture(screen_texture, uv).xyz), 1.0);
 }

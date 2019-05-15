@@ -63,7 +63,7 @@ private:
     Eigen::Vector2i m_figurePos;
 
     mutable std::mt19937 m_rnd_gen;
-    std::uniform_int_distribution<std::size_t> m_rnd;
+    mutable std::uniform_int_distribution<std::size_t> m_rnd;
 
     std::vector<int> m_linesForRemoval;
     int m_numberRemovedLines;

@@ -269,7 +269,7 @@ float ObjectEdgesTracker::_tracking1(const cv::Mat & edges)
             E = static_cast<float>(optimize_pose(x,
                               QThreadPool::globalInstance(), QThread::idealThreadCount(),
                               distancesMap, m_camera, controlModelPoints, 30.0, 10,
-                                                 1.0 / 3.0, prevViewPostition));
+                                                 1.5 / 3.0, prevViewPostition));
         }
         else
         {

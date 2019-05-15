@@ -37,7 +37,7 @@ cv::Mat Texture2GrayImageConvertor::read(QOpenGLFunctions * gl,
     orientation = ((orientation / 90) % 4) * 90;
     if ((orientation == 90) || (orientation == 270))
         textureSize = QSize(textureSize.height(), textureSize.width());
-    QSize imageSize = _getImageSize(textureSize, maxImageSize);
+    QSize imageSize = _getImageSize(textureSize, maxImageSize, true);
     if (!m_fboColor ||
             (m_fboColor->width() < imageSize.width()) ||
             (m_fboColor->height() < imageSize.height()))
@@ -87,7 +87,7 @@ std::tuple<cv::Mat, QVector2D> Texture2GrayImageConvertor::read_cropped(QOpenGLF
     orientation = ((orientation / 90) % 4) * 90;
     if ((orientation == 90) || (orientation == 270))
         textureSize = QSize(textureSize.height(), textureSize.width());
-    QSize imageSize = _getImageSize(textureSize, maxImageSize);
+    QSize imageSize = _getImageSize(textureSize, maxImageSize, false);
     QVector2D scale(1.0f, 1.0f);
     {
         float width = imageSize.height() * viewAspect, height = static_cast<float>(imageSize.height());
@@ -97,6 +97,12 @@ std::tuple<cv::Mat, QVector2D> Texture2GrayImageConvertor::read_cropped(QOpenGLF
             height = imageSize.width() / viewAspect;
         }
         QSize imageSize1(static_cast<int>(ceil(width)), static_cast<int>(ceil(height)));
+        if (imageSize1.width() % 4 != 0)
+        {
+            int w = (imageSize1.width() / 4) * 4;
+            float scale = w / static_cast<float>(imageSize1.width());
+            imageSize1 = QSize(w, static_cast<int>(imageSize1.height() * scale));
+        }
         scale = QVector2D(imageSize1.width() / static_cast<float>(imageSize.width()),
                           imageSize1.height() / static_cast<float>(imageSize.height()));
         imageSize = imageSize1;
@@ -144,13 +150,14 @@ std::tuple<cv::Mat, QVector2D> Texture2GrayImageConvertor::read_cropped(QOpenGLF
 }
 
 QSize Texture2GrayImageConvertor::_getImageSize(const QSize & textureSize,
-                                                QSize maxImageSize) const
+                                                QSize maxImageSize, bool k4fixFlag) const
 {
-    maxImageSize.setWidth((maxImageSize.width() / 4) * 4);
     if ((textureSize.width() < maxImageSize.width()) && (textureSize.height() < maxImageSize.height()))
     {
-        if (textureSize.width() % 4 == 0)
+        if (!k4fixFlag || (textureSize.width() % 4 == 0))
             return textureSize;
+        if (k4fixFlag)
+            maxImageSize.setWidth((maxImageSize.width() / 4) * 4);
         QSize imageSize;
         imageSize.setWidth((textureSize.width() / 4) * 4);
         float scale = imageSize.width() / static_cast<float>(textureSize.width());
@@ -160,8 +167,9 @@ QSize Texture2GrayImageConvertor::_getImageSize(const QSize & textureSize,
     float aspect = textureSize.height() / static_cast<float>(textureSize.width());
     QSize imageSize(maxImageSize.width(), static_cast<int>(maxImageSize.width() * aspect));
     if (imageSize.height() > maxImageSize.height())
-    {
         imageSize = QSize(static_cast<int>(maxImageSize.height() / aspect), maxImageSize.height());
+    if (k4fixFlag)
+    {
         int width = (imageSize.width() / 4) * 4;
         float scale = width / static_cast<float>(imageSize.width());
         imageSize.setWidth(width);

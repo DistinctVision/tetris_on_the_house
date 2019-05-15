@@ -9,6 +9,7 @@ Item {
     width: 9 * 60
     height: 16 * 60
 
+    property bool isDebug: true
     property string current_scene: "tetris_scene"
 
     Settings {
@@ -71,18 +72,22 @@ Item {
 
     state: "settings" //current_scene
 
-    /*Camera {
+    Camera {
         id: camera
 
         captureMode: Camera.CaptureVideo
 
         deviceId: QtMultimedia.availableCameras[0].deviceId
-    }*/
+
+        viewfinder {
+            resolution: "1280x720"
+        }
+    }
 
     MediaPlayer {
         id: player
         source: "file:///D:/1/1.mp4"
-        autoPlay: true
+        autoPlay: isDebug
         muted: true
         loops: MediaPlayer.Infinite
     }
@@ -94,10 +99,8 @@ Item {
     FrameHandler {
         id: frameHandler
         maxFrameSize: "600x600"
-        orientation: 270
-        flipHorizontally: false
-        //orientation: camera.orientation
-        //flipHorizontally: (camera.position != Camera.FrontFace)
+        orientation: isDebug ? 270 : camera.orientation
+        flipHorizontally: isDebug ? false : (camera.position != Camera.FrontFace)
         focalLength: Qt.vector2d(1.5, 1.5)
         opticalCenter: Qt.vector2d(0.5, 0.5)
         objectEdgesTracker {
@@ -113,10 +116,10 @@ Item {
     VideoOutput {
         id: videoOutput
         fillMode: VideoOutput.PreserveAspectCrop
-        source: player
+        source: isDebug ? player : camera
         anchors.fill: parent
-        //autoOrientation: true
         orientation: 270
+        autoOrientation: !isDebug
         filters: [ frameHandler ]
     }
 
@@ -157,6 +160,35 @@ Item {
             tetrisScene.moveFigureDown()
         } else if (event.key === Qt.Key_Up) {
             tetrisScene.rotateFigure()
+        }
+    }
+
+    MultiPointTouchArea {
+        anchors.fill: parent
+        onGestureStarted: {
+            var p = gesture.touchPoints[0]
+            var dX = p.x - p.startX
+            var dY = p.y - p.startY
+            if ((Math.abs(dX) + Math.abs(dY)) > 20) {
+                if (Math.abs(dX) > Math.abs(dY)) {
+                    if (dX > 0) {
+                        tetrisScene.moveFigureRight()
+                    } else {
+                        tetrisScene.moveFigureLeft()
+                    }
+                } else if (dY > 0) {
+                    tetrisScene.moveFigureDown()
+                }
+                gesture.grab()
+            }
+        }
+        onReleased: {
+            var p = touchPoints[0]
+            var dX = p.x - p.startX
+            var dY = p.y - p.startY
+            if ((Math.abs(dX) + Math.abs(dY)) <= 20) {
+                tetrisScene.rotateFigure()
+            }
         }
     }
 

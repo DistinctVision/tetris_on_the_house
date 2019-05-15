@@ -12,7 +12,7 @@ TetrisScene::TetrisScene():
     m_glowBuffer(nullptr),
     m_tempGlowBuffer(nullptr)
 {
-    m_game = std::make_shared<TetrisGame>(Vector2i(8, 18));
+    m_game = std::make_shared<TetrisGame>(Vector2i(10, 30));
 }
 
 ObjectEdgesTracker * TetrisScene::objectEdgesTracker() const
@@ -43,10 +43,10 @@ void TetrisScene::setTextureReceiver(TextureReceiver * textureReceiver)
 
 void TetrisScene::init(GL_ViewRenderer * view)
 {
-    m_house = HouseObjectPtr::create(view, Vector3i(10, 18, 5),
-                                           Vector3f(11.0f, 18.5f, 6.0f),
-                                           Vector3f(0.0f, 0.0f, 0.5f),
-                                           Vector3f(0.0f, 0.5f, 0.5f));
+    m_house = HouseObjectPtr::create(view, Vector3i(10, 15, 5),
+                                           Vector3f(20.0f, 30.0f, 3.0f),
+                                           Vector3f(0.0f, 0.0f, 0.0f),
+                                           Vector3f(0.0f, 0.5f, 0.0f));
     m_meshBlock = GL_MeshPtr::create(GL_Mesh::createQuad(QVector2D(1.0f, 1.0f),
                                                          QVector2D(0.0f, 0.0f), true));
     m_materialBlock = view->createMaterial(MaterialType::ContourFallOff);
@@ -77,7 +77,10 @@ void TetrisScene::draw(GL_ViewRenderer * view)
         qCritical() << Q_FUNC_INFO << ": texture receiver is not set!";
         return;
     }
-    m_game->step();
+    if (m_game->step() == TetrisGame::EventType::Lose)
+    {
+        m_game->reset();
+    }
     view->glEnable(GL_BLEND);
     view->glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     QMatrix4x4 viewMatrix = m_tracker->viewMatrix();
@@ -135,7 +138,7 @@ void TetrisScene::_drawBlocks(GL_ViewRenderer * view, const QMatrix4x4 & projMat
             float t = 1.0f - m_game->currentFigureState();
             t *= t;
             t *= t;
-            y += t * 15.0f;
+            y += t * 30.0f;
         }
         TetrisGame::Figure figure = m_game->currentFigure();
         for (int i = 0; i < TetrisGame::Figure::RowsAtCompileTime; ++i)
