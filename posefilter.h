@@ -49,6 +49,8 @@ public:
     const Motion & currentMotion() const;
     const Pose & next(const Pose & rawPose);
 
+    int currentStep() const;
+
 private:
     Eigen::Vector2d m_positionWeights;
     Eigen::Vector2d m_rotationWeights;

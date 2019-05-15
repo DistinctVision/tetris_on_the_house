@@ -137,14 +137,22 @@ void ObjectEdgesTracker::compute(cv::Mat image)
     assert(image.channels() == 1);
     assert(m_camera);
 
+    cv::Mat kernel = (cv::Mat_<float>(3,3) <<
+                      1,  1, 1,
+                      1, -8, 1,
+                      1,  1, 1);
+    cv::Mat imgLaplacian;
+    cv::filter2D(image, imgLaplacian, CV_32F, kernel);
+    imgLaplacian.convertTo(imgLaplacian, CV_8UC1);
+
     cv::Mat binImage;
     m_monitor->startTimer("Threshold");
-    cv::adaptiveThreshold(image, binImage, 255.0, cv::ADAPTIVE_THRESH_MEAN_C, cv::THRESH_BINARY, 33, m_binaryThreshold - 128.0);
-    //cv::threshold(image, binImage, m_binaryThreshold, 255.0, cv::THRESH_BINARY);
+    //cv::adaptiveThreshold(imgLaplacian, binImage, 255.0, cv::ADAPTIVE_THRESH_MEAN_C, cv::THRESH_BINARY, 33, m_binaryThreshold - 128.0);
+    cv::threshold(image, binImage, m_binaryThreshold, 255.0, cv::THRESH_BINARY);
     m_monitor->endTimer("Threshold");
 
     m_monitor->startTimer("Dilate");
-    cv::dilate(binImage, binImage, cv::getStructuringElement(cv::MORPH_DILATE, cv::Size(3, 3), cv::Point(1, 1)), cv::Point(1, 1), 1);
+    //cv::dilate(binImage, binImage, cv::getStructuringElement(cv::MORPH_DILATE, cv::Size(3, 3), cv::Point(1, 1)), cv::Point(1, 1), 1);
     m_monitor->startTimer("Dilate");
 
     m_monitor->startTimer("Find contours");
@@ -243,7 +251,9 @@ float ObjectEdgesTracker::_tracking1(const cv::Mat & edges)
 
     m_monitor->startTimer("Tracking [1]");
 
-    for (int i = 0; i < 1; ++i)
+    Vector3d prevViewPostition = m_poseFilter.currentPose().position;
+
+    for (int i = 0; i < 2; ++i)
     {
         string iterName = QString("    Tracking [1] iter_%1").arg(i).toStdString();
         m_monitor->startTimer(iterName);
@@ -254,9 +264,19 @@ float ObjectEdgesTracker::_tracking1(const cv::Mat & edges)
             break;
         }
 
-        E = static_cast<float>(optimize_pose(x,
-                          QThreadPool::globalInstance(), QThread::idealThreadCount(),
-                          distancesMap, m_camera, controlModelPoints, 30.0, 10));
+        if (m_poseFilter.currentStep() > 1)
+        {
+            E = static_cast<float>(optimize_pose(x,
+                              QThreadPool::globalInstance(), QThread::idealThreadCount(),
+                              distancesMap, m_camera, controlModelPoints, 30.0, 10,
+                                                 1.0 / 3.0, prevViewPostition));
+        }
+        else
+        {
+            E = static_cast<float>(optimize_pose(x,
+                              QThreadPool::globalInstance(), QThread::idealThreadCount(),
+                              distancesMap, m_camera, controlModelPoints, 30.0, 10));
+        }
 
         R = exp_rotationMatrix(x.segment<3>(3).eval()).cast<float>();
         t = x.segment<3>(0).cast<float>();
@@ -283,12 +303,14 @@ float ObjectEdgesTracker::_tracking1(const cv::Mat & edges)
     float area = (bb_max.x() - bb_min.x()) * (bb_max.y() - bb_min.y());
     if (area < 100.0f)
         E = numeric_limits<float>::max();
-    if (E > 2000000.0f)
+    if (E > 2.0f)
     {
         m_poseFilter.reset(m_resetCameraPose);
     }
     else
     {
+        Vector3d pose = _x2pose(x).position;
+        qDebug().noquote() << QString("pose = %1 %2 %3").arg(pose.x()).arg(pose.y()).arg(pose.z());
         m_poseFilter.next(_x2pose(x));
     }
 

@@ -34,7 +34,9 @@ float optimize_pose(Eigen::Matrix3f & R, Eigen::Vector3f & t,
                     const std::shared_ptr<const PinholeCamera> & camera,
                     const Vectors3f & modelPoints,
                     float maxDistance,
-                    int numberIterations);
+                    int numberIterations,
+                    double lambdaViewPosition = -1.0,
+                    const Eigen::Vector3d & prevViewPosition = Eigen::Vector3d::Zero());
 
 double optimize_pose(Eigen::Matrix<double, 6, 1> & x,
                      QThreadPool * pool, size_t numberWorkThreads,
@@ -42,6 +44,8 @@ double optimize_pose(Eigen::Matrix<double, 6, 1> & x,
                      const std::shared_ptr<const PinholeCamera> & camera,
                      const Vectors3f & modelPoints,
                      double maxDistance,
-                     int numberIterations);
+                     int numberIterations,
+                     double lambdaViewPosition = -1.0,
+                     const Eigen::Vector3d & prevViewPosition = Eigen::Vector3d::Zero());
 
 #endif // POSEOPTIMIZER_H

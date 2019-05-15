@@ -143,7 +143,7 @@ ObjectModel ObjectModel::createCubikRubik(float border)
 
 ObjectModel ObjectModel::createHouse()
 {
-    float k_floor = 2.6f;
+    float k_floor = 2.7f;
 
     ObjectModel model;
     model.m_vertices = {

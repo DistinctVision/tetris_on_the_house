@@ -129,3 +129,8 @@ const PoseFilter::Pose & PoseFilter::next(const PoseFilter::Pose & rawPose)
     }
     return m_pose;
 }
+
+int PoseFilter::currentStep() const
+{
+    return m_currentStep;
+}

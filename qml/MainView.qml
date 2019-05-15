@@ -81,7 +81,7 @@ Item {
 
     MediaPlayer {
         id: player
-        source: "file:///E:/1/1_1.mp4"
+        source: "file:///D:/1/1.mp4"
         autoPlay: true
         muted: true
         loops: MediaPlayer.Infinite
