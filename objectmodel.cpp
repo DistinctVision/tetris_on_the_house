@@ -155,10 +155,10 @@ ObjectModel ObjectModel::createHouse()
         Vector3f(- 24.0f, 19.0f * k_floor, -3.0f),     // 4
         Vector3f(- 24.0f, 8.0f * k_floor,  -3.0f),     // 5
 
-        Vector3f( - 23.0f, 0.0f, - 2.0f),              // 6
-        Vector3f( - 23.0f, 19.0f * k_floor, - 2.0f),   // 7
-        Vector3f( - 20.0f, 19.0f * k_floor, - 2.0f),   // 8
-        Vector3f( - 20.0f, 0.0f, - 2.0f),              // 9
+        Vector3f( - 23.0f, 0.0f, - 1.0f),              // 6
+        Vector3f( - 23.0f, 20.0f * k_floor, - 1.0f),   // 7
+        Vector3f( - 20.0f, 20.0f * k_floor, - 1.0f),   // 8
+        Vector3f( - 20.0f, 0.0f, - 1.0f),              // 9
 
         Vector3f(- 19.0f, 8.0f * k_floor, -3.0f),      // 10
         Vector3f(- 19.0f, 19.0f * k_floor,  -3.0f),    // 11

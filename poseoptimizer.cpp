@@ -674,6 +674,10 @@ double optimize_pose(Matrix<double, 6, 1> &x,
                     count += get<1>(results[i]);
                 }
             }
+            if (count == 0)
+            {
+                return numeric_limits<double>::max();
+            }
             pixelError_next /= static_cast<double>(count);
             Fsq_next = pixelError_next;
             if (lambdaViewPosition > 0.0)

@@ -32,7 +32,7 @@ ObjectEdgesTracker::ObjectEdgesTracker(const QSharedPointer<PerformanceMonitor> 
     m_maxBlobCircularity(0.25),
     m_model(ObjectModel::createHouse())
 {
-    m_resetCameraPose = Pose(Vector3d(0.0, 10.0, -100.0), Quaterniond(1.0, 0.0, 0.0, 0.0));
+    m_resetCameraPose = Pose(Vector3d(0.0, 10.0, -120.0), Quaterniond(1.0, 0.0, 0.0, 0.0));
     m_poseFilter.reset(m_resetCameraPose);
 }
 
@@ -136,24 +136,23 @@ void ObjectEdgesTracker::compute(cv::Mat image)
 {
     assert(image.channels() == 1);
     assert(m_camera);
-
-    cv::Mat kernel = (cv::Mat_<float>(3,3) <<
+    /*cv::Mat kernel = (cv::Mat_<float>(3,3) <<
                       1,  1, 1,
                       1, -8, 1,
                       1,  1, 1);
     cv::Mat imgLaplacian;
     cv::filter2D(image, imgLaplacian, CV_32F, kernel);
-    imgLaplacian.convertTo(imgLaplacian, CV_8UC1);
+    imgLaplacian.convertTo(imgLaplacian, CV_8UC1);*/
 
     cv::Mat binImage;
     m_monitor->startTimer("Threshold");
-    //cv::adaptiveThreshold(imgLaplacian, binImage, 255.0, cv::ADAPTIVE_THRESH_MEAN_C, cv::THRESH_BINARY, 33, m_binaryThreshold - 128.0);
+    //cv::adaptiveThreshold(image, binImage, 255.0, cv::ADAPTIVE_THRESH_MEAN_C, cv::THRESH_BINARY, 33, m_binaryThreshold - 128.0);
     cv::threshold(image, binImage, m_binaryThreshold, 255.0, cv::THRESH_BINARY);
     m_monitor->endTimer("Threshold");
 
-    m_monitor->startTimer("Dilate");
-    //cv::dilate(binImage, binImage, cv::getStructuringElement(cv::MORPH_DILATE, cv::Size(3, 3), cv::Point(1, 1)), cv::Point(1, 1), 1);
-    m_monitor->startTimer("Dilate");
+    /*m_monitor->startTimer("Dilate");
+    cv::dilate(binImage, binImage, cv::getStructuringElement(cv::MORPH_DILATE, cv::Size(3, 3), cv::Point(1, 1)), cv::Point(1, 1), 1);
+    m_monitor->startTimer("Dilate");*/
 
     m_monitor->startTimer("Find contours");
     std::vector<std::vector<cv::Point>> contours;
@@ -188,9 +187,9 @@ void ObjectEdgesTracker::compute(cv::Mat image)
     }
     m_monitor->endTimer("Filter contours");
 
-    m_monitor->startTimer("Erode");
+    /*m_monitor->startTimer("Erode");
     cv::erode(binImage, binImage, cv::getStructuringElement(cv::MORPH_ERODE, cv::Size(3, 3), cv::Point(1, 1)), cv::Point(1, 1), 1);
-    m_monitor->endTimer("Erode");
+    m_monitor->endTimer("Erode");*/
 
     m_monitor->startTimer("Inverting");
     cv::bitwise_not(binImage, binImage);
@@ -269,7 +268,7 @@ float ObjectEdgesTracker::_tracking1(const cv::Mat & edges)
             E = static_cast<float>(optimize_pose(x,
                               QThreadPool::globalInstance(), QThread::idealThreadCount(),
                               distancesMap, m_camera, controlModelPoints, 30.0, 10,
-                                                 1.5 / 3.0, prevViewPostition));
+                                                 0.5 / 3.0, prevViewPostition));
         }
         else
         {
@@ -303,7 +302,7 @@ float ObjectEdgesTracker::_tracking1(const cv::Mat & edges)
     float area = (bb_max.x() - bb_min.x()) * (bb_max.y() - bb_min.y());
     if (area < 100.0f)
         E = numeric_limits<float>::max();
-    if (E > 2.0f)
+    if (E > 6.0f)
     {
         m_poseFilter.reset(m_resetCameraPose);
     }

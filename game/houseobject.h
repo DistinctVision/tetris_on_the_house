@@ -44,8 +44,6 @@ private:
 
     GL_MeshPtr m_meshForward;
     GL_ShaderMaterialPtr m_materialForward;
-    QVector<_FloorInfo> m_floorInfos;
-    QVector<QVector2D> m_houseTextureCoords;
 
     GL_MeshPtr m_meshBackward;
     GL_ShaderMaterialPtr m_materialBackward;
@@ -54,8 +52,6 @@ private:
 
     void _createMeshForward();
     void _createMeshBackward();
-
-    void _moveFloors(float dy);
 };
 
 using HouseObjectPtr = QSharedPointer<HouseObject>;

@@ -55,12 +55,6 @@ void HouseObject::draw(GL_ViewRenderer * view, const QMatrix4x4 & viewMatrix,
     m_materialForward->setValue("matrixView2FrameUV", invUvTransfrom);
     m_materialForward->setTexture("screen_texture", frameTextureId);
 
-    {
-        static float t = 0.0f;
-        t += 0.05f;
-        _moveFloors(std::sin(t) * 3.0f);
-    }
-
     m_meshForward->draw(view, *m_materialForward);
 
     m_materialBackward->setValue("matrixMVP", matrixMVP);
@@ -69,178 +63,79 @@ void HouseObject::draw(GL_ViewRenderer * view, const QMatrix4x4 & viewMatrix,
 
 void HouseObject::_createMeshForward()
 {
+    float k_floor = 2.7f;
+
     QVector<QVector3D> vertices;
-    
-    QVector3D floorSize(m_size.x() - (m_borderFirst.x() + m_borderSecond.x()),
-                        m_size.y() - (m_borderFirst.y() + m_borderSecond.y()),
-                        m_size.z() - (m_borderFirst.z() + m_borderSecond.z()));
-
-    auto addFloor = [&, this] (float y) -> _FloorInfo
-    {
-        _FloorInfo info;
-        info.y = y;
-        /*{
-            QVector<GLuint> & indices = info.i_sides[0];
-            GLuint i_o = static_cast<GLuint>(vertices.size());
-            vertices.push_back(QVector3D(- m_size.x() * 0.5f, y, m_size.z() * 0.5f));
-            indices.push_back(i_o);
-            vertices.push_back(QVector3D(m_size.x() * 0.5f, y, m_size.z() * 0.5f));
-            indices.push_back(i_o + 1);
-        }*/
-        {
-            QVector<GLuint> & indices = info.i_sides[1];
-            GLuint i_o = static_cast<GLuint>(vertices.size());
-            vertices.push_back(QVector3D(m_size.x() * 0.5f, y, m_size.z() * 0.5f));
-            indices.push_back(i_o);
-            vertices.push_back(QVector3D(m_size.x() * 0.5f, y, - m_size.z() * 0.5f));
-            indices.push_back(i_o + 1);
-        }
-        {
-            QVector<GLuint> & indices = info.i_sides[2];
-            GLuint i_o = static_cast<GLuint>(vertices.size());
-            vertices.push_back(QVector3D(m_size.x() * 0.5f, y, - m_size.z() * 0.5f));
-            indices.push_back(i_o);
-            float t_delta = 1.0f / static_cast<float>(m_n_size.x());
-            QVector3D v1((0.5f - t_delta) * floorSize.x(), y, - m_size.z() * 0.5f);
-            vertices.push_back(v1);
-            indices.push_back(i_o + 1);
-            vertices.push_back(v1);
-            indices.push_back(i_o + 2);
-            QVector3D v2((t_delta - 0.5f) * floorSize.x(), y, - m_size.z() * 0.5f);
-            vertices.push_back(v2);
-            indices.push_back(i_o + 3);
-            vertices.push_back(v2);
-            indices.push_back(i_o + 4);
-            vertices.push_back(QVector3D(- m_size.x() * 0.5f, y, - m_size.z() * 0.5f));
-            indices.push_back(i_o + 5);
-        }
-        {
-            QVector<GLuint> & indices = info.i_sides[3];
-            GLuint i_o = static_cast<GLuint>(vertices.size());
-            vertices.push_back(QVector3D(- 0.5f * m_size.x(), y, - m_size.z() * 0.5f));
-            indices.push_back(i_o);
-            vertices.push_back(QVector3D(- m_size.x() * 0.5f, y, m_size.z() * 0.5f));
-            indices.push_back(i_o + 1);
-        }
-        return info;
-    };
-
-    QVector<_FloorInfo> floors(m_n_size.y() + 3);
-    floors[0] = addFloor(0.0f);
-    for (int i = 0; i <= m_n_size.y(); ++i)
-    {
-        float t = i / static_cast<float>(m_n_size.y());
-        floors[i + 1] = addFloor(m_borderFirst.y() + t * floorSize.y());
-    }
-    floors[m_n_size.y() + 2] = addFloor(m_size.y());
-
+    QVector<QVector2D> texCoords;
     QVector<GLuint> indices;
-    for (int i = 0; i < floors.size() - 1; ++i)
+
+    auto createRect = [&] (const QVector3D & origin, const QVector3D & axisX, const QVector3D & axisY,
+                           const QSize & size) -> std::tuple<QVector<QVector3D>, QVector<QVector2D>, QVector<GLuint>>
     {
-        const _FloorInfo & down = floors[i];
-        const _FloorInfo & up = floors[i + 1];
+        QVector<QVector3D> vertices;
+        QVector<QVector2D> texCoords;
+        QVector<GLuint> indices;
+
+        for (int j = 0; j <= size.height(); ++j)
         {
-            const QVector<GLuint> & d_ind = down.i_sides[1];
-            const QVector<GLuint> & u_ind = up.i_sides[1];
-            assert(d_ind.size() == u_ind.size());
-            indices.append({ d_ind[1], d_ind[0], u_ind[0],
-                             d_ind[1], u_ind[0], u_ind[1] });
-        }
-        {
-            const QVector<GLuint> & d_ind = down.i_sides[2];
-            const QVector<GLuint> & u_ind = up.i_sides[2];
-            assert(d_ind.size() == u_ind.size());
-            for (int k = 0; k < d_ind.size() - 1; ++k)
+            float v = j / static_cast<float>(size.height());
+            for (int i = 0; i <= size.width(); ++i)
             {
-                if ((k == 1) || (k == (d_ind.size() - 3)))
-                    continue;
-                indices.append({ d_ind[k + 1], d_ind[k + 0], u_ind[k + 0],
-                                 d_ind[k + 1], u_ind[k + 0], u_ind[k + 1] });
-                indices.append({ d_ind[k + 1], d_ind[k + 0], u_ind[k + 0],
-                                 d_ind[k + 1], u_ind[k + 0], u_ind[k + 1] });
+                float u = i / static_cast<float>(size.width());
+                vertices.push_back(origin + axisX * u + axisY * v);
+                texCoords.push_back(QVector2D(u, v));
             }
         }
+        GLuint str_i_offset = static_cast<GLuint>(size.width() + 1);
+        for (int i = 0; i < size.width(); ++i)
         {
-            const QVector<GLuint> & d_ind = down.i_sides[3];
-            const QVector<GLuint> & u_ind = up.i_sides[3];
-            assert(d_ind.size() == u_ind.size());
-            indices.append({ d_ind[1], d_ind[0], u_ind[0],
-                             d_ind[1], u_ind[0], u_ind[1] });
+            for (int j = 0; j < size.height(); ++j)
+            {
+                GLuint i_o = static_cast<GLuint>(i * str_i_offset + j);
+                indices.append({ i_o + 0, i_o + 1, i_o + str_i_offset + 0,
+                                 i_o + 1, i_o + str_i_offset + 0, i_o + str_i_offset + 1 });
+            }
         }
-    }
 
-    m_floorInfos = std::move(floors);
+        return std::make_tuple(vertices, texCoords, indices);
+    };
 
-    QVector<QVector2D> textureCoords(vertices.size(), QVector2D(0.0f, 0.0f));
+    auto merge = [&] (const std::tuple<QVector<QVector3D>, QVector<QVector2D>, QVector<GLuint>> & tuple)
+    {
+        const QVector<QVector3D> & c_vertices = std::get<0>(tuple);
+        const QVector<QVector2D> & c_texCoords = std::get<1>(tuple);
+        const QVector<GLuint> & c_indices = std::get<2>(tuple);
 
-    m_meshForward = GL_MeshPtr::create(GL_Mesh::createMesh(vertices, textureCoords, indices));
-    m_houseTextureCoords = std::move(textureCoords);
+        int i_o = vertices.size();
+        indices.resize(indices.size() + c_indices.size());
+        for (int i = 0; i < c_indices.size(); ++i)
+            indices[i_o + i] = c_indices[i];
+        vertices.append(c_vertices);
+        texCoords.append(c_texCoords);
+    };
+
+    merge(createRect(QVector3D(- 31.0f, 19.0f * k_floor, - 3.0f),
+                     QVector3D(0.0f, 0.0f, - 3.0f),
+                     QVector3D(0.0f, (8.0f - 19.0f) * k_floor, 0.0f),
+                     QSize(1, 1)));
+    merge(createRect(QVector3D(- 31.0f, 19.0f * k_floor, 0.0f),
+                     QVector3D(- 24.0f - 31.0f, 0.0f, 0.0f),
+                     QVector3D(0.0f, (8.0f - 19.0f) * k_floor, 0.0f),
+                     QSize(4, 11)));
+    merge(createRect(QVector3D(- 23.0f, 20.0f, - 1.0f),
+                     QVector3D(- 23.0f - 20.0f, 0.0f, 0.0f),
+                     QVector3D(0.0f, (0.0f - 20.0f) * k_floor, 0.0f),
+                     QSize(1, 1)));
+    merge(createRect(QVector3D(- 19.0f, 19.0f * k_floor, 0.0f),
+                     QVector3D(- 12.0f - 19.0f, 0.0f, 0.0f),
+                     QVector3D(0.0f, (8.0f - 19.0f) * k_floor, 0.0f),
+                     QSize(4, 11)));
+    merge(createRect(QVector3D(- 12.0f, 19.0f * k_floor, 0.0f),
+                     QVector3D(0.0f, 0.0f, 3.0f),
+                     QVector3D(0.0f, (8.0f - 19.0f) * k_floor, 0.0f),
+                     QSize(1, 1)));
 }
 
 void HouseObject::_createMeshBackward()
 {
-    QVector<QVector3D> vertices;
-    QVector<GLuint> indices;
-
-    GLuint i_o = static_cast<GLuint>(vertices.size());
-    vertices.push_back(QVector3D(- m_size.x() * 0.5f, 0.0f, - m_size.z() * 0.5f));
-    vertices.push_back(QVector3D(m_size.x() * 0.5f, 0.0f, - m_size.z() * 0.5f));
-    vertices.push_back(QVector3D(m_size.x() * 0.5f, 0.0f, m_size.z() * 0.5f));
-    vertices.push_back(QVector3D(- m_size.x() * 0.5f, 0.0f, m_size.z() * 0.5f));
-    indices.append({ i_o + 0, i_o + 1, i_o + 2, i_o + 0, i_o + 2, i_o + 3 });
-
-    i_o = static_cast<GLuint>(vertices.size());
-    vertices.push_back(QVector3D(- m_size.x() * 0.5f, m_size.y(), - m_size.z() * 0.5f));
-    vertices.push_back(QVector3D(m_size.x() * 0.5f, m_size.y(), - m_size.z() * 0.5f));
-    vertices.push_back(QVector3D(m_size.x() * 0.5f, m_size.y(), m_size.z() * 0.5f));
-    vertices.push_back(QVector3D(- m_size.x() * 0.5f, m_size.y(), m_size.z() * 0.5f));
-    indices.append({ i_o + 0, i_o + 2, i_o + 1, i_o + 0, i_o + 3, i_o + 2 });
-
-    i_o = static_cast<GLuint>(vertices.size());
-    vertices.push_back(QVector3D(- m_size.x() * 0.5f, m_size.y(), m_size.z() * 0.5f));
-    vertices.push_back(QVector3D(m_size.x() * 0.5f, m_size.y(), m_size.z() * 0.5f));
-    vertices.push_back(QVector3D(m_size.x() * 0.5f, 0.0f, m_size.z() * 0.5f));
-    vertices.push_back(QVector3D(- m_size.x() * 0.5f, 0.0f, m_size.z() * 0.5f));
-    indices.append({ i_o + 0, i_o + 2, i_o + 1, i_o + 0, i_o + 3, i_o + 2 });
-
-    i_o = static_cast<GLuint>(vertices.size());
-    vertices.push_back(QVector3D(- m_size.x() * 0.5f, m_size.y(), - m_size.z() * 0.5f));
-    vertices.push_back(QVector3D(- m_size.x() * 0.5f, m_size.y(), m_size.z() * 0.5f));
-    vertices.push_back(QVector3D(- m_size.x() * 0.5f, 0.0f, m_size.z() * 0.5f));
-    vertices.push_back(QVector3D(- m_size.x() * 0.5f, 0.0f, - m_size.z() * 0.5f));
-    indices.append({ i_o + 0, i_o + 2, i_o + 1, i_o + 0, i_o + 3, i_o + 2 });
-
-    i_o = static_cast<GLuint>(vertices.size());
-    vertices.push_back(QVector3D(m_size.x() * 0.5f, m_size.y(), m_size.z() * 0.5f));
-    vertices.push_back(QVector3D(m_size.x() * 0.5f, m_size.y(), - m_size.z() * 0.5f));
-    vertices.push_back(QVector3D(m_size.x() * 0.5f, 0.0f, - m_size.z() * 0.5f));
-    vertices.push_back(QVector3D(m_size.x() * 0.5f, 0.0f, m_size.z() * 0.5f));
-    indices.append({ i_o + 0, i_o + 2, i_o + 1, i_o + 0, i_o + 3, i_o + 2 });
-
-    QVector<QVector2D> textureCoords(vertices.size());
-    for (int i = 0; i < textureCoords.size(); i += 4)
-    {
-        textureCoords[i + 0] = QVector2D(0.0f, 0.0f);
-        textureCoords[i + 1] = QVector2D(1.0f, 0.0f);
-        textureCoords[i + 2] = QVector2D(1.0f, 1.0f);
-        textureCoords[i + 3] = QVector2D(0.0f, 1.0f);
-    }
-    m_meshBackward = GL_MeshPtr::create(GL_Mesh::createMesh(vertices, textureCoords, indices));
-}
-
-void HouseObject::_moveFloors(float dy)
-{
-    for (int i = 0; i < m_floorInfos.size(); ++i)
-    {
-        float floor_y = m_floorInfos[i].y;
-        for (int j = 2; j < 3; ++j)
-        {
-            const QVector<GLuint> & indices = m_floorInfos[i].i_sides[j];
-            for (int k = 2; k < indices.size() - 2; ++k)
-            {
-                m_houseTextureCoords[indices[k]].setY(std::max(dy, - floor_y));
-            }
-        }
-    }
-    m_meshForward->updateTextureCoords(m_houseTextureCoords);
 }
