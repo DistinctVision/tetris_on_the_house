@@ -9,7 +9,7 @@ Item {
     width: 9 * 60
     height: 16 * 60
 
-    property bool isDebug: false
+    property bool isDebug: true
     property string current_scene: "tetris_scene"
 
     Settings {
@@ -86,7 +86,7 @@ Item {
 
     MediaPlayer {
         id: player
-        source: "file:///D:/1/2.mp4"
+        source: "file:///E:/1/3.mp4"
         autoPlay: isDebug
         muted: true
         loops: MediaPlayer.Infinite

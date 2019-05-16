@@ -84,7 +84,7 @@ void TetrisScene::draw(GL_ViewRenderer * view)
     view->glEnable(GL_BLEND);
     view->glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     QMatrix4x4 viewMatrix = m_tracker->viewMatrix();
-    //m_house->draw(view, viewMatrix, m_textureReceiver->textureId(), m_textureReceiver->textureSize());
+    m_house->draw(view, viewMatrix, m_textureReceiver->textureId(), m_textureReceiver->textureSize());
     _drawBlocks(view, view->projectionMatrix(), viewMatrix);
 }
 

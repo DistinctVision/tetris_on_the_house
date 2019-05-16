@@ -147,26 +147,26 @@ ObjectModel ObjectModel::createHouse()
 
     ObjectModel model;
     model.m_vertices = {
-        Vector3f(- 31.0f, 8.0f * k_floor, 0.0f),       // 0
-        Vector3f(- 31.0f, 19.0f * k_floor, 0.0f),      // 1
-        Vector3f(- 31.0f, 19.0f * k_floor, -3.0f),     // 2
-        Vector3f(- 31.0f, 8.0f * k_floor, -3.0f),      // 3
+        Vector3f(- 31.0f, 8.0f * k_floor, - 4.0f),       // 0
+        Vector3f(- 31.0f, 19.0f * k_floor, - 4.0f),      // 1
+        Vector3f(- 31.0f, 19.0f * k_floor, 0.0f),     // 2
+        Vector3f(- 31.0f, 8.0f * k_floor, 0.0f),      // 3
 
-        Vector3f(- 24.0f, 19.0f * k_floor, -3.0f),     // 4
-        Vector3f(- 24.0f, 8.0f * k_floor,  -3.0f),     // 5
+        Vector3f(- 24.0f, 19.0f * k_floor, 0.0f),     // 4
+        Vector3f(- 24.0f, 8.0f * k_floor,  0.0f),     // 5
 
-        Vector3f( - 23.0f, 0.0f, - 1.0f),              // 6
-        Vector3f( - 23.0f, 20.0f * k_floor, - 1.0f),   // 7
-        Vector3f( - 20.0f, 20.0f * k_floor, - 1.0f),   // 8
-        Vector3f( - 20.0f, 0.0f, - 1.0f),              // 9
+        Vector3f( - 23.0f, 0.0f * k_floor, - 4.0f),    // 6
+        Vector3f( - 23.0f, 20.0f * k_floor, - 4.0f),   // 7
+        Vector3f( - 20.0f, 20.0f * k_floor, - 4.0f),   // 8
+        Vector3f( - 20.0f, 0.0f * k_floor, - 4.0f),    // 9
 
-        Vector3f(- 19.0f, 8.0f * k_floor, -3.0f),      // 10
-        Vector3f(- 19.0f, 19.0f * k_floor,  -3.0f),    // 11
-        Vector3f(- 12.0f, 19.0f * k_floor, -3.0f),     // 12
-        Vector3f(- 12.0f, 8.0f * k_floor,  -3.0f),     // 13
+        Vector3f(- 19.0f, 8.0f * k_floor, 0.0f),      // 10
+        Vector3f(- 19.0f, 19.0f * k_floor, 0.0f),    // 11
+        Vector3f(- 12.0f, 19.0f * k_floor, 0.0f),     // 12
+        Vector3f(- 12.0f, 8.0f * k_floor, 0.0f),     // 13
 
-        Vector3f(- 12.0f, 8.0f * k_floor, 0.0f),       // 14
-        Vector3f(- 12.0f, 19.0f * k_floor,  0.0f),     // 15
+        Vector3f(- 12.0f, 8.0f * k_floor, - 4.0f),       // 14
+        Vector3f(- 12.0f, 19.0f * k_floor,  - 4.0f),     // 15
     };
     model.m_polygons = {
         Polygon {
@@ -454,7 +454,7 @@ void ObjectModel::draw(const cv::Mat & image,
         cv::Scalar color = (m_disabledEdges.find(*itEdge) == m_disabledEdges.cend()) ? cv::Scalar(0, 255, 0) :
                                                                                        cv::Scalar(255, 0, 0);
 
-        cv::line(image, cv::Point2f(p1.x(), p1.y()), cv::Point2f(p2.x(), p2.y()), color, 2);
+        cv::line(image, cv::Point2f(p1.x(), p1.y()), cv::Point2f(p2.x(), p2.y()), color, 1);
     }
 }
 
