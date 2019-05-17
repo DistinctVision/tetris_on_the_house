@@ -70,7 +70,7 @@ Item {
         }
     ]
 
-    state: "settings" //current_scene
+    state: current_scene
 
     Camera {
         id: camera
@@ -86,7 +86,7 @@ Item {
 
     MediaPlayer {
         id: player
-        source: "file:///E:/1/3.mp4"
+        source: "file:///D:/1/4.mp4"
         autoPlay: isDebug
         muted: true
         loops: MediaPlayer.Infinite
@@ -197,7 +197,7 @@ Item {
         height: 60
         x: parent.width - width
         y: 0
-        text: "*"
+        text: " "
         background: null
         onClicked: {
             parent.state = (parent.state == "settings") ? current_scene : "settings"
