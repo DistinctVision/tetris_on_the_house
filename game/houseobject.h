@@ -16,14 +16,14 @@
 class HouseObject
 {
 public:
-    HouseObject(GL_ViewRenderer * view,
-                const Eigen::Vector3i & n_size,
+    HouseObject(const Eigen::Vector3i & n_size,
                 const Eigen::Vector3f & size,
                 const Eigen::Vector3f & borderFirst,
                 const Eigen::Vector3f & borderSecond);
 
-    void draw(GL_ViewRenderer * view, const QMatrix4x4 & viewMatrix,
-              GLuint frameTextureId, const QSize & frameTextureSize);
+    GL_MeshPtr meshForward() const;
+
+    QMatrix4x4 matrixView2FrameUV(GL_ViewRenderer * view, const QSize & frameTextureSize) const;
 
     Eigen::Vector3f size() const;
     Eigen::Vector3i n_size() const;
@@ -43,10 +43,6 @@ private:
     Eigen::Vector3f m_borderSecond;
 
     GL_MeshPtr m_meshForward;
-    GL_ShaderMaterialPtr m_materialForward;
-
-    GL_MeshPtr m_meshBackward;
-    GL_ShaderMaterialPtr m_materialBackward;
 
     GL_ScreenObjectPtr m_screenTempObject;
 

@@ -9,6 +9,8 @@ using namespace Eigen;
 TetrisScene::TetrisScene():
     m_tracker(nullptr),
     m_textureReceiver(nullptr),
+    m_houseColorK_a(1.0f, 1.0f, 1.0f),
+    m_houseColorK_b(0.0f, 0.0f, 0.0f),
     m_glowBuffer(nullptr),
     m_tempGlowBuffer(nullptr)
 {
@@ -43,19 +45,26 @@ void TetrisScene::setTextureReceiver(TextureReceiver * textureReceiver)
 
 void TetrisScene::init(GL_ViewRenderer * view)
 {
-    m_house = HouseObjectPtr::create(view, Vector3i(10, 15, 5),
-                                           Vector3f(20.0f, 30.0f, 3.0f),
-                                           Vector3f(0.0f, 0.0f, 0.0f),
-                                           Vector3f(0.0f, 0.5f, 0.0f));
-    m_meshBlock = GL_MeshPtr::create(GL_Mesh::createQuad(QVector2D(1.0f, 1.0f),
+    m_house = HouseObjectPtr::create(Vector3i(10, 15, 5),
+                                     Vector3f(20.0f, 30.0f, 3.0f),
+                                     Vector3f(0.0f, 0.0f, 0.0f),
+                                     Vector3f(0.0f, 0.5f, 0.0f));
+    m_houseDefaultMaterial = view->createMaterial(MaterialType::ScreenMorph_default);
+    m_houseColorK_a = QVector3D(1.0f, 1.0f, 1.0f);
+    m_houseColorK_b = QVector3D(0.0f, 0.0f, 0.0f);
+
+    m_blockMesh = GL_MeshPtr::create(GL_Mesh::createQuad(QVector2D(1.0f, 1.0f),
                                                          QVector2D(0.0f, 0.0f), true));
-    m_materialBlock = view->createMaterial(MaterialType::ContourFallOff);
+    m_blockMaterial = view->createMaterial(MaterialType::ContourFallOff);
 }
 
 void TetrisScene::destroy(GL_ViewRenderer * view)
 {
     Q_UNUSED(view);
     m_house.reset();
+    m_houseDefaultMaterial.reset();
+    m_blockMesh.reset();
+    m_blockMaterial.reset();
     if (m_glowBuffer != nullptr)
     {
         delete m_glowBuffer;
@@ -84,7 +93,23 @@ void TetrisScene::draw(GL_ViewRenderer * view)
     view->glEnable(GL_BLEND);
     view->glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     QMatrix4x4 viewMatrix = m_tracker->viewMatrix();
-    m_house->draw(view, viewMatrix, m_textureReceiver->textureId(), m_textureReceiver->textureSize());
+
+    {
+        static float t = 0.0f;
+        m_houseColorK_b.setX(sin(t));
+        m_houseColorK_a.setY(cos(t * 30.0f));
+        t += 0.02f;
+        m_houseColorK_a.setZ(1.5f);
+
+        m_houseDefaultMaterial->setValue("matrixMVP", view->projectionMatrix() * viewMatrix);
+        m_houseDefaultMaterial->setValue("matrixView2FrameUV",
+                                         m_house->matrixView2FrameUV(view, m_textureReceiver->textureSize()));
+        m_houseDefaultMaterial->setTexture("screen_texture", m_textureReceiver->textureId());
+        m_houseDefaultMaterial->setValue("color_a", m_houseColorK_a);
+        m_houseDefaultMaterial->setValue("color_b", m_houseColorK_b);
+        m_house->meshForward()->draw(view, *m_houseDefaultMaterial);
+    }
+
     _drawBlocks(view, view->projectionMatrix(), viewMatrix);
 }
 
@@ -125,8 +150,8 @@ void TetrisScene::_drawBlocks(GL_ViewRenderer * view, const QMatrix4x4 & projMat
     m_game->for_each_blocks([&, this] (const Vector2i & p) {
         worldMatrix(0, 3) = (p.x() + 1) * blockSize.x() - fieldSize.x() * 0.5f;
         worldMatrix(1, 3) = p.y() * blockSize.y() + borders.first.y();
-        m_materialBlock->setValue("matrixMVP", projViewMatrix * worldMatrix);
-        m_meshBlock->draw(view, *m_materialBlock);
+        m_blockMaterial->setValue("matrixMVP", projViewMatrix * worldMatrix);
+        m_blockMesh->draw(view, *m_blockMaterial);
     });
 
     if (m_game->currentFigureState() > 0.0f)
@@ -149,8 +174,8 @@ void TetrisScene::_drawBlocks(GL_ViewRenderer * view, const QMatrix4x4 & projMat
                 if (figure(i, j) > 0)
                 {
                     worldMatrix(0, 3) = x + blockSize.x() * j;
-                    m_materialBlock->setValue("matrixMVP", projViewMatrix * worldMatrix);
-                    m_meshBlock->draw(view, *m_materialBlock);
+                    m_blockMaterial->setValue("matrixMVP", projViewMatrix * worldMatrix);
+                    m_blockMesh->draw(view, *m_blockMaterial);
                 }
             }
         }

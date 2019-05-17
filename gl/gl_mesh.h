@@ -1,6 +1,8 @@
 #ifndef GL_MESH_H
 #define GL_MESH_H
 
+#include <initializer_list>
+
 #include <QSharedPointer>
 
 #include <QOpenGLFunctions>
@@ -19,6 +21,16 @@ class GL_ShaderMaterial;
 class GL_Mesh
 {
 public:
+    struct ExtraBuffer
+    {
+        QOpenGLBuffer buffer;
+        QString name;
+        GLenum type;
+        int offset;
+        int tupleSize;
+        int stride;
+    };
+
     static QVector<QVector3D> computeNormals(const QVector<QVector3D> & vertices,
                                              const QVector<GLuint> & indices);
 
@@ -35,6 +47,8 @@ public:
     void updateTextureCoords(const QVector<QVector2D> & textureCoords);
 
     void draw(QOpenGLFunctions * gl, const GL_ShaderMaterial & shaderMaterial);
+    void draw(QOpenGLFunctions * gl, const GL_ShaderMaterial & shaderMaterial,
+              const std::initializer_list<ExtraBuffer> & extraBuffers);
 
 private:
     GL_Mesh();

@@ -10,5 +10,7 @@
         <file>shaders/packed_gray_image.fsh</file>
         <file>shaders/morph.fsh</file>
         <file>shaders/morph.vsh</file>
+        <file>shaders/screen_morph/default.fsh</file>
+        <file>shaders/screen_morph/default.vsh</file>
     </qresource>
 </RCC>

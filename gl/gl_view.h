@@ -26,7 +26,7 @@ public:
         Color,
         Texture,
         ContourFallOff,
-        Morph
+        ScreenMorph_default
     };
     Q_ENUM(Enum)
 };

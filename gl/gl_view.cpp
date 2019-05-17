@@ -431,14 +431,15 @@ void GL_ViewRenderer::_loadShaders()
                                                               { "border_size", 0.1f },
                                                               { "border_color", QColor(255, 255, 255, 255) }
                                                           }));
-    programPtr = loadShader(":/shaders/morph.vsh",
-                             ":/shaders/morph.fsh");
-    m_shaderMaterials.insert(MaterialType::Morph,
+    programPtr = loadShader(":/shaders/screen_morph/default.vsh",
+                             ":/shaders/screen_morph/default.fsh");
+    m_shaderMaterials.insert(MaterialType::ScreenMorph_default,
                              GL_ShaderMaterialPtr::create(programPtr,
                                                           QVariantMap {
                                                               { "matrixMVP", QMatrix4x4() },
-                                                              //{ "matrixMV", QMatrix4x4() },
-                                                              { "matrixView2FrameUV", QMatrix4x4() }
+                                                              { "matrixView2FrameUV", QMatrix4x4() },
+                                                              { "color_a", QVector3D(1.0f, 1.0f, 1.0f) },
+                                                              { "color_b", QVector3D(0.0f, 0.0f, 0.0f) }
                                                           },
                                                           QMap<QString, GLuint> {
                                                               { "screen_texture", m_emptyTextureId }

@@ -54,8 +54,11 @@ private:
     TextureReceiver * m_textureReceiver;
 
     HouseObjectPtr m_house;
-    GL_MeshPtr m_meshBlock;
-    GL_ShaderMaterialPtr m_materialBlock;
+    GL_ShaderMaterialPtr m_houseDefaultMaterial;
+    QVector3D m_houseColorK_a;
+    QVector3D m_houseColorK_b;
+    GL_MeshPtr m_blockMesh;
+    GL_ShaderMaterialPtr m_blockMaterial;
 
     std::shared_ptr<TetrisGame> m_game;
 

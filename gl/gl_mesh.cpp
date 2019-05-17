@@ -1,6 +1,6 @@
 #include "gl_mesh.h"
 
-#include <QVector>
+#include <cassert>
 
 #include "gl_shadermaterial.h"
 
@@ -325,6 +325,65 @@ void GL_Mesh::draw(QOpenGLFunctions * gl, const GL_ShaderMaterial & shaderMateri
         shaderMaterial.setAttributeBuffer(normalLocation, GL_FLOAT, 0, 3, sizeof(QVector3D));
     }
     gl->glDrawElements(GL_TRIANGLES, m_numberElements, GL_UNSIGNED_INT, nullptr);
+
+    if (vertexLocation >= 0)
+        shaderMaterial.disableAttribute(vertexLocation);
+    if (textureCoordLocation >= 0)
+        shaderMaterial.disableAttribute(textureCoordLocation);
+    if (normalLocation >= 0)
+        shaderMaterial.disableAttribute(normalLocation);
+
+    m_vertexBuffer.release();
+    m_indicesBuffer.release();
+
+    shaderMaterial.release(gl);
+}
+
+void GL_Mesh::draw(QOpenGLFunctions * gl, const GL_ShaderMaterial & shaderMaterial,
+                   const std::initializer_list<ExtraBuffer> & extraBuffers)
+{
+    shaderMaterial.bind(gl);
+    m_indicesBuffer.bind();
+
+    int vertexLocation = shaderMaterial.attributeLocation("vertex_position");
+    int textureCoordLocation = shaderMaterial.attributeLocation("vertex_textureCoord");
+    int normalLocation = shaderMaterial.attributeLocation("vertex_normal");
+
+    if (vertexLocation >= 0)
+    {
+        m_vertexBuffer.bind();
+        shaderMaterial.enableAttribute(vertexLocation);
+        shaderMaterial.setAttributeBuffer(vertexLocation, GL_FLOAT, 0, 3, sizeof(QVector3D));
+    }
+    if (textureCoordLocation >= 0)
+    {
+        m_textureCoordsBuffer.bind();
+        shaderMaterial.enableAttribute(textureCoordLocation);
+        shaderMaterial.setAttributeBuffer(textureCoordLocation, GL_FLOAT, 0, 2, sizeof(QVector2D));
+    }
+    if (normalLocation >= 0)
+    {
+        m_normalsBuffer.bind();
+        shaderMaterial.enableAttribute(normalLocation);
+        shaderMaterial.setAttributeBuffer(normalLocation, GL_FLOAT, 0, 3, sizeof(QVector3D));
+    }
+
+    for (const ExtraBuffer & it : extraBuffers)
+    {
+        int location = shaderMaterial.attributeLocation(it.name);
+        assert(location >= 0);
+        shaderMaterial.enableAttribute(textureCoordLocation);
+        shaderMaterial.setAttributeBuffer(textureCoordLocation, it.type, it.offset, it.tupleSize, it.stride);
+    }
+
+    gl->glDrawElements(GL_TRIANGLES, m_numberElements, GL_UNSIGNED_INT, nullptr);
+
+    for (const ExtraBuffer & it : extraBuffers)
+    {
+        int location = shaderMaterial.attributeLocation(it.name);
+        assert(location >= 0);
+        shaderMaterial.disableAttribute(textureCoordLocation);
+    }
 
     if (vertexLocation >= 0)
         shaderMaterial.disableAttribute(vertexLocation);

@@ -38,6 +38,7 @@ void GL_ShaderMaterial::setValue(const QString & name, const QVariant & value)
     if (it == m_values.end())
     {
         qFatal(QString("Coudn't find value : %1").arg(name).toStdString().c_str());
+        return;
     }
     if (it.value().type() != value.type())
     {
@@ -82,7 +83,8 @@ void GL_ShaderMaterial::bind(QOpenGLFunctions * gl) const
             it.next();
             if (!_setUniformValue(it.key(), it.value()))
             {
-                qFatal(QString("Coudn't set uniform value: %1").arg(it.key()).toStdString().c_str());
+                //qFatal(QString("Coudn't set uniform value: %1").arg(it.key()).toStdString().c_str());
+                continue;
             }
         }
     }

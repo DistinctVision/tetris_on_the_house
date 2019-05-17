@@ -2,8 +2,7 @@
 
 using namespace Eigen;
 
-HouseObject::HouseObject(GL_ViewRenderer * view,
-                         const Vector3i & n_size,
+HouseObject::HouseObject(const Vector3i & n_size,
                          const Vector3f & size,
                          const Eigen::Vector3f & borderFirst,
                          const Eigen::Vector3f & borderSecond):
@@ -13,11 +12,19 @@ HouseObject::HouseObject(GL_ViewRenderer * view,
     m_borderSecond(borderSecond)
 {
     _createMeshForward();
-    _createMeshBackward();
-    m_materialForward = view->createMaterial(MaterialType::Color);
-    m_materialBackward = view->createMaterial(MaterialType::Color);
-    m_materialBackward->setValue("mainColor", QColor(0, 0, 0, 255));
     m_screenTempObject = GL_ScreenObjectPtr::create(GL_MeshPtr(), GL_ShaderMaterialPtr());
+}
+
+QMatrix4x4 HouseObject::matrixView2FrameUV(GL_ViewRenderer * view, const QSize & frameTextureSize) const
+{
+    m_screenTempObject->setFillMode(view->parent()->fillFrameMode());
+    m_screenTempObject->setOrigin(Vector2f(0.0f, 0.0f));
+    m_screenTempObject->setSize(Vector2f(frameTextureSize.width(), frameTextureSize.height()));
+
+    QMatrix4x4 scaleFrameTransform;
+    scaleFrameTransform.scale(1.0f / frameTextureSize.width(), 1.0f / frameTextureSize.height());
+    QMatrix4x4 invUvTransfrom = m_screenTempObject->getMatrixMVP(view->viewportSize()).inverted();
+    return invUvTransfrom;
 }
 
 Vector3f HouseObject::size() const
@@ -40,27 +47,9 @@ Vector3f HouseObject::borderSecond() const
     return m_borderSecond;
 }
 
-void HouseObject::draw(GL_ViewRenderer * view, const QMatrix4x4 & viewMatrix,
-                       GLuint frameTextureId, const QSize & frameTextureSize)
+GL_MeshPtr HouseObject::meshForward() const
 {
-    QMatrix4x4 matrixMVP = view->projectionMatrix() * viewMatrix;
-    m_materialForward->setValue("matrixMVP", matrixMVP);
-    m_meshForward->draw(view, *m_materialForward);
-    /*m_screenTempObject->setFillMode(view->parent()->fillFrameMode());
-    m_screenTempObject->setOrigin(Vector2f(0.0f, 0.0f));
-    m_screenTempObject->setSize(Vector2f(frameTextureSize.width(), frameTextureSize.height()));
-
-    QMatrix4x4 scaleFrameTransform;
-    scaleFrameTransform.scale(1.0f / frameTextureSize.width(), 1.0f / frameTextureSize.height());
-    QMatrix4x4 invUvTransfrom = m_screenTempObject->getMatrixMVP(view->viewportSize()).inverted();
-    m_materialForward->setValue("matrixMVP", matrixMVP);
-    m_materialForward->setValue("matrixView2FrameUV", invUvTransfrom);
-    m_materialForward->setTexture("screen_texture", frameTextureId);
-
-    m_meshForward->draw(view, *m_materialForward);
-
-    m_materialBackward->setValue("matrixMVP", matrixMVP);
-    m_meshBackward->draw(view, *m_materialBackward);*/
+    return m_meshForward;
 }
 
 void HouseObject::_createMeshForward()
@@ -105,7 +94,8 @@ void HouseObject::_createMeshForward()
         return std::make_tuple(vertices, texCoords, indices);
     };
 
-    auto merge = [&] (const std::tuple<QVector<QVector3D>, QVector<QVector2D>, QVector<GLuint>> & tuple)
+    auto merge = [&] (const std::tuple<QVector<QVector3D>, QVector<QVector2D>, QVector<GLuint>> & tuple) ->
+            std::pair<GLuint, GLuint>
     {
         const QVector<QVector3D> & c_vertices = std::get<0>(tuple);
         const QVector<QVector2D> & c_texCoords = std::get<1>(tuple);
@@ -118,8 +108,11 @@ void HouseObject::_createMeshForward()
             indices[offset + i] = i_o + c_indices[i];
         vertices.append(c_vertices);
         texCoords.append(c_texCoords);
+
+        return std::make_pair(i_o, static_cast<GLuint>(vertices.size()));
     };
 
+    //left upper and vertical part
     merge(createRect(QVector3D(-31.0f, 8.0f * k_floor, 4.0f),
                      QVector3D(0.0f, 0.0f, - 4.0f),
                      QVector3D(0.0f, (19.0f - 8.0f) * k_floor, 0.0f),
@@ -142,9 +135,10 @@ void HouseObject::_createMeshForward()
                      QSize(1, 1)));
 
 
+    //right upper and vertical part
     merge(createRect(QVector3D(12.0f, 19.0f * k_floor, 0.0f),
                      QVector3D(0.0f, 0.0f, 4.0f),
-                     QVector3D(0.0f, (8.0f - 19.0f) * k_floor, 0.0f),
+                     QVector3D(0.0f, (8.0f - 18.0f) * k_floor, 0.0f),
                      QSize(1, 1)));
     merge(createRect(QVector3D(12.0f, 8.0f * k_floor, 0.0f),
                      QVector3D(19.0f - 12.0f, 0.0f, 0.0f),
@@ -163,9 +157,9 @@ void HouseObject::_createMeshForward()
                      QVector3D(0.0f, (19.0f - 8.0f) * k_floor, 0.0f),
                      QSize(1, 1)));
 
-
-    merge(createRect(QVector3D(-31.0f, 0.0f * k_floor, 4.0f),
-                     QVector3D(- 12.0f - (- 31.0f), 0.0f, 0.0f),
+    // bottom left
+    merge(createRect(QVector3D(-29.0f, 0.0f * k_floor, 4.0f),
+                     QVector3D(- 12.0f - (- 29.0f), 0.0f, 0.0f),
                      QVector3D(0.0f, 8.0f * k_floor, 0.0f),
                      QSize(5, 8)));
     merge(createRect(QVector3D(- 12.0f, 0.0f * k_floor, 4.0f),
@@ -173,24 +167,22 @@ void HouseObject::_createMeshForward()
                      QVector3D(0.0f, 8.0f * k_floor, 0.0f),
                      QSize(4, 8)));
 
+    // bottom right
     merge(createRect(QVector3D(0.0f, 0.0f * k_floor, 4.0f),
                      QVector3D(12.0f, 0.0f, 0.0f),
                      QVector3D(0.0f, 8.0f * k_floor, 0.0f),
                      QSize(4, 8)));
 
     merge(createRect(QVector3D(12.0f, 0.0f * k_floor, 4.0f),
-                     QVector3D(31.0f - 12.0f, 0.0f, 0.0f),
+                     QVector3D(29.0f - 12.0f, 0.0f, 0.0f),
                      QVector3D(0.0f, 8.0f * k_floor, 0.0f),
                      QSize(5, 8)));
 
+    // cental upper
     merge(createRect(QVector3D(-12.0f, 8.0f * k_floor, 4.0f),
                      QVector3D(12.0f - (- 12.0f), 0.0f, 0.0f),
-                     QVector3D(0.0f, (19.5f - 8.0f) * k_floor, 0.0f),
+                     QVector3D(0.0f, (19.125f - 8.0f) * k_floor, 0.0f),
                      QSize(8, 11)));
 
     m_meshForward = GL_MeshPtr::create(GL_Mesh::createMesh(vertices, texCoords, indices));
-}
-
-void HouseObject::_createMeshBackward()
-{
 }
