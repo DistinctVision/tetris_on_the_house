@@ -9,7 +9,8 @@ HouseObject::HouseObject(const Vector3i & n_size,
     m_n_size(n_size),
     m_size(size),
     m_borderFirst(borderFirst),
-    m_borderSecond(borderSecond)
+    m_borderSecond(borderSecond),
+    m_activityLevel(0.0f)
 {
     _createMeshForward();
     m_screenTempObject = GL_ScreenObjectPtr::create(GL_MeshPtr(), GL_ShaderMaterialPtr());
@@ -45,6 +46,16 @@ Vector3f HouseObject::borderFirst() const
 Vector3f HouseObject::borderSecond() const
 {
     return m_borderSecond;
+}
+
+float HouseObject::activityLevel() const
+{
+    return m_activityLevel;
+}
+
+void HouseObject::setActivityLevel(float activityLevel)
+{
+    m_activityLevel = activityLevel;
 }
 
 GL_MeshPtr HouseObject::meshForward() const

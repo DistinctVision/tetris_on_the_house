@@ -1,9 +1,14 @@
 in highp vec4 view_position;
+in highp vec2 textureCoord;
+
 uniform sampler2D screen_texture;
 uniform highp mat4 matrixView2FrameUV;
 
 uniform highp vec3 color_a;
 uniform highp vec3 color_b;
+
+uniform highp float edges_size;
+uniform highp vec4 edges_color;
 
 out highp vec4 color;
 
@@ -42,5 +47,8 @@ highp vec3 changeColor(highp vec3 c)
 void main(void)
 {
     highp vec2 uv = v_project(matrixView2FrameUV * view_position).xy;
-    color = vec4(changeColor(texture(screen_texture, uv).bgr), 1.0);
+    highp float tEdge = min(min(textureCoord.x, 1.0 - textureCoord.x),
+                            min(textureCoord.y, 1.0 - textureCoord.y));
+    tEdge = (edges_size > 0.01) ? (1.0 - clamp(tEdge / edges_size, 0.0, 1.0)) : 0.0;
+    color = vec4(mix(changeColor(texture(screen_texture, uv).bgr), edges_color.xyz, tEdge), 1.0);
 }

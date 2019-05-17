@@ -30,6 +30,9 @@ public:
     Eigen::Vector3f borderFirst() const;
     Eigen::Vector3f borderSecond() const;
 
+    float activityLevel() const;
+    void setActivityLevel(float activityLevel);
+
 private:
     struct _FloorInfo
     {
@@ -41,6 +44,8 @@ private:
     Eigen::Vector3f m_size;
     Eigen::Vector3f m_borderFirst;
     Eigen::Vector3f m_borderSecond;
+
+    float m_activityLevel;
 
     GL_MeshPtr m_meshForward;
 

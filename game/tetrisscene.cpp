@@ -49,7 +49,7 @@ void TetrisScene::init(GL_ViewRenderer * view)
                                      Vector3f(20.0f, 30.0f, 3.0f),
                                      Vector3f(0.0f, 0.0f, 0.0f),
                                      Vector3f(0.0f, 0.5f, 0.0f));
-    m_houseDefaultMaterial = view->createMaterial(MaterialType::ScreenMorph_default);
+    m_houseDefaultMaterial = view->createMaterial(MaterialType::ScreenMorph_glowEdges);
     m_houseColorK_a = QVector3D(1.0f, 1.0f, 1.0f);
     m_houseColorK_b = QVector3D(0.0f, 0.0f, 0.0f);
 
@@ -90,14 +90,17 @@ void TetrisScene::draw(GL_ViewRenderer * view)
     {
         m_game->reset();
     }
+
+    m_house->setActivityLevel(std::max(m_house->activityLevel() - 0.01f, 0.0f));
+
     view->glEnable(GL_BLEND);
     view->glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     QMatrix4x4 viewMatrix = m_tracker->viewMatrix();
 
     {
         static float t = 0.0f;
-        m_houseColorK_b.setX(sin(t));
-        m_houseColorK_a.setY(cos(t * 30.0f));
+        m_houseColorK_b.setX(cos(t));
+        //m_houseColorK_a.setY(sin(t * 30.0f));
         t += 0.02f;
         m_houseColorK_a.setZ(1.5f);
 
@@ -107,6 +110,7 @@ void TetrisScene::draw(GL_ViewRenderer * view)
         m_houseDefaultMaterial->setTexture("screen_texture", m_textureReceiver->textureId());
         m_houseDefaultMaterial->setValue("color_a", m_houseColorK_a);
         m_houseDefaultMaterial->setValue("color_b", m_houseColorK_b);
+        m_houseDefaultMaterial->setValue("edges_size", fabs(sin(t)) * 0.3f);
         m_house->meshForward()->draw(view, *m_houseDefaultMaterial);
     }
 
