@@ -218,7 +218,7 @@ Vector2i TetrisGame::_createRandomStartPos(const TetrisGame::Figure & figure) co
     pair<Vector2i, Vector2i> bb = _getFigureBoundedBox(figure);
     int begin_x = - bb.first.x(), end_x = m_fieldSize.x() - 1 - bb.second.x();
     Vector2i pos(begin_x + m_rnd(m_rnd_gen) % (end_x - begin_x),
-                 m_fieldSize.y() - bb.first.y() + 1);
+                 m_fieldSize.y() - bb.first.y());
     return pos;
 }
 

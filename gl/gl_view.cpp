@@ -427,7 +427,7 @@ void GL_ViewRenderer::_loadShaders()
                                                           QVariantMap {
                                                               { "matrixMVP", QMatrix4x4() },
                                                               { "matrixMV", QMatrix4x4() },
-                                                              { "fallOff_color", QColor(255, 215, 0, 200) },
+                                                              { "mainColor", QColor(255, 215, 0, 200) },
                                                               { "border_size", 0.1f },
                                                               { "border_color", QColor(255, 255, 255, 255) }
                                                           }));
@@ -485,8 +485,10 @@ void GL_ViewRenderer::_draw()
 
     //glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     //glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+    glClearDepthf(1.0f);
     glClear(GL_DEPTH_BUFFER_BIT);
     glEnable(GL_CULL_FACE);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     QList<QPair<GL_Scene*, bool>> & scenes = m_parent->m_scenes;
     for (QPair<GL_Scene*, bool> & s : scenes)

@@ -1,51 +1,41 @@
 #include "houseobject.h"
 
+#include "tetrisgame.h"
+
 using namespace Eigen;
 
-HouseObject::HouseObject(const Vector3i & n_size,
-                         const Vector3f & size,
-                         const Eigen::Vector3f & borderFirst,
-                         const Eigen::Vector3f & borderSecond):
-    m_n_size(n_size),
-    m_size(size),
-    m_borderFirst(borderFirst),
-    m_borderSecond(borderSecond),
+HouseObject::HouseObject(GL_ViewRenderer * view,
+                         const Vector3i & grid_n_size,
+                         const Vector3f & grid_begin,
+                         const Vector3f & grid_end):
+    m_grid_n_size(grid_n_size),
+    m_grid_begin(grid_begin),
+    m_grid_end(grid_end),
     m_activityLevel(0.0f)
 {
     _createMeshForward();
+    _createMeshGrid(0.1f);
     m_screenTempObject = GL_ScreenObjectPtr::create(GL_MeshPtr(), GL_ShaderMaterialPtr());
+    m_materialGrid = view->createMaterial(MaterialType::Color);
+    m_materialGrid->setValue("mainColor", QColor(255, 255, 255, 100));
+    m_meshBlock = GL_MeshPtr::create(GL_Mesh::createQuad(QVector2D(1.0f, 1.0f),
+                                                         QVector2D(0.0f, 0.0f), true));
+    m_materialBlock = view->createMaterial(MaterialType::ContourFallOff);
 }
 
-QMatrix4x4 HouseObject::matrixView2FrameUV(GL_ViewRenderer * view, const QSize & frameTextureSize) const
+Vector3i HouseObject::grid_n_size() const
 {
-    m_screenTempObject->setFillMode(view->parent()->fillFrameMode());
-    m_screenTempObject->setOrigin(Vector2f(0.0f, 0.0f));
-    m_screenTempObject->setSize(Vector2f(frameTextureSize.width(), frameTextureSize.height()));
-
-    QMatrix4x4 scaleFrameTransform;
-    scaleFrameTransform.scale(1.0f / frameTextureSize.width(), 1.0f / frameTextureSize.height());
-    QMatrix4x4 invUvTransfrom = m_screenTempObject->getMatrixMVP(view->viewportSize()).inverted();
-    return invUvTransfrom;
+    return m_grid_n_size;
 }
 
-Vector3f HouseObject::size() const
+Vector3f HouseObject::grid_begin() const
 {
-    return m_size;
+    return m_grid_begin;
 }
 
-Vector3i HouseObject::n_size() const
+Vector3f HouseObject::grid_end() const
 {
-    return m_n_size;
-}
-
-Vector3f HouseObject::borderFirst() const
-{
-    return m_borderFirst;
-}
-
-Vector3f HouseObject::borderSecond() const
-{
-    return m_borderSecond;
+    return m_grid_end;
 }
 
 float HouseObject::activityLevel() const
@@ -58,9 +48,96 @@ void HouseObject::setActivityLevel(float activityLevel)
     m_activityLevel = activityLevel;
 }
 
+GL_MeshPtr HouseObject::meshGrid() const
+{
+    return m_meshGrid;
+}
+
+GL_ShaderMaterialPtr HouseObject::materialGrid() const
+{
+    return m_materialGrid;
+}
+
 GL_MeshPtr HouseObject::meshForward() const
 {
     return m_meshForward;
+}
+
+GL_MeshPtr HouseObject::meshBlock() const
+{
+    return m_meshBlock;
+}
+
+GL_ShaderMaterialPtr HouseObject::materialBlock() const
+{
+    return m_materialBlock;
+}
+
+QMatrix4x4 HouseObject::matrixView2FrameUV(GL_ViewRenderer * view, const QSize & frameTextureSize) const
+{
+    m_screenTempObject->setFillMode(view->parent()->fillFrameMode());
+    m_screenTempObject->setOrigin(Vector2f(0.0f, 0.0f));
+    m_screenTempObject->setSize(Vector2f(frameTextureSize.width(), frameTextureSize.height()));
+
+    //QMatrix4x4 scaleFrameTransform;
+    //scaleFrameTransform.scale(1.0f / frameTextureSize.width(), 1.0f / frameTextureSize.height());
+    QMatrix4x4 invUvTransfrom = m_screenTempObject->getMatrixMVP(view->viewportSize()).inverted();
+    return invUvTransfrom;
+}
+
+void HouseObject::drawBlocks(GL_ViewRenderer * view, const TetrisGame * game, const QMatrix4x4 & viewMatrix)
+{
+    const float offset = 0.05f;
+
+    Vector3f fieldSize = m_grid_end - m_grid_begin;
+    Vector2f blockSize(fieldSize.x() / static_cast<float>(m_grid_n_size.x()),
+                       fieldSize.y() / static_cast<float>(m_grid_n_size.y()));
+    QMatrix4x4 projViewMatrix = view->projectionMatrix() * viewMatrix;
+    QMatrix4x4 worldMatrix;
+    worldMatrix(0, 0) = worldMatrix(1, 1) = std::min(blockSize.x(), blockSize.y()) * 0.9f;
+    worldMatrix(2, 3) = m_grid_begin.z() - offset;
+    game->for_each_blocks([&, this] (const Vector2i & p) {
+        worldMatrix(0, 3) = (p.x()) * blockSize.x() - fieldSize.x() * 0.5f;
+        worldMatrix(1, 3) = p.y() * blockSize.y() + m_grid_begin.y();
+        m_materialBlock->setValue("matrixMVP", projViewMatrix * worldMatrix);
+        m_meshBlock->draw(view, *m_materialBlock);
+    });
+
+    if (game->currentFigureState() > 0.0f)
+    {
+        QColor colorBlock = m_materialBlock->value("mainColor").value<QColor>();
+        float x = (game->figurePos().x() - TetrisGame::figureAnchor.x()) * blockSize.x() - fieldSize.x() * 0.5f;
+        float y = (game->figurePos().y() - TetrisGame::figureAnchor.y()) * blockSize.y() + m_grid_begin.y();
+        if (game->currentFigureState() < 1.0f)
+        {
+            colorBlock.setAlphaF(static_cast<qreal>(game->currentFigureState()));
+            float t = 1.0f - game->currentFigureState();
+            t *= t;
+            t *= t;
+            y += t * 30.0f;
+        }
+        else
+        {
+            colorBlock.setAlphaF(1.0);
+        }
+        m_materialBlock->setValue("mainColor", colorBlock);
+        TetrisGame::Figure figure = game->currentFigure();
+        for (int i = 0; i < TetrisGame::Figure::RowsAtCompileTime; ++i)
+        {
+            worldMatrix(1, 3) = y + blockSize.y() * i;
+            for (int j = 0; j < TetrisGame::Figure::ColsAtCompileTime; ++j)
+            {
+                if (figure(i, j) > 0)
+                {
+                    worldMatrix(0, 3) = x + blockSize.x() * j;
+                    m_materialBlock->setValue("matrixMVP", projViewMatrix * worldMatrix);
+                    m_meshBlock->draw(view, *m_materialBlock);
+                }
+            }
+        }
+        colorBlock.setAlpha(255);
+        m_materialBlock->setValue("mainColor", colorBlock);
+    }
 }
 
 void HouseObject::_createMeshForward()
@@ -169,23 +246,23 @@ void HouseObject::_createMeshForward()
                      QSize(1, 1)));
 
     // bottom left
-    merge(createRect(QVector3D(-29.0f, 0.0f * k_floor, 4.0f),
-                     QVector3D(- 12.0f - (- 29.0f), 0.0f, 0.0f),
+    merge(createRect(QVector3D(-30.0f, 0.0f * k_floor, 4.0f),
+                     QVector3D(- 14.0f - (- 30.0f), 0.0f, 0.0f),
                      QVector3D(0.0f, 8.0f * k_floor, 0.0f),
                      QSize(5, 8)));
-    merge(createRect(QVector3D(- 12.0f, 0.0f * k_floor, 4.0f),
-                     QVector3D(0.0f - (- 12.0f), 0.0f, 0.0f),
+    merge(createRect(QVector3D(- 14.0f, 0.0f * k_floor, 4.0f),
+                     QVector3D(0.0f - (- 14.0f), 0.0f, 0.0f),
                      QVector3D(0.0f, 8.0f * k_floor, 0.0f),
                      QSize(4, 8)));
 
     // bottom right
     merge(createRect(QVector3D(0.0f, 0.0f * k_floor, 4.0f),
-                     QVector3D(12.0f, 0.0f, 0.0f),
+                     QVector3D(14.0f, 0.0f, 0.0f),
                      QVector3D(0.0f, 8.0f * k_floor, 0.0f),
                      QSize(4, 8)));
 
-    merge(createRect(QVector3D(12.0f, 0.0f * k_floor, 4.0f),
-                     QVector3D(29.0f - 12.0f, 0.0f, 0.0f),
+    merge(createRect(QVector3D(14.0f, 0.0f * k_floor, 4.0f),
+                     QVector3D(30.0f - 14.0f, 0.0f, 0.0f),
                      QVector3D(0.0f, 8.0f * k_floor, 0.0f),
                      QSize(5, 8)));
 
@@ -196,4 +273,74 @@ void HouseObject::_createMeshForward()
                      QSize(8, 11)));
 
     m_meshForward = GL_MeshPtr::create(GL_Mesh::createMesh(vertices, texCoords, indices));
+}
+
+void HouseObject::_createMeshGrid(float border)
+{
+    QVector<QVector3D> vertices;
+    QVector<QVector2D> texCoords;
+    QVector<GLuint> indices;
+
+    Vector3f delta = m_grid_end - m_grid_begin;
+
+    for (int i = 0; i <= m_grid_n_size.y(); ++i)
+    {
+        float y = m_grid_begin.y() + delta.y() * (i / static_cast<float>(m_grid_n_size.y()));
+
+        float y1 = y - border;
+        float y2 = y + border;
+
+        GLuint i_o = 8 * static_cast<GLuint>(i);
+        vertices.push_back(QVector3D(m_grid_begin.x() - border, y1, m_grid_end.z()));
+        vertices.push_back(QVector3D(m_grid_begin.x() - border, y2, m_grid_end.z()));
+        vertices.push_back(QVector3D(m_grid_begin.x() - border, y1, m_grid_begin.z()));
+        vertices.push_back(QVector3D(m_grid_begin.x() - border, y2, m_grid_begin.z()));
+        vertices.push_back(QVector3D(m_grid_end.x() + border, y1, m_grid_begin.z()));
+        vertices.push_back(QVector3D(m_grid_end.x() + border, y2, m_grid_begin.z()));
+        vertices.push_back(QVector3D(m_grid_end.x() + border, y1, m_grid_end.z()));
+        vertices.push_back(QVector3D(m_grid_end.x() + border, y2, m_grid_end.z()));
+
+        texCoords.push_back(QVector2D(0.0f, 0.0f));
+        texCoords.push_back(QVector2D(0.0f, 1.0f));
+        texCoords.push_back(QVector2D(0.25f, 0.0f));
+        texCoords.push_back(QVector2D(0.25f, 1.0f));
+        texCoords.push_back(QVector2D(0.5f, 0.0f));
+        texCoords.push_back(QVector2D(0.5f, 1.0f));
+        texCoords.push_back(QVector2D(1.0f, 0.0f));
+        texCoords.push_back(QVector2D(1.0f, 1.0f));
+
+        indices.append({ i_o + 0, i_o + 3, i_o + 1,
+                         i_o + 0, i_o + 2, i_o + 3,
+                         i_o + 0, i_o + 1, i_o + 3,
+                         i_o + 0, i_o + 3, i_o + 2,
+                         i_o + 2, i_o + 5, i_o + 3,
+                         i_o + 2, i_o + 4, i_o + 5,
+                         i_o + 4, i_o + 7, i_o + 5,
+                         i_o + 4, i_o + 6, i_o + 7,
+                         i_o + 4, i_o + 5, i_o + 7,
+                         i_o + 4, i_o + 7, i_o + 6
+                       });
+    }
+
+    for (int i = 0; i <= m_grid_n_size.x(); ++i)
+    {
+        float x = m_grid_begin.x() + delta.x() * (i / static_cast<float>(m_grid_n_size.x()));
+
+        GLuint i_o = static_cast<GLuint>(vertices.size());
+        vertices.push_back(QVector3D(x - border, m_grid_begin.y() - border, m_grid_begin.z()));
+        vertices.push_back(QVector3D(x + border, m_grid_begin.y() - border, m_grid_begin.z()));
+        vertices.push_back(QVector3D(x - border, m_grid_end.y() + border, m_grid_begin.z()));
+        vertices.push_back(QVector3D(x + border, m_grid_end.y() + border, m_grid_begin.z()));
+
+        texCoords.push_back(QVector2D(0.0f, 0.0f));
+        texCoords.push_back(QVector2D(1.0f, 0.0f));
+        texCoords.push_back(QVector2D(0.0f, 1.0f));
+        texCoords.push_back(QVector2D(1.0f, 1.0f));
+
+        indices.append({ i_o + 0, i_o + 1, i_o + 3,
+                         i_o + 0, i_o + 3, i_o + 2
+                       });
+    }
+
+    m_meshGrid = GL_MeshPtr::create(GL_Mesh::createMesh(vertices, texCoords, indices));
 }

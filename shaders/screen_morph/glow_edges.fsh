@@ -50,5 +50,6 @@ void main(void)
     highp float tEdge = min(min(textureCoord.x, 1.0 - textureCoord.x),
                             min(textureCoord.y, 1.0 - textureCoord.y));
     tEdge = (edges_size > 0.01) ? (1.0 - clamp(tEdge / edges_size, 0.0, 1.0)) : 0.0;
+    tEdge *= tEdge;
     color = vec4(mix(changeColor(texture(screen_texture, uv).bgr), edges_color.xyz, tEdge), 1.0);
 }

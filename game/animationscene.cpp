@@ -55,12 +55,12 @@ void AnimationScene::setViewMatrix(const QMatrix4x4 & viewMatrix)
     m_viewMatrix = viewMatrix;
 }
 
-QSharedPointer<HouseObject> AnimationScene::house() const
+HouseObjectPtr AnimationScene::house() const
 {
     return m_house;
 }
 
-void AnimationScene::setHouse(const QSharedPointer<HouseObject> & house)
+void AnimationScene::setHouse(const HouseObjectPtr & house)
 {
     m_house = house;
 }

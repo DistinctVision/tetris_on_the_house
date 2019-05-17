@@ -6,8 +6,8 @@
 #include <QMatrix4x4>
 
 #include "gl/gl_scene.h"
+#include "houseobject.h"
 
-class HouseObject;
 class TextureReceiver;
 
 class AnimationScene:
@@ -30,8 +30,8 @@ public:
     QMatrix4x4 viewMatrix() const;
     void setViewMatrix(const QMatrix4x4 & viewMatrix);
 
-    QSharedPointer<HouseObject> house() const;
-    void setHouse(const QSharedPointer<HouseObject> & house);
+    HouseObjectPtr house() const;
+    void setHouse(const HouseObjectPtr & house);
 
     void init(GL_ViewRenderer * view) override;
     void destroy(GL_ViewRenderer * view) override;
@@ -42,7 +42,7 @@ private:
     int m_duration;
     int m_currentTime;
 
-    QSharedPointer<HouseObject> m_house;
+    HouseObjectPtr m_house;
     TextureReceiver * m_textureReceiver;
     QMatrix4x4 m_viewMatrix;
 };

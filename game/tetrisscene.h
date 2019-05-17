@@ -59,15 +59,11 @@ private:
     GL_ShaderMaterialPtr m_houseDefaultMaterial;
     QVector3D m_houseColorK_a;
     QVector3D m_houseColorK_b;
-    GL_MeshPtr m_blockMesh;
-    GL_ShaderMaterialPtr m_blockMaterial;
 
     QSharedPointer<TetrisGame> m_game;
 
     QOpenGLFramebufferObject * m_glowBuffer;
     QOpenGLFramebufferObject * m_tempGlowBuffer;
-
-    void _drawBlocks(GL_ViewRenderer * view, const QMatrix4x4 & projMatrix, const QMatrix4x4 & viewMatrix);
 
     void _drawGlow(GL_ViewRenderer * view);
 };
