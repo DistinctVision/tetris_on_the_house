@@ -87,8 +87,13 @@ QMatrix4x4 HouseObject::matrixView2FrameUV(GL_ViewRenderer * view, const QSize &
 
 void HouseObject::drawBlocks(GL_ViewRenderer * view, const TetrisGame * game, const QMatrix4x4 & viewMatrix)
 {
+    using Figure = TetrisGame::Figure;
+
     const float offset = 0.05f;
 
+    QColor colorBlock = m_materialBlock->value("mainColor").value<QColor>();
+    colorBlock.setAlpha(255);
+    m_materialBlock->setValue("mainColor", colorBlock);
     Vector3f fieldSize = m_grid_end - m_grid_begin;
     Vector2f blockSize(fieldSize.x() / static_cast<float>(m_grid_n_size.x()),
                        fieldSize.y() / static_cast<float>(m_grid_n_size.y()));
@@ -97,7 +102,7 @@ void HouseObject::drawBlocks(GL_ViewRenderer * view, const TetrisGame * game, co
     worldMatrix(0, 0) = worldMatrix(1, 1) = std::min(blockSize.x(), blockSize.y()) * 0.9f;
     worldMatrix(2, 3) = m_grid_begin.z() - offset;
     game->for_each_blocks([&, this] (const Vector2i & p) {
-        worldMatrix(0, 3) = (p.x()) * blockSize.x() - fieldSize.x() * 0.5f;
+        worldMatrix(0, 3) = p.x() * blockSize.x() + m_grid_begin.x();
         worldMatrix(1, 3) = p.y() * blockSize.y() + m_grid_begin.y();
         m_materialBlock->setValue("matrixMVP", projViewMatrix * worldMatrix);
         m_meshBlock->draw(view, *m_materialBlock);
@@ -105,8 +110,7 @@ void HouseObject::drawBlocks(GL_ViewRenderer * view, const TetrisGame * game, co
 
     if (game->currentFigureState() > 0.0f)
     {
-        QColor colorBlock = m_materialBlock->value("mainColor").value<QColor>();
-        float x = (game->figurePos().x() - TetrisGame::figureAnchor.x()) * blockSize.x() - fieldSize.x() * 0.5f;
+        float x = (game->figurePos().x() - TetrisGame::figureAnchor.x()) * blockSize.x() + m_grid_begin.x();
         float y = (game->figurePos().y() - TetrisGame::figureAnchor.y()) * blockSize.y() + m_grid_begin.y();
         if (game->currentFigureState() < 1.0f)
         {
@@ -122,10 +126,10 @@ void HouseObject::drawBlocks(GL_ViewRenderer * view, const TetrisGame * game, co
         }
         m_materialBlock->setValue("mainColor", colorBlock);
         TetrisGame::Figure figure = game->currentFigure();
-        for (int i = 0; i < TetrisGame::Figure::RowsAtCompileTime; ++i)
+        for (int i = 0; i < Figure::RowsAtCompileTime; ++i)
         {
             worldMatrix(1, 3) = y + blockSize.y() * i;
-            for (int j = 0; j < TetrisGame::Figure::ColsAtCompileTime; ++j)
+            for (int j = 0; j < Figure::ColsAtCompileTime; ++j)
             {
                 if (figure(i, j) > 0)
                 {
@@ -135,8 +139,26 @@ void HouseObject::drawBlocks(GL_ViewRenderer * view, const TetrisGame * game, co
                 }
             }
         }
-        colorBlock.setAlpha(255);
+    }
+
+    {
+        colorBlock.setAlpha(0);
         m_materialBlock->setValue("mainColor", colorBlock);
+        Vector2i offset(- (2 + Figure::ColsAtCompileTime), 2 + m_grid_n_size.y());
+
+        Figure nextFigure = game->nextFigure();
+        for (int i = 0; i < Figure::RowsAtCompileTime; ++i)
+        {
+            worldMatrix(1, 3) = (i + offset.y()) * blockSize.y() + m_grid_begin.y();
+            for (int j = 0; j < Figure::ColsAtCompileTime; ++j)
+            {
+                if (nextFigure(i, j) <= 0)
+                    continue;
+                worldMatrix(0, 3) = (j + offset.x()) * blockSize.x() + m_grid_begin.x();
+                m_materialBlock->setValue("matrixMVP", projViewMatrix * worldMatrix);
+                m_meshBlock->draw(view, *m_materialBlock);
+            }
+        }
     }
 }
 
