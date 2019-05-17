@@ -1,8 +1,6 @@
 #include "animationscene.h"
 #include <cmath>
 
-#include "houseobject.h"
-
 AnimationScene::AnimationScene(int duration):
     m_duration(duration),
     m_currentTime(0),

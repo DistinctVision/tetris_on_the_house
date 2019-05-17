@@ -3,13 +3,17 @@ HEADERS += \
     $$PWD/tetrisscene.h \
     $$PWD/houseobject.h \
     $$PWD/tetrisgame.h \
-    $$PWD/animationscene.h \
-    $$PWD/gamestartscene.h
+    $$PWD/scenes/animationscene.h \
+    $$PWD/scenes/gamestartscene.h \
+    $$PWD/scenes/changecolorsscene.h \
+    $$PWD/scenes/wavehousescene.h
 
 SOURCES += \
     $$PWD/testcubescene.cpp \
     $$PWD/tetrisscene.cpp \
     $$PWD/houseobject.cpp \
     $$PWD/tetrisgame.cpp \
-    $$PWD/animationscene.cpp \
-    $$PWD/gamestartscene.cpp
+    $$PWD/scenes/animationscene.cpp \
+    $$PWD/scenes/gamestartscene.cpp \
+    $$PWD/scenes/changecolorsscene.cpp \
+    $$PWD/scenes/wavehousescene.cpp

@@ -11,8 +11,7 @@
 #include "gl/gl_mesh.h"
 #include "gl/gl_shadermaterial.h"
 #include "houseobject.h"
-
-#include "animationscene.h"
+#include "scenes/animationscene.h"
 
 class ObjectEdgesTracker;
 class TextureReceiver;
@@ -54,11 +53,9 @@ private:
     TextureReceiver * m_textureReceiver;
 
     QSharedPointer<AnimationScene> m_startScene;
+    QSharedPointer<AnimationScene> m_currentScene;
 
     HouseObjectPtr m_house;
-    GL_ShaderMaterialPtr m_houseDefaultMaterial;
-    QVector3D m_houseColorK_a;
-    QVector3D m_houseColorK_b;
 
     QSharedPointer<TetrisGame> m_game;
 

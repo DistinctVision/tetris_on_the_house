@@ -3,12 +3,9 @@
 
 #include <memory>
 
-#include <QMatrix4x4>
-
 #include "gl/gl_shadermaterial.h"
 #include "animationscene.h"
 
-class HouseObject;
 class TextureReceiver;
 
 class GameStartScene:

@@ -27,7 +27,8 @@ public:
         Texture,
         ContourFallOff,
         ScreenMorph_default,
-        ScreenMorph_glowEdges
+        ScreenMorph_glowEdges,
+        ScreenMorph_wave,
     };
     Q_ENUM(Enum)
 };

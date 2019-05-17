@@ -6,7 +6,7 @@
 #include <QMatrix4x4>
 
 #include "gl/gl_scene.h"
-#include "houseobject.h"
+#include "game/houseobject.h"
 
 class TextureReceiver;
 

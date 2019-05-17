@@ -4,16 +4,13 @@
 #include "texturereceiver.h"
 #include "tetrisgame.h"
 
-#include "animationscene.h"
-#include "gamestartscene.h"
+#include "scenes/gamestartscene.h"
 
 using namespace Eigen;
 
 TetrisScene::TetrisScene():
     m_tracker(nullptr),
     m_textureReceiver(nullptr),
-    m_houseColorK_a(1.0f, 1.0f, 1.0f),
-    m_houseColorK_b(0.0f, 0.0f, 0.0f),
     m_glowBuffer(nullptr),
     m_tempGlowBuffer(nullptr)
 {
@@ -56,9 +53,6 @@ void TetrisScene::init(GL_ViewRenderer * view)
                                      Vector3i(8, 19, 1),
                                      Vector3f(-11.0f, 0.0f, -4.0f),
                                      Vector3f(11.0f, 19.0f * k_floor, 4.0f));
-    m_houseDefaultMaterial = view->createMaterial(MaterialType::ScreenMorph_glowEdges);
-    m_houseColorK_a = QVector3D(1.0f, 1.0f, 1.0f);
-    m_houseColorK_b = QVector3D(0.0f, 0.0f, 0.0f);
 
     m_startScene->init(view);
     m_startScene->setHouse(m_house);
@@ -69,7 +63,6 @@ void TetrisScene::destroy(GL_ViewRenderer * view)
     Q_UNUSED(view);
     m_startScene->destroy(view);
     m_house.reset();
-    m_houseDefaultMaterial.reset();
     if (m_glowBuffer != nullptr)
     {
         delete m_glowBuffer;

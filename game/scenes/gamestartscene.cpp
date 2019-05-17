@@ -1,8 +1,7 @@
 #include "gamestartscene.h"
-#include "houseobject.h"
-#include "texturereceiver.h"
 
-#include <QVector3D>
+#include "game/houseobject.h"
+#include "texturereceiver.h"
 
 using namespace std;
 
