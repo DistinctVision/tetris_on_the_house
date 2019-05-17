@@ -1,4 +1,4 @@
-in highp vec3 position;
+//in highp vec3 position;
 in highp vec2 textureCoord;
 in highp vec3 normal;
 
@@ -17,7 +17,8 @@ void main(void)
         return;
     }
 
-    highp float v = 1.0 - max(dot(normalize(position), normalize(normal)), 0.0);
-    v = 1.0 - (1.0 - v) * (1.0 - v);
+    highp float v = max(dot(vec3(0.0, 0.0, 1.0), normalize(normal)), 0.0);
+    v *= v;
+    //v = 1.0 - (1.0 - v) * (1.0 - v);
     color = vec4(mix(mainColor.xyz, vec3(1.0), v), mainColor.w * v);
 }
