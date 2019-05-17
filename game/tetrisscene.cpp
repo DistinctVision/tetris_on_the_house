@@ -4,6 +4,9 @@
 #include "texturereceiver.h"
 #include "tetrisgame.h"
 
+#include "animationscene.h"
+#include "gamestartscene.h"
+
 using namespace Eigen;
 
 TetrisScene::TetrisScene():
@@ -14,7 +17,8 @@ TetrisScene::TetrisScene():
     m_glowBuffer(nullptr),
     m_tempGlowBuffer(nullptr)
 {
-    m_game = std::make_shared<TetrisGame>(Vector2i(10, 30));
+    m_game = QSharedPointer<TetrisGame>::create(Vector2i(10, 30));
+    m_startScene = QSharedPointer<GameStartScene>::create(60);
 }
 
 ObjectEdgesTracker * TetrisScene::objectEdgesTracker() const
@@ -40,6 +44,7 @@ void TetrisScene::setTextureReceiver(TextureReceiver * textureReceiver)
     if (m_textureReceiver == textureReceiver)
         return;
     m_textureReceiver = textureReceiver;
+    m_startScene->setTextureReceiver(m_textureReceiver);
     emit textureReceiverChanged();
 }
 
@@ -56,11 +61,14 @@ void TetrisScene::init(GL_ViewRenderer * view)
     m_blockMesh = GL_MeshPtr::create(GL_Mesh::createQuad(QVector2D(1.0f, 1.0f),
                                                          QVector2D(0.0f, 0.0f), true));
     m_blockMaterial = view->createMaterial(MaterialType::ContourFallOff);
+    m_startScene->init(view);
+    m_startScene->setHouse(m_house);
 }
 
 void TetrisScene::destroy(GL_ViewRenderer * view)
 {
     Q_UNUSED(view);
+    m_startScene->destroy(view);
     m_house.reset();
     m_houseDefaultMaterial.reset();
     m_blockMesh.reset();
@@ -93,26 +101,15 @@ void TetrisScene::draw(GL_ViewRenderer * view)
 
     m_house->setActivityLevel(std::max(m_house->activityLevel() - 0.01f, 0.0f));
 
+
     view->glEnable(GL_BLEND);
     view->glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     QMatrix4x4 viewMatrix = m_tracker->viewMatrix();
 
-    {
-        static float t = 0.0f;
-        m_houseColorK_b.setX(cos(t));
-        //m_houseColorK_a.setY(sin(t * 30.0f));
-        t += 0.02f;
-        m_houseColorK_a.setZ(1.5f);
-
-        m_houseDefaultMaterial->setValue("matrixMVP", view->projectionMatrix() * viewMatrix);
-        m_houseDefaultMaterial->setValue("matrixView2FrameUV",
-                                         m_house->matrixView2FrameUV(view, m_textureReceiver->textureSize()));
-        m_houseDefaultMaterial->setTexture("screen_texture", m_textureReceiver->textureId());
-        m_houseDefaultMaterial->setValue("color_a", m_houseColorK_a);
-        m_houseDefaultMaterial->setValue("color_b", m_houseColorK_b);
-        m_houseDefaultMaterial->setValue("edges_size", fabs(sin(t)) * 0.3f);
-        m_house->meshForward()->draw(view, *m_houseDefaultMaterial);
-    }
+    m_startScene->setViewMatrix(viewMatrix);
+    m_startScene->drawAndPlay(view);
+    if (m_startScene->animationIsFinished())
+        m_startScene->resetTime();
 
     _drawBlocks(view, view->projectionMatrix(), viewMatrix);
 }

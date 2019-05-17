@@ -1,8 +1,6 @@
 #ifndef TETRISSCENE_H
 #define TETRISSCENE_H
 
-#include <memory>
-
 #include <QVector2D>
 #include <QVector3D>
 #include <QMatrix4x4>
@@ -13,6 +11,8 @@
 #include "gl/gl_mesh.h"
 #include "gl/gl_shadermaterial.h"
 #include "houseobject.h"
+
+#include "animationscene.h"
 
 class ObjectEdgesTracker;
 class TextureReceiver;
@@ -53,6 +53,8 @@ private:
     ObjectEdgesTracker * m_tracker;
     TextureReceiver * m_textureReceiver;
 
+    QSharedPointer<AnimationScene> m_startScene;
+
     HouseObjectPtr m_house;
     GL_ShaderMaterialPtr m_houseDefaultMaterial;
     QVector3D m_houseColorK_a;
@@ -60,7 +62,7 @@ private:
     GL_MeshPtr m_blockMesh;
     GL_ShaderMaterialPtr m_blockMaterial;
 
-    std::shared_ptr<TetrisGame> m_game;
+    QSharedPointer<TetrisGame> m_game;
 
     QOpenGLFramebufferObject * m_glowBuffer;
     QOpenGLFramebufferObject * m_tempGlowBuffer;
