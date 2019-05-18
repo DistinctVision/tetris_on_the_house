@@ -42,7 +42,7 @@ void GameStartScene::draw(GL_ViewRenderer * view)
         float time_edge = min(max(0.5f - fabs(time * 2.0f - 1.0f), 0.0f), 1.0f);
         time_edge *= time_edge;
         m_material->setValue("edges_size", time_edge * 0.25f);
-        house->meshForward()->draw(view, *m_material);
+        house->meshHouse()->draw(view, *m_material);
     }
 
     view->glEnable(GL_BLEND);

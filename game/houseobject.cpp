@@ -13,7 +13,7 @@ HouseObject::HouseObject(GL_ViewRenderer * view,
     m_grid_end(grid_end),
     m_activityLevel(0.0f)
 {
-    _createMeshForward();
+    _createMeshHouse();
     _createMeshGrid(0.1f);
     m_screenTempObject = GL_ScreenObjectPtr::create(GL_MeshPtr(), GL_ShaderMaterialPtr());
     m_materialGrid = view->createMaterial(MaterialType::Color);
@@ -58,9 +58,24 @@ GL_ShaderMaterialPtr HouseObject::materialGrid() const
     return m_materialGrid;
 }
 
-GL_MeshPtr HouseObject::meshForward() const
+GL_MeshPtr HouseObject::meshHouse() const
 {
-    return m_meshForward;
+    return m_meshHouse;
+}
+
+GL_MeshPtr HouseObject::meshHouse_wo_doors() const
+{
+    return m_meshHouse_wo_doors;
+}
+
+GL_MeshPtr HouseObject::meshLeftDoor() const
+{
+    return m_meshLeftDoor;
+}
+
+GL_MeshPtr HouseObject::meshRightDoor() const
+{
+    return m_meshRightDoor;
 }
 
 GL_MeshPtr HouseObject::meshBlock() const
@@ -165,16 +180,18 @@ void HouseObject::drawBlocks(GL_ViewRenderer * view, const TetrisGame * game, co
     }
 }
 
-void HouseObject::_createMeshForward()
+void HouseObject::_createMeshHouse()
 {
-    float k_floor = 2.7f;
+    using MeshData = std::tuple<QVector<QVector3D>, QVector<QVector2D>, QVector<GLuint>>;
 
-    QVector<QVector3D> vertices;
-    QVector<QVector2D> texCoords;
-    QVector<GLuint> indices;
+    const float k_floor = 2.7f;
+
+    MeshData house;
+    MeshData leftDoor;
+    MeshData rightDoor;
 
     auto createRect = [&] (const QVector3D & origin, const QVector3D & axisX, const QVector3D & axisY,
-                           const QSize & size) -> std::tuple<QVector<QVector3D>, QVector<QVector2D>, QVector<GLuint>>
+                           const QSize & size) -> MeshData
     {
         QVector<QVector3D> vertices;
         QVector<QVector2D> texCoords;
@@ -207,12 +224,15 @@ void HouseObject::_createMeshForward()
         return std::make_tuple(vertices, texCoords, indices);
     };
 
-    auto merge = [&] (const std::tuple<QVector<QVector3D>, QVector<QVector2D>, QVector<GLuint>> & tuple) ->
-            std::pair<GLuint, GLuint>
+    auto merge = [&] (MeshData & source, const MeshData & target) -> std::pair<GLuint, GLuint>
     {
-        const QVector<QVector3D> & c_vertices = std::get<0>(tuple);
-        const QVector<QVector2D> & c_texCoords = std::get<1>(tuple);
-        const QVector<GLuint> & c_indices = std::get<2>(tuple);
+        QVector<QVector3D> & vertices = std::get<0>(source);
+        QVector<QVector2D> & texCoords = std::get<1>(source);
+        QVector<GLuint> & indices = std::get<2>(source);
+
+        const QVector<QVector3D> & c_vertices = std::get<0>(target);
+        const QVector<QVector2D> & c_texCoords = std::get<1>(target);
+        const QVector<GLuint> & c_indices = std::get<2>(target);
 
         GLuint i_o = static_cast<GLuint>(vertices.size());
         int offset = indices.size();
@@ -226,114 +246,153 @@ void HouseObject::_createMeshForward()
     };
 
     //left upper and vertical part
-    merge(createRect(QVector3D(-31.0f, 8.0f * k_floor, 4.0f),
+    merge(house,
+          createRect(QVector3D(-31.0f, 8.0f * k_floor, 4.0f),
                      QVector3D(0.0f, 0.0f, - 4.0f),
                      QVector3D(0.0f, (19.0f - 8.0f) * k_floor, 0.0f),
                      QSize(1, 1)));
-    merge(createRect(QVector3D(- 31.0f, 8.0f * k_floor, 0.0f),
+    merge(house,
+          createRect(QVector3D(- 31.0f, 8.0f * k_floor, 0.0f),
                      QVector3D(- 23.5f - (- 31.0f), 0.0f, 0.0f),
                      QVector3D(0.0f, (19.0f - 8.0f) * k_floor, 0.0f),
                      QSize(4, 11)));
-    merge(createRect(QVector3D(- 23.5f, 8.0f * k_floor, 0.0f),
+    merge(house,
+          createRect(QVector3D(- 23.5f, 8.0f * k_floor, 0.0f),
                      QVector3D(0.0f, 0.0f, 4.0f),
                      QVector3D(0.0f, (19.0f - 8.0f) * k_floor, 0.0f),
                      QSize(4, 11)));
-    merge(createRect(QVector3D(-31.0f, 8.0f * k_floor, 2.0f),
+    merge(house,
+          createRect(QVector3D(-31.0f, 8.0f * k_floor, 2.0f),
                      QVector3D(- 23.5f - (- 31.0f), 0.0f, 0.0f),
                      QVector3D(0.0f, 0.0f, -2.0f),
                      QSize(1, 1)));
 
-    merge(createRect(QVector3D(- 23.5f, 0.0f * k_floor, 2.0f),
+    merge(house,
+          createRect(QVector3D(- 23.5f, 0.0f * k_floor, 2.0f),
                      QVector3D(- 20.0f - (- 23.5f), 0.0f, 0.0f),
                      QVector3D(0.0f, (20.25f) * k_floor, 0.0f),
                      QSize(2, 1)));
 
-    merge(createRect(QVector3D(- 19.0f, 8.0f * k_floor, 4.0f),
+    merge(house,
+          createRect(QVector3D(- 19.0f, 8.0f * k_floor, 4.0f),
                      QVector3D(0.0f, 0.0f, -4.0f),
                      QVector3D(0.0f, (19.0f - 8.0f) * k_floor, 0.0f),
                      QSize(4, 11)));
-    merge(createRect(QVector3D(- 19.0f, 8.0f * k_floor, 0.0f),
+    merge(house,
+          createRect(QVector3D(- 19.0f, 8.0f * k_floor, 0.0f),
                      QVector3D(- 12.0f - (- 19.0f), 0.0f, 0.0f),
                      QVector3D(0.0f, (19.0f - 8.0f) * k_floor, 0.0f),
                      QSize(4, 11)));
-    merge(createRect(QVector3D(- 12.0f, 8.0f * k_floor, 0.0f),
+    merge(house,
+          createRect(QVector3D(- 12.0f, 8.0f * k_floor, 0.0f),
                      QVector3D(0.0f, 0.0f, 4.0f),
                      QVector3D(0.0f, (19.0f - 8.0f) * k_floor, 0.0f),
                      QSize(1, 1)));
-    merge(createRect(QVector3D(-19.0f, 8.0f * k_floor, 2.0f),
+    merge(house,
+          createRect(QVector3D(-19.0f, 8.0f * k_floor, 2.0f),
                      QVector3D(- 12.0f - (- 19.0f), 0.0f, 0.0f),
                      QVector3D(0.0f, 0.0f, -2.0f),
                      QSize(1, 1)));
 
 
     //right upper and vertical part
-    merge(createRect(QVector3D(12.0f, 19.0f * k_floor, 0.0f),
+    merge(house,
+          createRect(QVector3D(12.0f, 19.0f * k_floor, 0.0f),
                      QVector3D(0.0f, 0.0f, 4.0f),
                      QVector3D(0.0f, (8.0f - 19.0f) * k_floor, 0.0f),
                      QSize(1, 1)));
-    merge(createRect(QVector3D(12.0f, 8.0f * k_floor, 0.0f),
+    merge(house,
+          createRect(QVector3D(12.0f, 8.0f * k_floor, 0.0f),
                      QVector3D(19.0f - 12.0f, 0.0f, 0.0f),
                      QVector3D(0.0f, (19.0f - 8.0f) * k_floor, 0.0f),
                      QSize(4, 11)));
-    merge(createRect(QVector3D(19.0f, 8.0f * k_floor, 0.0f),
+    merge(house,
+          createRect(QVector3D(19.0f, 8.0f * k_floor, 0.0f),
                      QVector3D(0.0f, 0.0f, 4.0f),
                      QVector3D(0.0f, (19.0f - 8.0f) * k_floor, 0.0f),
                      QSize(4, 11)));
-    merge(createRect(QVector3D(12.0f, 8.0f * k_floor, 2.0f),
+    merge(house,
+          createRect(QVector3D(12.0f, 8.0f * k_floor, 2.0f),
                      QVector3D(19.0f - 12.0f, 0.0f, 0.0f),
                      QVector3D(0.0f, 0.0f, -2.0f),
                      QSize(1, 1)));
 
-    merge(createRect(QVector3D(20.0f, 0.0f * k_floor, 2.0f),
+    merge(house,
+          createRect(QVector3D(20.0f, 0.0f * k_floor, 2.0f),
                      QVector3D(23.5f - 20.0f, 0.0f, 0.0f),
                      QVector3D(0.0f, (20.25f) * k_floor, 0.0f),
                      QSize(2, 1)));
 
-    merge(createRect(QVector3D(23.5f, 8.0f * k_floor, 4.0f),
+    merge(house,
+          createRect(QVector3D(23.5f, 8.0f * k_floor, 4.0f),
                      QVector3D(0.0f, 0.0f, -4.0f),
                      QVector3D(0.0f, (19.0f - 8.0f) * k_floor, 0.0f),
                      QSize(4, 11)));
-    merge(createRect(QVector3D(23.5f, 8.0f * k_floor, 0.0f),
+    merge(house,
+          createRect(QVector3D(23.5f, 8.0f * k_floor, 0.0f),
                      QVector3D(31.0f - 23.5f, 0.0f, 0.0f),
                      QVector3D(0.0f, (19.0f - 8.0f) * k_floor, 0.0f),
                      QSize(4, 11)));
-    merge(createRect(QVector3D(31.0f, 8.0f * k_floor, 0.0f),
+    merge(house,
+          createRect(QVector3D(31.0f, 8.0f * k_floor, 0.0f),
                      QVector3D(0.0f, 0.0f, 4.0f),
                      QVector3D(0.0f, (19.0f - 8.0f) * k_floor, 0.0f),
                      QSize(1, 1)));
-    merge(createRect(QVector3D(23.5f, 8.0f * k_floor, 2.0f),
+    merge(house,
+          createRect(QVector3D(23.5f, 8.0f * k_floor, 2.0f),
                      QVector3D(31.0f - 23.5f, 0.0f, 0.0f),
                      QVector3D(0.0f, 0.0f, -2.0f),
                      QSize(1, 1)));
 
     // bottom left
-    merge(createRect(QVector3D(-30.0f, 0.0f * k_floor, 2.0f),
+    merge(house,
+          createRect(QVector3D(-30.0f, 0.0f * k_floor, 2.0f),
                      QVector3D(- 14.0f - (- 30.0f), 0.0f, 0.0f),
                      QVector3D(0.0f, 8.0f * k_floor, 0.0f),
                      QSize(5, 8)));
-    merge(createRect(QVector3D(- 14.0f, 0.0f * k_floor, 2.0f),
+    merge(leftDoor,
+          createRect(QVector3D(- 14.0f, 0.0f * k_floor, 2.0f),
                      QVector3D(0.0f - (- 14.0f), 0.0f, 0.0f),
                      QVector3D(0.0f, 8.0f * k_floor, 0.0f),
                      QSize(4, 8)));
 
     // bottom right
-    merge(createRect(QVector3D(0.0f, 0.0f * k_floor, 2.0f),
+    merge(rightDoor,
+          createRect(QVector3D(0.0f, 0.0f * k_floor, 2.0f),
                      QVector3D(14.0f, 0.0f, 0.0f),
                      QVector3D(0.0f, 8.0f * k_floor, 0.0f),
                      QSize(4, 8)));
 
-    merge(createRect(QVector3D(14.0f, 0.0f * k_floor, 2.0f),
+    merge(house,
+          createRect(QVector3D(14.0f, 0.0f * k_floor, 2.0f),
                      QVector3D(30.0f - 14.0f, 0.0f, 0.0f),
                      QVector3D(0.0f, 8.0f * k_floor, 0.0f),
                      QSize(5, 8)));
 
     // cental upper
-    merge(createRect(QVector3D(-12.0f, 8.0f * k_floor, 4.0f),
+    merge(house,
+          createRect(QVector3D(-12.0f, 8.0f * k_floor, 4.0f),
                      QVector3D(12.0f - (- 12.0f), 0.0f, 0.0f),
                      QVector3D(0.0f, (19.125f - 8.0f) * k_floor, 0.0f),
                      QSize(8, 11)));
 
-    m_meshForward = GL_MeshPtr::create(GL_Mesh::createMesh(vertices, texCoords, indices));
+    m_meshHouse_wo_doors = GL_MeshPtr::create(GL_Mesh::createMesh(std::get<0>(house),
+                                                                  std::get<1>(house),
+                                                                  std::get<2>(house)));
+
+    m_meshLeftDoor = GL_MeshPtr::create(GL_Mesh::createMesh(std::get<0>(leftDoor),
+                                                            std::get<1>(leftDoor),
+                                                            std::get<2>(leftDoor)));
+    m_meshRightDoor = GL_MeshPtr::create(GL_Mesh::createMesh(std::get<0>(rightDoor),
+                                                             std::get<1>(rightDoor),
+                                                             std::get<2>(rightDoor)));
+
+    merge(house, leftDoor);
+    merge(house, rightDoor);
+
+    m_meshHouse = GL_MeshPtr::create(GL_Mesh::createMesh(std::get<0>(house),
+                                                         std::get<1>(house),
+                                                         std::get<2>(house)));
 }
 
 void HouseObject::_createMeshGrid(float border)

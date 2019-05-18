@@ -43,6 +43,10 @@ Item {
                 target: gl_view
                 orderRender: 1
             }
+            PropertyChanges {
+                target: frameHandler.objectEdgesTracker
+                debugEnabled: false
+            }
         },
         State {
             name: "settings"
@@ -66,6 +70,10 @@ Item {
             PropertyChanges {
                 target: gl_view
                 orderRender: 0
+            }
+            PropertyChanges {
+                target: frameHandler.objectEdgesTracker
+                debugEnabled: true
             }
         }
     ]
@@ -104,7 +112,6 @@ Item {
         focalLength: Qt.vector2d(1.5, 1.5)
         opticalCenter: Qt.vector2d(0.5, 0.5)
         objectEdgesTracker {
-            debugEnabled: true
             binaryThreshold: settings.binaryThreshold
             minBlobArea: settings.minBlobArea
             maxBlobCircularity: settings.maxBlobCircularity

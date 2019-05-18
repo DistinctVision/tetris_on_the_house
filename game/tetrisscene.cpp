@@ -15,6 +15,7 @@
 #include "scenes/transfromhousescene.h"
 #include "scenes/glowedgesscene.h"
 #include "scenes/defaultscene.h"
+#include "scenes/finalscene.h"
 
 using namespace std;
 using namespace std::chrono;
@@ -116,7 +117,7 @@ void TetrisScene::draw(GL_ViewRenderer * view)
         m_house->setActivityLevel(1.0f);
     }
 
-    if (!m_startScene->animationIsFinished())
+    if (!m_startScene->animationIsFinished() && false)
     {
         m_startScene->setViewMatrix(viewMatrix);
         m_startScene->drawAndPlay(view);
@@ -173,8 +174,11 @@ bool TetrisScene::rotateFigure()
 
 QSharedPointer<AnimationScene> TetrisScene::_createRandomScene() const
 {
+    return QSharedPointer<FinalScene>::create(100);
+
     m_rnd_gen.seed(duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count());
     int index = m_rnd(m_rnd_gen) % 6;
+    index = 3;
     QSharedPointer<AnimationScene> scene;
     switch (index) {
     case 0: {

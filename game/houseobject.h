@@ -31,7 +31,10 @@ public:
     float activityLevel() const;
     void setActivityLevel(float activityLevel);
 
-    GL_MeshPtr meshForward() const;
+    GL_MeshPtr meshHouse() const;
+    GL_MeshPtr meshHouse_wo_doors() const;
+    GL_MeshPtr meshLeftDoor() const;
+    GL_MeshPtr meshRightDoor() const;
     GL_MeshPtr meshGrid() const;
     GL_ShaderMaterialPtr materialGrid() const;
     GL_MeshPtr meshBlock() const;
@@ -55,7 +58,10 @@ private:
 
     float m_activityLevel;
 
-    GL_MeshPtr m_meshForward;
+    GL_MeshPtr m_meshHouse;
+    GL_MeshPtr m_meshHouse_wo_doors;
+    GL_MeshPtr m_meshLeftDoor;
+    GL_MeshPtr m_meshRightDoor;
     GL_MeshPtr m_meshGrid;
     GL_ShaderMaterialPtr m_materialGrid;
     GL_MeshPtr m_meshBlock;
@@ -63,7 +69,7 @@ private:
 
     GL_ScreenObjectPtr m_screenTempObject;
 
-    void _createMeshForward();
+    void _createMeshHouse();
     void _createMeshGrid(float border);
 };
 

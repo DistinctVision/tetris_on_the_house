@@ -48,13 +48,13 @@ void GlowEdgesScene::draw(GL_ViewRenderer * view)
         m_material->setValue("edges_color", QColor(200, 255, 200, 255));
         m_material->setValue("edges_power", 2.0f);
         m_material->setValue("plane", QVector4D(m_planeDir, 60.0f - 120.0f * time));
-        house->meshForward()->draw(view, *m_material);
+        house->meshHouse()->draw(view, *m_material);
 
 
         view->glDepthFunc(GL_GREATER);
         m_material->setValue("edges_color", QColor(150, 255, 150, 255));
         m_material->setValue("edges_power", 1.0f);
-        house->meshForward()->draw(view, *m_material);
+        house->meshHouse()->draw(view, *m_material);
         m_backwardMesh->draw(view, *m_material);
     }
 
@@ -105,60 +105,60 @@ void GlowEdgesScene::_createBackwardMesh()
 
     merge(createRect(QVector3D(-31.0f, 19.0f * k_floor, 4.0f),
                      QVector3D(-31.0f, 8.0f * k_floor, 4.0f),
-                     QVector3D(-31.0f, 8.0f * k_floor, 14.0f),
-                     QVector3D(-31.0f, 19.0f * k_floor, 14.0f)));
+                     QVector3D(-31.0f, 8.0f * k_floor, 30.0f),
+                     QVector3D(-31.0f, 19.0f * k_floor, 30.0f)));
     merge(createRect(QVector3D(-12.0f, 19.0f * k_floor, 0.0f),
                      QVector3D(-12.0f, 8.0f * k_floor, 0.0f),
-                     QVector3D(-12.0f, 8.0f * k_floor, 14.0f),
-                     QVector3D(-12.0f, 19.0f * k_floor, 14.0f)));
+                     QVector3D(-12.0f, 8.0f * k_floor, 30.0f),
+                     QVector3D(-12.0f, 19.0f * k_floor, 30.0f)));
     merge(createRect(QVector3D(-31.0f, 19.0f * k_floor, 0.0f),
-                     QVector3D(-31.0f, 19.0f * k_floor, 14.0f),
-                     QVector3D(-12.0f, 19.0f * k_floor, 14.0f),
+                     QVector3D(-31.0f, 19.0f * k_floor, 30.0f),
+                     QVector3D(-12.0f, 19.0f * k_floor, 30.0f),
                      QVector3D(-12.0f, 19.0f * k_floor, 0.0f)));
     merge(createRect(QVector3D(-31.0f, 8.0f * k_floor, 0.0f),
-                     QVector3D(-31.0f, 8.0f * k_floor, 14.0f),
-                     QVector3D(-12.0f, 8.0f * k_floor, 14.0f),
+                     QVector3D(-31.0f, 8.0f * k_floor, 30.0f),
+                     QVector3D(-12.0f, 8.0f * k_floor, 30.0f),
                      QVector3D(-12.0f, 8.0f * k_floor, 0.0f)));
 
     merge(createRect(QVector3D(-30.0f, 8.0f * k_floor, 2.0f),
                      QVector3D(-30.0f, 0.0f * k_floor, 2.0f),
-                     QVector3D(-30.0f, 0.0f * k_floor, 14.0f),
-                     QVector3D(-30.0f, 8.0f * k_floor, 14.0f)));
+                     QVector3D(-30.0f, 0.0f * k_floor, 30.0f),
+                     QVector3D(-30.0f, 8.0f * k_floor, 30.0f)));
     merge(createRect(QVector3D(-14.0f, 8.0f * k_floor, 2.0f),
                      QVector3D(-14.0f, 0.0f * k_floor, 2.0f),
-                     QVector3D(-14.0f, 0.0f * k_floor, 14.0f),
-                     QVector3D(-14.0f, 8.0f * k_floor, 14.0f)));
+                     QVector3D(-14.0f, 0.0f * k_floor, 30.0f),
+                     QVector3D(-14.0f, 8.0f * k_floor, 30.0f)));
 
     merge(createRect(QVector3D(0.0f, 8.0f * k_floor, 2.0f),
                      QVector3D(0.0f, 0.0f * k_floor, 2.0f),
-                     QVector3D(0.0f, 0.0f * k_floor, 14.0f),
-                     QVector3D(0.0f, 8.0f * k_floor, 14.0f)));
+                     QVector3D(0.0f, 0.0f * k_floor, 30.0f),
+                     QVector3D(0.0f, 8.0f * k_floor, 30.0f)));
 
     merge(createRect(QVector3D(31.0f, 19.0f * k_floor, 4.0f),
                      QVector3D(31.0f, 8.0f * k_floor, 4.0f),
-                     QVector3D(31.0f, 8.0f * k_floor, 14.0f),
-                     QVector3D(31.0f, 19.0f * k_floor, 14.0f)));
+                     QVector3D(31.0f, 8.0f * k_floor, 30.0f),
+                     QVector3D(31.0f, 19.0f * k_floor, 30.0f)));
     merge(createRect(QVector3D(12.0f, 19.0f * k_floor, 0.0f),
                      QVector3D(12.0f, 8.0f * k_floor, 0.0f),
-                     QVector3D(12.0f, 8.0f * k_floor, 14.0f),
-                     QVector3D(12.0f, 19.0f * k_floor, 14.0f)));
+                     QVector3D(12.0f, 8.0f * k_floor, 30.0f),
+                     QVector3D(12.0f, 19.0f * k_floor, 30.0f)));
     merge(createRect(QVector3D(31.0f, 19.0f * k_floor, 0.0f),
-                     QVector3D(31.0f, 19.0f * k_floor, 14.0f),
-                     QVector3D(12.0f, 19.0f * k_floor, 14.0f),
+                     QVector3D(31.0f, 19.0f * k_floor, 30.0f),
+                     QVector3D(12.0f, 19.0f * k_floor, 30.0f),
                      QVector3D(12.0f, 19.0f * k_floor, 0.0f)));
     merge(createRect(QVector3D(31.0f, 8.0f * k_floor, 0.0f),
-                     QVector3D(31.0f, 8.0f * k_floor, 14.0f),
-                     QVector3D(12.0f, 8.0f * k_floor, 14.0f),
+                     QVector3D(31.0f, 8.0f * k_floor, 30.0f),
+                     QVector3D(12.0f, 8.0f * k_floor, 30.0f),
                      QVector3D(12.0f, 8.0f * k_floor, 0.0f)));
 
     merge(createRect(QVector3D(30.0f, 8.0f * k_floor, 2.0f),
                      QVector3D(30.0f, 0.0f * k_floor, 2.0f),
-                     QVector3D(30.0f, 0.0f * k_floor, 14.0f),
-                     QVector3D(30.0f, 8.0f * k_floor, 14.0f)));
+                     QVector3D(30.0f, 0.0f * k_floor, 30.0f),
+                     QVector3D(30.0f, 8.0f * k_floor, 30.0f)));
     merge(createRect(QVector3D(14.0f, 8.0f * k_floor, 2.0f),
                      QVector3D(14.0f, 0.0f * k_floor, 2.0f),
-                     QVector3D(14.0f, 0.0f * k_floor, 14.0f),
-                     QVector3D(14.0f, 8.0f * k_floor, 14.0f)));
+                     QVector3D(14.0f, 0.0f * k_floor, 30.0f),
+                     QVector3D(14.0f, 8.0f * k_floor, 30.0f)));
 
     m_backwardMesh = GL_MeshPtr::create(GL_Mesh::createMesh(vertices, texCoords, indices));
 }

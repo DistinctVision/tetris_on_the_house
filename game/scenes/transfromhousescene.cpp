@@ -47,7 +47,7 @@ void TransfromHouseScene::draw(GL_ViewRenderer * view)
         m_material->setTexture("screen_texture", textureReceiver()->textureId());
         m_material->setValue("color_a", color_a);
         m_material->setValue("color_b", color_b);
-        house->meshForward()->draw(view, *m_material);
+        house->meshHouse()->draw(view, *m_material);
     }
 
     view->glEnable(GL_BLEND);
