@@ -15,5 +15,6 @@
         <file>shaders/screen_morph/glow_edges.fsh</file>
         <file>shaders/screen_morph/glow_edges.vsh</file>
         <file>shaders/screen_morph/wave.vsh</file>
+        <file>shaders/screen_morph/transform.vsh</file>
     </qresource>
 </RCC>

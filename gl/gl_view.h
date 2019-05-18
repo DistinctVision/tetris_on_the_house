@@ -29,6 +29,7 @@ public:
         ScreenMorph_default,
         ScreenMorph_glowEdges,
         ScreenMorph_wave,
+        ScreenMorph_transform
     };
     Q_ENUM(Enum)
 };

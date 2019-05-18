@@ -25,6 +25,6 @@ void main(void)
     float d = clamp((fract(distance / wave_distanceStep - wave_time * wave_timeScale) * wave_distanceStepScale), 0.0, 1.0);
     vec4 delta = vec4((sin(d * (2.0 * M_PI)) * wave_scale) * wave_dir, 0.0);
 
-    view_position = matrixMVP * (vertex_position + delta * k);
+    view_position = matrixMVP * (vertex_position + delta);
     gl_Position = matrixMVP * vertex_position;
 }

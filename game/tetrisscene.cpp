@@ -10,6 +10,7 @@
 #include "scenes/gamestartscene.h"
 #include "scenes/changecolorsscene.h"
 #include "scenes/wavehousescene.h"
+#include "scenes/transfromhousescene.h"
 
 using namespace std;
 using namespace std::chrono;
@@ -162,7 +163,8 @@ bool TetrisScene::rotateFigure()
 QSharedPointer<AnimationScene> TetrisScene::_createRandomScene() const
 {
     m_rnd_gen.seed(duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count());
-    int index = m_rnd(m_rnd_gen) % 2;
+    int index = m_rnd(m_rnd_gen) % 3;
+    index = 1;
     QSharedPointer<AnimationScene> scene;
     switch (index) {
     case 0: {
@@ -170,17 +172,22 @@ QSharedPointer<AnimationScene> TetrisScene::_createRandomScene() const
                                                           2 + m_rnd(m_rnd_gen) % 3);
     } break;
     case 1: {
-        int duration = 100 + m_rnd(m_rnd_gen) % 100;
+        int duration = 200 + m_rnd(m_rnd_gen) % 200;
         QVector3D wave_origin(float(m_rnd(m_rnd_gen) % 30) - 15.0f,
                               float(m_rnd(m_rnd_gen) % 30),
                               0.0f);
         float wave_timeScale = float(m_rnd(m_rnd_gen) % 3 + 3);
         float wave_distanceStep = float(m_rnd(m_rnd_gen) % 10 + 20);
         float wave_distanceStepScale = float(m_rnd(m_rnd_gen) % 2 + 1);
-        float wave_scale = float(m_rnd(m_rnd_gen) % 3 + 3);
+        float wave_scale = float(m_rnd(m_rnd_gen) % 2 + 1);
         scene = QSharedPointer<WaveHouseScene>::create(duration, wave_origin,
                                                        wave_timeScale, wave_distanceStep,
                                                        wave_distanceStepScale, wave_scale);
+    } break;
+    case 2: {
+        int duration = 60 + m_rnd(m_rnd_gen) % 60;
+        float delta_z = float(m_rnd(m_rnd_gen) % 3 + 2) * 0.99f;
+        scene = QSharedPointer<TransfromHouseScene>::create(duration, delta_z);
     } break;
     default:
         assert(false);
