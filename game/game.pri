@@ -8,7 +8,8 @@ HEADERS += \
     $$PWD/scenes/changecolorsscene.h \
     $$PWD/scenes/wavehousescene.h \
     $$PWD/scenes/transfromhousescene.h \
-    $$PWD/scenes/glowedgesscene.h
+    $$PWD/scenes/glowedgesscene.h \
+    $$PWD/scenes/defaultscene.h
 
 SOURCES += \
     $$PWD/testcubescene.cpp \
@@ -20,4 +21,5 @@ SOURCES += \
     $$PWD/scenes/changecolorsscene.cpp \
     $$PWD/scenes/wavehousescene.cpp \
     $$PWD/scenes/transfromhousescene.cpp \
-    $$PWD/scenes/glowedgesscene.cpp
+    $$PWD/scenes/glowedgesscene.cpp \
+    $$PWD/scenes/defaultscene.cpp
