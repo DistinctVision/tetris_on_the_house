@@ -196,6 +196,11 @@ bool TetrisGame::rotateFigure()
     return true;
 }
 
+int TetrisGame::numberRemovedLines() const
+{
+    return m_numberRemovedLines;
+}
+
 void TetrisGame::_updateRandom()
 {
     m_rnd_gen.seed(static_cast<unsigned int>(duration_cast<milliseconds>(

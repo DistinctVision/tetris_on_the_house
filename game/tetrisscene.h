@@ -60,6 +60,7 @@ private:
     HouseObjectPtr m_house;
 
     QSharedPointer<TetrisGame> m_game;
+    int m_numberRemovalLines;
 
     QOpenGLFramebufferObject * m_glowBuffer;
     QOpenGLFramebufferObject * m_tempGlowBuffer;

@@ -33,7 +33,7 @@ void GameStartScene::draw(GL_ViewRenderer * view)
     view->glDisable(GL_BLEND);
     {
         QVector3D color_a(1.0f, time, 1.0f);
-        QVector3D color_b(0.0f, 0.0f, 0.0f);
+        QVector3D color_b(0.0f, 0.0f, house->activityLevel() * 0.25f);
         m_material->setValue("matrixMVP", matrixVP);
         m_material->setValue("matrixView2FrameUV", house->matrixView2FrameUV(view, textureReceiver()->textureSize()));
         m_material->setTexture("screen_texture", textureReceiver()->textureId());

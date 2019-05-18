@@ -51,6 +51,8 @@ public:
     bool moveFigureDown();
     bool rotateFigure();
 
+    int numberRemovedLines() const;
+
 private:
     std::vector<Figure, Eigen::aligned_allocator<Figure>> m_figureSet;
     std::array<Eigen::Vector2i, Figure::ColsAtCompileTime * Figure::RowsAtCompileTime> m_rotateFigureInd;

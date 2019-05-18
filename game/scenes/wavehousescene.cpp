@@ -41,7 +41,7 @@ void WaveHouseScene::draw(GL_ViewRenderer * view)
     view->glDisable(GL_BLEND);
     {
         QVector3D color_a(1.0f, 1.0f, 1.0f);
-        QVector3D color_b(0.0f, 0.0f, 0.0f);
+        QVector3D color_b(0.0f, 0.0f, house->activityLevel() * 0.25f);
         m_material->setValue("matrixMVP", matrixVP);
         m_material->setValue("wave_time", time);
         m_material->setValue("wave_timeScale", m_wave_timeScale);

@@ -3,6 +3,8 @@
 #include <cassert>
 #include <chrono>
 
+#include <QQuaternion>
+
 #include "objectedgestracker.h"
 #include "texturereceiver.h"
 #include "tetrisgame.h"
@@ -11,6 +13,7 @@
 #include "scenes/changecolorsscene.h"
 #include "scenes/wavehousescene.h"
 #include "scenes/transfromhousescene.h"
+#include "scenes/glowedgesscene.h"
 
 using namespace std;
 using namespace std::chrono;
@@ -24,6 +27,7 @@ TetrisScene::TetrisScene():
     m_rnd(0, 10000)
 {
     m_game = QSharedPointer<TetrisGame>::create(Vector2i(8, 19));
+    m_numberRemovalLines = m_game->numberRemovedLines();
     m_startScene = QSharedPointer<GameStartScene>::create(120);
 }
 
@@ -101,9 +105,15 @@ void TetrisScene::draw(GL_ViewRenderer * view)
         return;
     }
 
-    m_house->setActivityLevel(std::max(m_house->activityLevel() - 0.01f, 0.0f));
+    m_house->setActivityLevel(std::max(m_house->activityLevel() - 0.1f, 0.0f));
 
     QMatrix4x4 viewMatrix = m_tracker->viewMatrix();
+
+    if (m_numberRemovalLines != m_game->numberRemovedLines())
+    {
+        m_numberRemovalLines = m_game->numberRemovedLines();
+        m_house->setActivityLevel(1.0f);
+    }
 
     if (!m_startScene->animationIsFinished() && false)
     {
@@ -163,13 +173,12 @@ bool TetrisScene::rotateFigure()
 QSharedPointer<AnimationScene> TetrisScene::_createRandomScene() const
 {
     m_rnd_gen.seed(duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count());
-    int index = m_rnd(m_rnd_gen) % 3;
-    index = 1;
+    int index = m_rnd(m_rnd_gen) % 4;
     QSharedPointer<AnimationScene> scene;
     switch (index) {
     case 0: {
-        scene = QSharedPointer<ChangeColorsScene>::create(100 + m_rnd(m_rnd_gen) % 50,
-                                                          2 + m_rnd(m_rnd_gen) % 3);
+        scene = QSharedPointer<ChangeColorsScene>::create(50 + m_rnd(m_rnd_gen) % 50,
+                                                          1 + m_rnd(m_rnd_gen) % 3);
     } break;
     case 1: {
         int duration = 200 + m_rnd(m_rnd_gen) % 200;
@@ -188,6 +197,14 @@ QSharedPointer<AnimationScene> TetrisScene::_createRandomScene() const
         int duration = 60 + m_rnd(m_rnd_gen) % 60;
         float delta_z = float(m_rnd(m_rnd_gen) % 3 + 2) * 0.99f;
         scene = QSharedPointer<TransfromHouseScene>::create(duration, delta_z);
+    } break;
+    case 3: {
+        int duration = 100 + m_rnd(m_rnd_gen) % 60;
+        float pitch = m_rnd(m_rnd_gen) % 360;
+        float yaw = m_rnd(m_rnd_gen) % 360;
+        float roll = m_rnd(m_rnd_gen) % 360;
+        QQuaternion q = QQuaternion::fromEulerAngles(pitch, yaw, roll);
+        scene = QSharedPointer<GlowEdgesScene>::create(duration, q.rotatedVector(QVector3D(1.0f, 0.0f, 0.0f)));
     } break;
     default:
         assert(false);

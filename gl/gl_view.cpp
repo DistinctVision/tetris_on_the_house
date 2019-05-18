@@ -493,6 +493,25 @@ void GL_ViewRenderer::_loadShaders()
                                                           QMap<QString, GLuint> {
                                                               { "screen_texture", m_emptyTextureId }
                                                           }));
+    programPtr = loadShader(":/shaders/screen_morph/glow_edges_on_plane.vsh",
+                             ":/shaders/screen_morph/glow_edges_on_plane.fsh");
+    m_shaderMaterials.insert(MaterialType::ScreenMorph_glowEdgesOnPlane,
+                             GL_ShaderMaterialPtr::create(programPtr,
+                                                          QVariantMap {
+                                                              { "matrixMVP", QMatrix4x4() },
+                                                              { "matrixView2FrameUV", QMatrix4x4() },
+                                                              { "color_a", QVector3D(1.0f, 1.0f, 1.0f) },
+                                                              { "color_b", QVector3D(0.0f, 0.0f, 0.0f) },
+                                                              { "edges_size", 0.1f },
+                                                              { "edges_power", 2.0f },
+                                                              { "edges_color", QColor(255, 255, 255, 255) },
+                                                              { "plane", QVector4D(1.0, 0.0, 0.0, 0.0) },
+                                                              { "plane_edge_distance", 5.0f },
+                                                              { "max_edges_distance", 10.0f }
+                                                          },
+                                                          QMap<QString, GLuint> {
+                                                              { "screen_texture", m_emptyTextureId }
+                                                          }));
 }
 
 void GL_ViewRenderer::_beforeSlotDraw()
