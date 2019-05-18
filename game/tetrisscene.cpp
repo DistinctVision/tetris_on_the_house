@@ -104,7 +104,7 @@ void TetrisScene::draw(GL_ViewRenderer * view)
 
     QMatrix4x4 viewMatrix = m_tracker->viewMatrix();
 
-    if (!m_startScene->animationIsFinished())
+    if (!m_startScene->animationIsFinished() && false)
     {
         m_startScene->setViewMatrix(viewMatrix);
         m_startScene->drawAndPlay(view);
@@ -165,14 +165,23 @@ QSharedPointer<AnimationScene> TetrisScene::_createRandomScene() const
     int index = m_rnd(m_rnd_gen) % 2;
     QSharedPointer<AnimationScene> scene;
     switch (index) {
-    case 0:
-        scene = QSharedPointer<ChangeColorsScene>::create(100 + m_rnd(m_rnd_gen) % 5,
-                                                          3 + m_rnd(m_rnd_gen) % 6);
-        break;
-    case 1:
-        scene = QSharedPointer<WaveHouseScene>::create(100 + m_rnd(m_rnd_gen) % 5,
-                                                       10.0f, 1.0f);
-        break;
+    case 0: {
+        scene = QSharedPointer<ChangeColorsScene>::create(100 + m_rnd(m_rnd_gen) % 50,
+                                                          2 + m_rnd(m_rnd_gen) % 3);
+    } break;
+    case 1: {
+        int duration = 100 + m_rnd(m_rnd_gen) % 100;
+        QVector3D wave_origin(float(m_rnd(m_rnd_gen) % 30) - 15.0f,
+                              float(m_rnd(m_rnd_gen) % 30),
+                              0.0f);
+        float wave_timeScale = float(m_rnd(m_rnd_gen) % 3 + 3);
+        float wave_distanceStep = float(m_rnd(m_rnd_gen) % 10 + 20);
+        float wave_distanceStepScale = float(m_rnd(m_rnd_gen) % 2 + 1);
+        float wave_scale = float(m_rnd(m_rnd_gen) % 3 + 3);
+        scene = QSharedPointer<WaveHouseScene>::create(duration, wave_origin,
+                                                       wave_timeScale, wave_distanceStep,
+                                                       wave_distanceStepScale, wave_scale);
+    } break;
     default:
         assert(false);
     }

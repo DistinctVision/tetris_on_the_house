@@ -1,19 +1,20 @@
 #ifndef WAVEHOUSESCENE_H
 #define WAVEHOUSESCENE_H
 
+#include <QVector3D>
+
 #include "animationscene.h"
 
 class WaveHouseScene:
         public AnimationScene
 {
 public:
-    WaveHouseScene(int duration, float wave_timeScale, float wave_scale);
-
-    float wave_timeScale() const;
-    void setWave_timeScale(float wave_timeScale);
-
-    float wave_scale() const;
-    void setWave_scale(float wave_scale);
+    WaveHouseScene(int duration,
+                   const QVector3D & wave_origin,
+                   float wave_timeScale,
+                   float wave_distanceStep,
+                   float wave_distanceStepScale,
+                   float wave_scale);
 
     void init(GL_ViewRenderer * view) override;
     void destroy(GL_ViewRenderer * view) override;
@@ -21,7 +22,10 @@ public:
 
 private:
     GL_ShaderMaterialPtr m_material;
+    QVector3D m_wave_origin;
     float m_wave_timeScale;
+    float m_wave_distanceStep;
+    float m_wave_distanceStepScale;
     float m_wave_scale;
 };
 

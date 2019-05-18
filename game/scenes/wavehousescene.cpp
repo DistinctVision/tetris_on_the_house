@@ -4,33 +4,20 @@
 
 #include "texturereceiver.h"
 
-WaveHouseScene::WaveHouseScene(int duration, float wave_timeScale, float wave_scale):
+WaveHouseScene::WaveHouseScene(int duration,
+                               const QVector3D & wave_origin,
+                               float wave_timeScale,
+                               float wave_distanceStep,
+                               float wave_distanceStepScale,
+                               float wave_scale):
     AnimationScene(duration),
+    m_wave_origin(wave_origin),
     m_wave_timeScale(wave_timeScale),
+    m_wave_distanceStep(wave_distanceStep),
+    m_wave_distanceStepScale(wave_distanceStepScale),
     m_wave_scale(wave_scale)
 {
 }
-
-float WaveHouseScene::wave_timeScale() const
-{
-    return m_wave_timeScale;
-}
-
-void WaveHouseScene::setWave_timeScale(float wave_timeScale)
-{
-    m_wave_timeScale = wave_timeScale;
-}
-
-float WaveHouseScene::wave_scale() const
-{
-    return m_wave_scale;
-}
-
-void WaveHouseScene::setWave_scale(float wave_scale)
-{
-    m_wave_scale = wave_scale;
-}
-
 
 void WaveHouseScene::init(GL_ViewRenderer * view)
 {
@@ -58,6 +45,9 @@ void WaveHouseScene::draw(GL_ViewRenderer * view)
         m_material->setValue("matrixMVP", matrixVP);
         m_material->setValue("wave_time", time);
         m_material->setValue("wave_timeScale", m_wave_timeScale);
+        m_material->setValue("wave_origin", m_wave_origin);
+        m_material->setValue("wave_distanceStep", m_wave_distanceStep);
+        m_material->setValue("wave_distanceStepScale", m_wave_distanceStepScale);
         m_material->setValue("wave_scale", m_wave_scale * sin(time * static_cast<float>(M_PI)));
         m_material->setValue("matrixView2FrameUV", house->matrixView2FrameUV(view, textureReceiver()->textureSize()));
         m_material->setTexture("screen_texture", textureReceiver()->textureId());

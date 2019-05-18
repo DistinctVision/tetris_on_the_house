@@ -44,7 +44,7 @@ void ChangeColorsScene::draw(GL_ViewRenderer * view)
 
     view->glDisable(GL_BLEND);
     {
-        QVector3D color_a(1.0f, 1.0f, 1.0f);
+        QVector3D color_a(1.0f, min(max(2.0f * time - 1.0f, 0.0f), 1.0f) + 1.0f, 1.0f);
         QVector3D color_b(time * m_numberCyrcles, 0.0f, 0.0f);
         m_material->setValue("matrixMVP", matrixVP);
         m_material->setValue("matrixView2FrameUV", house->matrixView2FrameUV(view, textureReceiver()->textureSize()));
