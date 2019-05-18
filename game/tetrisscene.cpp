@@ -1,18 +1,26 @@
 #include "tetrisscene.h"
 
+#include <cassert>
+#include <chrono>
+
 #include "objectedgestracker.h"
 #include "texturereceiver.h"
 #include "tetrisgame.h"
 
 #include "scenes/gamestartscene.h"
+#include "scenes/changecolorsscene.h"
+#include "scenes/wavehousescene.h"
 
+using namespace std;
+using namespace std::chrono;
 using namespace Eigen;
 
 TetrisScene::TetrisScene():
     m_tracker(nullptr),
     m_textureReceiver(nullptr),
     m_glowBuffer(nullptr),
-    m_tempGlowBuffer(nullptr)
+    m_tempGlowBuffer(nullptr),
+    m_rnd(0, 10000)
 {
     m_game = QSharedPointer<TetrisGame>::create(Vector2i(8, 19));
     m_startScene = QSharedPointer<GameStartScene>::create(120);
@@ -42,6 +50,8 @@ void TetrisScene::setTextureReceiver(TextureReceiver * textureReceiver)
         return;
     m_textureReceiver = textureReceiver;
     m_startScene->setTextureReceiver(m_textureReceiver);
+    if (m_currentScene)
+        m_currentScene->setTextureReceiver(m_textureReceiver);
     emit textureReceiverChanged();
 }
 
@@ -62,6 +72,11 @@ void TetrisScene::destroy(GL_ViewRenderer * view)
 {
     Q_UNUSED(view);
     m_startScene->destroy(view);
+    if (m_currentScene)
+    {
+        m_currentScene->destroy(view);
+        m_currentScene.reset();
+    }
     m_house.reset();
     if (m_glowBuffer != nullptr)
     {
@@ -84,23 +99,44 @@ void TetrisScene::draw(GL_ViewRenderer * view)
         qCritical() << Q_FUNC_INFO << ": texture receiver is not set!";
         return;
     }
-    if (m_game->step() == TetrisGame::EventType::Lose)
-    {
-        m_game->reset();
-    }
 
     m_house->setActivityLevel(std::max(m_house->activityLevel() - 0.01f, 0.0f));
 
     QMatrix4x4 viewMatrix = m_tracker->viewMatrix();
 
-    m_startScene->setViewMatrix(viewMatrix);
-    m_startScene->drawAndPlay(view);
-    if (m_startScene->animationIsFinished())
-        m_startScene->resetTime();
+    if (!m_startScene->animationIsFinished())
+    {
+        m_startScene->setViewMatrix(viewMatrix);
+        m_startScene->drawAndPlay(view);
 
-    view->glEnable(GL_BLEND);
+        view->glEnable(GL_BLEND);
+        m_house->drawBlocks(view, m_game.get(), viewMatrix, 0.8f, m_startScene->timeState());
+    }
+    else
+    {
+        if (m_game->step() == TetrisGame::EventType::Lose)
+        {
+            m_game->reset();
+        }
 
-    m_house->drawBlocks(view, m_game.get(), viewMatrix);
+        if (!m_currentScene)
+        {
+            m_currentScene = _createRandomScene();
+            m_currentScene->init(view);
+            m_currentScene->setTextureReceiver(m_textureReceiver);
+            m_currentScene->setHouse(m_house);
+        }
+        m_currentScene->setViewMatrix(viewMatrix);
+        m_currentScene->drawAndPlay(view);
+        if (m_currentScene->animationIsFinished())
+        {
+            m_currentScene->destroy(view);
+            m_currentScene.reset();
+        }
+
+        view->glEnable(GL_BLEND);
+        m_house->drawBlocks(view, m_game.get(), viewMatrix, 0.8f, 1.0f);
+    }
 }
 
 bool TetrisScene::moveFigureLeft()
@@ -121,6 +157,26 @@ bool TetrisScene::moveFigureDown()
 bool TetrisScene::rotateFigure()
 {
     return m_game->rotateFigure();
+}
+
+QSharedPointer<AnimationScene> TetrisScene::_createRandomScene() const
+{
+    m_rnd_gen.seed(duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count());
+    int index = m_rnd(m_rnd_gen) % 2;
+    QSharedPointer<AnimationScene> scene;
+    switch (index) {
+    case 0:
+        scene = QSharedPointer<ChangeColorsScene>::create(100 + m_rnd(m_rnd_gen) % 5,
+                                                          3 + m_rnd(m_rnd_gen) % 6);
+        break;
+    case 1:
+        scene = QSharedPointer<WaveHouseScene>::create(100 + m_rnd(m_rnd_gen) % 5,
+                                                       10.0f, 1.0f);
+        break;
+    default:
+        assert(false);
+    }
+    return scene;
 }
 
 void TetrisScene::_drawGlow(GL_ViewRenderer * view)

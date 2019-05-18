@@ -465,8 +465,10 @@ void GL_ViewRenderer::_loadShaders()
                              GL_ShaderMaterialPtr::create(programPtr,
                                                           QVariantMap {
                                                               { "matrixMVP", QMatrix4x4() },
+                                                              { "wave_time", 0.0f },
                                                               { "wave_timeScale", 2.0f },
                                                               { "wave_scale", 1.0f },
+                                                              { "wave_threshold", 0.05f },
                                                               { "matrixView2FrameUV", QMatrix4x4() },
                                                               { "color_a", QVector3D(1.0f, 1.0f, 1.0f) },
                                                               { "color_b", QVector3D(0.0f, 0.0f, 0.0f) }

@@ -48,7 +48,6 @@ void GameStartScene::draw(GL_ViewRenderer * view)
     view->glEnable(GL_BLEND);
     {
         float time_grid = min(max((time - 0.5f) * 2.0f, 0.0f), 1.0f);
-        time_grid = 1.0f;
         GL_ShaderMaterialPtr materialGrid = house->materialGrid();
         QMatrix4x4 worldGridMatrix;
         worldGridMatrix(2, 2) = time_grid;

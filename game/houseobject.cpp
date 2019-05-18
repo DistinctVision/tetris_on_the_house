@@ -85,14 +85,17 @@ QMatrix4x4 HouseObject::matrixView2FrameUV(GL_ViewRenderer * view, const QSize &
     return invUvTransfrom;
 }
 
-void HouseObject::drawBlocks(GL_ViewRenderer * view, const TetrisGame * game, const QMatrix4x4 & viewMatrix)
+void HouseObject::drawBlocks(GL_ViewRenderer * view, const TetrisGame * game, const QMatrix4x4 & viewMatrix,
+                             float blockAlpha, float blockEdgeAlpha)
 {
     using Figure = TetrisGame::Figure;
 
     const float offset = 0.05f;
 
+    m_materialBlock->setValue("border_size", blockEdgeAlpha * 0.1f);
+
     QColor colorBlock = m_materialBlock->value("mainColor").value<QColor>();
-    colorBlock.setAlpha(255);
+    colorBlock.setAlphaF(static_cast<qreal>(blockAlpha));
     m_materialBlock->setValue("mainColor", colorBlock);
     Vector3f fieldSize = m_grid_end - m_grid_begin;
     Vector2f blockSize(fieldSize.x() / static_cast<float>(m_grid_n_size.x()),
@@ -114,7 +117,7 @@ void HouseObject::drawBlocks(GL_ViewRenderer * view, const TetrisGame * game, co
         float y = (game->figurePos().y() - TetrisGame::figureAnchor.y()) * blockSize.y() + m_grid_begin.y();
         if (game->currentFigureState() < 1.0f)
         {
-            colorBlock.setAlphaF(static_cast<qreal>(game->currentFigureState()));
+            colorBlock.setAlphaF(static_cast<qreal>(game->currentFigureState() * blockAlpha));
             float t = 1.0f - game->currentFigureState();
             t *= t;
             t *= t;
@@ -122,7 +125,7 @@ void HouseObject::drawBlocks(GL_ViewRenderer * view, const TetrisGame * game, co
         }
         else
         {
-            colorBlock.setAlphaF(1.0);
+            colorBlock.setAlphaF(static_cast<qreal>(blockAlpha));
         }
         m_materialBlock->setValue("mainColor", colorBlock);
         TetrisGame::Figure figure = game->currentFigure();

@@ -1,6 +1,8 @@
 #ifndef TETRISSCENE_H
 #define TETRISSCENE_H
 
+#include <random>
+
 #include <QVector2D>
 #include <QVector3D>
 #include <QMatrix4x4>
@@ -61,6 +63,11 @@ private:
 
     QOpenGLFramebufferObject * m_glowBuffer;
     QOpenGLFramebufferObject * m_tempGlowBuffer;
+
+    mutable std::mt19937 m_rnd_gen;
+    mutable std::uniform_int_distribution<int> m_rnd;
+
+    QSharedPointer<AnimationScene> _createRandomScene() const;
 
     void _drawGlow(GL_ViewRenderer * view);
 };
