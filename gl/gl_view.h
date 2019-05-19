@@ -32,6 +32,7 @@ public:
         ScreenMorph_transform,
         ScreenMorph_glowEdgesOnPlane,
         ScreenMorph_glowEdges_transform,
+        Tunnel
     };
     Q_ENUM(Enum)
 };

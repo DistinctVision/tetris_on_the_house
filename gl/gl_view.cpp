@@ -528,6 +528,18 @@ void GL_ViewRenderer::_loadShaders()
                                                           QMap<QString, GLuint> {
                                                               { "screen_texture", m_emptyTextureId }
                                                           }));
+    programPtr = loadShader(":/shaders/tunnel.vsh",
+                             ":/shaders/tunnel.fsh");
+    m_shaderMaterials.insert(MaterialType::Tunnel,
+                             GL_ShaderMaterialPtr::create(programPtr,
+                                                          QVariantMap {
+                                                              { "matrixMVP", QMatrix4x4() },
+                                                              { "colorA", QColor(255, 255, 255, 255) },
+                                                              { "colorB", QColor(0, 0, 0, 255) },
+                                                              { "plane_z", 0.0f },
+                                                              { "plane_delta", 30.0f },
+                                                              { "begin_z", 0.0f }
+                                                          }));
 }
 
 void GL_ViewRenderer::_beforeSlotDraw()

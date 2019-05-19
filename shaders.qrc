@@ -19,5 +19,7 @@
         <file>shaders/screen_morph/glow_edges_on_plane.fsh</file>
         <file>shaders/screen_morph/glow_edges_on_plane.vsh</file>
         <file>shaders/screen_morph/glow_edges_transform.vsh</file>
+        <file>shaders/tunnel.fsh</file>
+        <file>shaders/tunnel.vsh</file>
     </qresource>
 </RCC>

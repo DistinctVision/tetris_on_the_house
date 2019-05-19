@@ -3,6 +3,8 @@
 
 #include "animationscene.h"
 
+#include "gl/gl_mesh.h"
+
 class FinalScene:
         public AnimationScene
 {
@@ -17,6 +19,11 @@ private:
     GL_ShaderMaterialPtr m_materialHouse;
     GL_ShaderMaterialPtr m_materialForDoors;
     GL_ShaderMaterialPtr m_materialColor;
+    GL_ShaderMaterialPtr m_materialTunnel;
+
+    GL_MeshPtr m_meshTunnelGrid;
+
+    void _createTunnelGrid();
 };
 
 #endif // FINALSCENE_H
