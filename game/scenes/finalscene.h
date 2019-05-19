@@ -15,7 +15,8 @@ public:
 
 private:
     GL_ShaderMaterialPtr m_materialHouse;
-    GL_ShaderMaterialPtr m_materialTransform;
+    GL_ShaderMaterialPtr m_materialForDoors;
+    GL_ShaderMaterialPtr m_materialColor;
 };
 
 #endif // FINALSCENE_H

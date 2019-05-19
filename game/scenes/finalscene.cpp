@@ -15,14 +15,16 @@ FinalScene::FinalScene(int duration):
 void FinalScene::init(GL_ViewRenderer * view)
 {
     AnimationScene::init(view);
-    m_materialHouse = view->createMaterial(MaterialType::ScreenMorph_default);
-    m_materialTransform = view->createMaterial(MaterialType::ScreenMorph_transform);
+    m_materialHouse = view->createMaterial(MaterialType::ScreenMorph_glowEdges);
+    m_materialForDoors = view->createMaterial(MaterialType::ScreenMorph_glowEdges_transform);
+    m_materialColor = view->createMaterial(MaterialType::Color);
 }
 
 void FinalScene::destroy(GL_ViewRenderer * view)
 {
     m_materialHouse.reset();
-    m_materialTransform.reset();
+    m_materialForDoors.reset();
+    m_materialColor.reset();
     AnimationScene::destroy(view);
 }
 
@@ -32,6 +34,8 @@ void FinalScene::draw(GL_ViewRenderer * view)
 
     HouseObjectPtr house = this->house();
     QMatrix4x4 matrixVP = view->projectionMatrix() * viewMatrix();
+
+    m_materialHouse->setValue("edges_size", min(max(time / 0.1f, 0.0f), 1.0f) * 0.125f);
 
     QVector3D color_a(1.0f, min(max((1.0f - time) / 0.1f, 0.0f), 1.0f), 1.0f);
     QVector3D color_b(0.0f, 0.0f, house->activityLevel() * 0.25f);
@@ -44,9 +48,28 @@ void FinalScene::draw(GL_ViewRenderer * view)
         m_materialHouse->setValue("color_a", color_a);
         m_materialHouse->setValue("color_b", color_b);
         house->meshHouse_wo_doors()->draw(view, *m_materialHouse);
+        if (time < 0.1f)
+        {
+            house->meshLeftDoor()->draw(view, *m_materialHouse);
+            house->meshRightDoor()->draw(view, *m_materialHouse);
+        }
+    }
+
+    if (time >= 0.1f)
+    {
+        view->glDepthMask(GL_FALSE);
+        m_materialColor->setValue("matrixMVP", matrixVP);
+        m_materialColor->setValue("mainColor", QColor(0, 0, 0, 255));
+        house->meshLeftDoor()->draw(view, *m_materialColor);
+        house->meshRightDoor()->draw(view, *m_materialColor);
+        view->glDepthMask(GL_TRUE);
     }
 
     float time_for_doors = (time - 0.1f) / 0.2f;
+    if ((time_for_doors < 0.0f) || (time_for_doors > 1.0f))
+    {
+        time_for_doors = (1.0f - time) / 0.1f;
+    }
     if ((time_for_doors >= 0.0f) && (time_for_doors <= 1.0f))
     {
         const float delta_x = 14.0f;
@@ -71,16 +94,17 @@ void FinalScene::draw(GL_ViewRenderer * view)
             worldMatrixForRightDoor(0, 3) = t * delta_x;
             worldMatrixForRightDoor(2, 3) = delta_z;
         }
-        m_materialTransform->setValue("matrixView2FrameUV",
-                                      house->matrixView2FrameUV(view, textureReceiver()->textureSize()));
-        m_materialTransform->setTexture("screen_texture", textureReceiver()->textureId());
-        m_materialTransform->setValue("color_a", color_a);
-        m_materialTransform->setValue("color_b", color_b);
-        m_materialTransform->setValue("matrixMVP", matrixVP);
-        m_materialTransform->setValue("matrixMVP_transform", matrixVP * worldMatrixForLeftDoor);
-        house->meshLeftDoor()->draw(view, *m_materialTransform);
-        m_materialTransform->setValue("matrixMVP_transform", matrixVP * worldMatrixForRightDoor);
-        house->meshRightDoor()->draw(view, *m_materialTransform);
+        m_materialForDoors->setValue("edges_size", 0.125f);
+        m_materialForDoors->setValue("matrixView2FrameUV",
+                                     house->matrixView2FrameUV(view, textureReceiver()->textureSize()));
+        m_materialForDoors->setTexture("screen_texture", textureReceiver()->textureId());
+        m_materialForDoors->setValue("color_a", color_a);
+        m_materialForDoors->setValue("color_b", color_b);
+        m_materialForDoors->setValue("matrixMVP", matrixVP);
+        m_materialForDoors->setValue("matrixMVP_transform", matrixVP * worldMatrixForLeftDoor);
+        house->meshLeftDoor()->draw(view, *m_materialForDoors);
+        m_materialForDoors->setValue("matrixMVP_transform", matrixVP * worldMatrixForRightDoor);
+        house->meshRightDoor()->draw(view, *m_materialForDoors);
     }
 
     if (time < 0.1f)

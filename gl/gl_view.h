@@ -30,7 +30,8 @@ public:
         ScreenMorph_glowEdges,
         ScreenMorph_wave,
         ScreenMorph_transform,
-        ScreenMorph_glowEdgesOnPlane
+        ScreenMorph_glowEdgesOnPlane,
+        ScreenMorph_glowEdges_transform,
     };
     Q_ENUM(Enum)
 };

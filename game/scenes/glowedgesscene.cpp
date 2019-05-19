@@ -52,7 +52,7 @@ void GlowEdgesScene::draw(GL_ViewRenderer * view)
 
 
         view->glDepthFunc(GL_GREATER);
-        m_material->setValue("edges_color", QColor(150, 255, 150, 255));
+        m_material->setValue("edges_color", QColor(100, 255, 220, 255));
         m_material->setValue("edges_power", 1.0f);
         house->meshHouse()->draw(view, *m_material);
         m_backwardMesh->draw(view, *m_material);

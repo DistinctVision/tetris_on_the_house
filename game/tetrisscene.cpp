@@ -178,7 +178,7 @@ QSharedPointer<AnimationScene> TetrisScene::_createRandomScene() const
 
     m_rnd_gen.seed(duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count());
     int index = m_rnd(m_rnd_gen) % 6;
-    index = 3;
+    //index = 3;
     QSharedPointer<AnimationScene> scene;
     switch (index) {
     case 0: {

@@ -40,7 +40,8 @@ SOURCES += \
 
 RESOURCES += \
     qml.qrc \
-    shaders.qrc
+    shaders.qrc \
+    models.qrc
 
 contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
     ANDROID_EXTRA_LIBS = \
