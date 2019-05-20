@@ -42,6 +42,16 @@ public:
     static GL_Mesh createMesh(const QVector<QVector3D> & vertices,
                               const QVector<QVector2D> & textureCoords,
                               const QVector<GLuint> & indices);
+    static GL_Mesh createMesh(const QOpenGLBuffer & verticesBuffer,
+                              const QOpenGLBuffer & textureCoordsBuffer,
+                              const QOpenGLBuffer & normalsBuffer,
+                              const QOpenGLBuffer & indicesBuffer,
+                              GLsizei numberElements);
+
+    QOpenGLBuffer verticesBuffer() const;
+    QOpenGLBuffer textureCoordsBuffer() const;
+    QOpenGLBuffer normalsBuffer() const;
+    QOpenGLBuffer indicesBuffer() const;
 
     void updateVertices(const QVector<QVector3D> & vertices);
     void updateTextureCoords(const QVector<QVector2D> & textureCoords);
@@ -53,7 +63,7 @@ public:
 private:
     GL_Mesh();
 
-    QOpenGLBuffer m_vertexBuffer;
+    QOpenGLBuffer m_verticesBuffer;
     QOpenGLBuffer m_textureCoordsBuffer;
     QOpenGLBuffer m_normalsBuffer;
     QOpenGLBuffer m_indicesBuffer;

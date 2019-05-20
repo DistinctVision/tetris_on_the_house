@@ -10,7 +10,9 @@ HEADERS += \
     $$PWD/scenes/transfromhousescene.h \
     $$PWD/scenes/glowedgesscene.h \
     $$PWD/scenes/defaultscene.h \
-    $$PWD/scenes/finalscene.h
+    $$PWD/scenes/finalscene.h \
+    $$PWD/birdmesh.h \
+    $$PWD/birdobject.h
 
 SOURCES += \
     $$PWD/testcubescene.cpp \
@@ -24,4 +26,6 @@ SOURCES += \
     $$PWD/scenes/transfromhousescene.cpp \
     $$PWD/scenes/glowedgesscene.cpp \
     $$PWD/scenes/defaultscene.cpp \
-    $$PWD/scenes/finalscene.cpp
+    $$PWD/scenes/finalscene.cpp \
+    $$PWD/birdmesh.cpp \
+    $$PWD/birdobject.cpp
