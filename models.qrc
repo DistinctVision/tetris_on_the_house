@@ -1,5 +1,5 @@
 <RCC>
-    <qresource prefix="/models">
+    <qresource prefix="/">
         <file>models/bird_1.obj</file>
         <file>models/bird_2.obj</file>
         <file>models/bird_3.obj</file>

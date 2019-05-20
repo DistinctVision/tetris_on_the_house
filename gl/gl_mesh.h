@@ -53,6 +53,8 @@ public:
     QOpenGLBuffer normalsBuffer() const;
     QOpenGLBuffer indicesBuffer() const;
 
+    GLsizei numberElements() const;
+
     void updateVertices(const QVector<QVector3D> & vertices);
     void updateTextureCoords(const QVector<QVector2D> & textureCoords);
 

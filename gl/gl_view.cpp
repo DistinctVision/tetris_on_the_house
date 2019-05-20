@@ -540,6 +540,17 @@ void GL_ViewRenderer::_loadShaders()
                                                               { "plane_delta", 30.0f },
                                                               { "begin_z", 0.0f }
                                                           }));
+    programPtr = loadShader(":/shaders/morph_falloff.vsh",
+                             ":/shaders/morph_falloff.fsh");
+    m_shaderMaterials.insert(MaterialType::Morph_fallOff,
+                             GL_ShaderMaterialPtr::create(programPtr,
+                                                          QVariantMap {
+                                                              { "matrixMVP", QMatrix4x4() },
+                                                              { "matrixMV", QMatrix4x4() },
+                                                              { "time", 0.0f },
+                                                              { "mainColor", QColor(255, 255, 255, 255) },
+                                                              { "fallOffColor", QColor(0, 0, 0, 255) }
+                                                          }));
 }
 
 void GL_ViewRenderer::_beforeSlotDraw()

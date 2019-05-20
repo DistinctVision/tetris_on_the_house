@@ -8,8 +8,6 @@
         <file>shaders/contour_falloff.fsh</file>
         <file>shaders/contour_falloff.vsh</file>
         <file>shaders/packed_gray_image.fsh</file>
-        <file>shaders/morph.fsh</file>
-        <file>shaders/morph.vsh</file>
         <file>shaders/screen_morph/default.fsh</file>
         <file>shaders/screen_morph/default.vsh</file>
         <file>shaders/screen_morph/glow_edges.fsh</file>
@@ -21,5 +19,7 @@
         <file>shaders/screen_morph/glow_edges_transform.vsh</file>
         <file>shaders/tunnel.fsh</file>
         <file>shaders/tunnel.vsh</file>
+        <file>shaders/morph_falloff.fsh</file>
+        <file>shaders/morph_falloff.vsh</file>
     </qresource>
 </RCC>

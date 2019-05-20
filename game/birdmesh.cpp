@@ -39,7 +39,7 @@ bool BirdMesh::load(const QString & path,
     }
 
     QVector<QVector2D> texCoords(data.vertices.size(), QVector2D(0.0f, 0.0f));
-    m_meshBird = GL_MeshPtr::create(GL_Mesh::createMesh(data.vertices, texCoords, data.indices));
+    m_mesh = GL_MeshPtr::create(GL_Mesh::createMesh(data.vertices, texCoords, data.indices));
 
     QVector<QVector3D> normals1 = GL_Mesh::computeNormals(data1.vertices, data1.indices);
     QVector<QVector3D> normals2 = GL_Mesh::computeNormals(data2.vertices, data2.indices);
@@ -61,6 +61,31 @@ bool BirdMesh::load(const QString & path,
     m_bufferNormals2.allocate(normals2.data(), static_cast<int>(sizeof(QVector3D)) * normals2.size());
 
     return true;
+}
+
+GL_MeshPtr BirdMesh::mesh() const
+{
+    return m_mesh;
+}
+
+QOpenGLBuffer BirdMesh::bufferVertices1() const
+{
+    return m_bufferVertices1;
+}
+
+QOpenGLBuffer BirdMesh::bufferNormals1() const
+{
+    return m_bufferNormals1;
+}
+
+QOpenGLBuffer BirdMesh::bufferVertices2() const
+{
+    return m_bufferVertices2;
+}
+
+QOpenGLBuffer BirdMesh::bufferNormals2() const
+{
+    return m_bufferNormals2;
 }
 
 bool BirdMesh::_loadObject(BirdMesh::_ModelData & data, const QString & path) const
@@ -89,7 +114,7 @@ bool BirdMesh::_loadObject(BirdMesh::_ModelData & data, const QString & path) co
             for (int i = 0; i < f.size(); ++i)
             {
                 QStringList fl = l[i+1].split("/");
-                f[i] = fl[0].toUInt();
+                f[i] = fl[0].toUInt() - 1;
             }
             while (f.size() >= 3)
             {

@@ -316,6 +316,11 @@ QOpenGLBuffer GL_Mesh::indicesBuffer() const
     return m_indicesBuffer;
 }
 
+GLsizei GL_Mesh::numberElements() const
+{
+    return m_numberElements;
+}
+
 void GL_Mesh::updateVertices(const QVector<QVector3D> & vertices)
 {
     m_verticesBuffer.bind();

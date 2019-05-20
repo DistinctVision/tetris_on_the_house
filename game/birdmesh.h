@@ -1,6 +1,7 @@
 #ifndef BIRDMESH_H
 #define BIRDMESH_H
 
+#include <QOpenGLFunctions>
 #include <QOpenGLBuffer>
 
 #include "gl/gl_mesh.h"
@@ -19,6 +20,14 @@ public:
               const QString & path1,
               const QString & path2);
 
+    GL_MeshPtr mesh() const;
+
+    QOpenGLBuffer bufferVertices1() const;
+    QOpenGLBuffer bufferNormals1() const;
+
+    QOpenGLBuffer bufferVertices2() const;
+    QOpenGLBuffer bufferNormals2() const;
+
 private:
     struct _ModelData
     {
@@ -26,7 +35,7 @@ private:
         QVector<GLuint> indices;
     };
 
-    GL_MeshPtr m_meshBird;
+    GL_MeshPtr m_mesh;
 
     QOpenGLBuffer m_bufferVertices1;
     QOpenGLBuffer m_bufferNormals1;
