@@ -2,10 +2,13 @@
 
 #include <QtMath>
 #include <cmath>
+#include <random>
+#include <chrono>
 
 #include "gl/gl_view.h"
 
 using namespace std;
+using namespace std::chrono;
 
 BirdObject::BirdObject(GL_ViewRenderer * view,
                        const BirdMeshPtr & mesh,
@@ -24,6 +27,13 @@ BirdObject::BirdObject(GL_ViewRenderer * view,
 {
     m_material = view->createMaterial(MaterialType::Morph_fallOff);
     m_orientation = _getRotation(targetPoint);
+
+    int time = rand() % 100;
+    while (time > 0)
+    {
+        _updateAnimation();
+        --time;
+    }
 }
 
 void BirdObject::updateStep()
@@ -34,61 +44,7 @@ void BirdObject::updateStep()
     m_orientation = (m_angularVelocity * m_orientation).normalized();
     m_angularVelocity = QQuaternion::slerp(m_angularVelocity, _getRotation(m_targetPoint) * m_orientation.conjugated(), 0.001f);
 
-    if (m_vertexIndexA == m_vertexIndexB)
-    {
-        m_timeState = 1.0f;
-    }
-    else
-    {
-        m_timeState += m_timeSpeed;
-    }
-
-    if (m_timeState >= 1.0f)
-    {
-        switch (m_state) {
-        case StateType::Gliding:
-            m_vertexIndexA = m_vertexIndexB;
-            m_vertexIndexB = 0;
-            break;
-        case StateType::Fly:
-            if (m_vertexIndexB == 0)
-            {
-                if (m_vertexIndexA == 2)
-                {
-                    m_vertexIndexA = 0;
-                    m_vertexIndexB = 1;
-                }
-                else
-                {
-                    m_vertexIndexA = 0;
-                    m_vertexIndexB = 2;
-                }
-            }
-            else if (m_vertexIndexB == 1)
-            {
-                m_vertexIndexA = 1;
-                m_vertexIndexB = 0;
-            }
-            else
-            {
-                m_vertexIndexA = 2;
-                m_vertexIndexB = 0;
-            }
-            break;
-        }
-        m_timeState = m_timeState - floor(m_timeState);
-    }
-    else
-    {
-        if (m_vertexIndexA == 1)
-        {
-            m_angularVelocity = m_angularVelocity * QQuaternion::fromAxisAndAngle(1.0f, 0.0f, 0.0f, 0.07f);
-        }
-        else if (m_vertexIndexA == 2)
-        {
-            m_angularVelocity = m_angularVelocity * QQuaternion::fromAxisAndAngle(1.0f, 0.0f, 0.0f, -0.07f);
-        }
-    }
+    _updateAnimation();
 }
 
 void BirdObject::draw(GL_ViewRenderer * view, const QMatrix4x4 & viewMatrix)
@@ -167,4 +123,63 @@ QQuaternion BirdObject::_getRotation(const QVector3D & targetPoint) const
     QQuaternion q2 = QQuaternion::fromAxisAndAngle(1.0f, 0.0f, 0.0f, xAngle) * q1;
 
     return q2;
+}
+
+void BirdObject::_updateAnimation()
+{
+    if (m_vertexIndexA == m_vertexIndexB)
+    {
+        m_timeState = 1.0f;
+    }
+    else
+    {
+        m_timeState += m_timeSpeed;
+    }
+
+    if (m_timeState >= 1.0f)
+    {
+        switch (m_state) {
+        case StateType::Gliding:
+            m_vertexIndexA = m_vertexIndexB;
+            m_vertexIndexB = 0;
+            break;
+        case StateType::Fly:
+            if (m_vertexIndexB == 0)
+            {
+                if (m_vertexIndexA == 2)
+                {
+                    m_vertexIndexA = 0;
+                    m_vertexIndexB = 1;
+                }
+                else
+                {
+                    m_vertexIndexA = 0;
+                    m_vertexIndexB = 2;
+                }
+            }
+            else if (m_vertexIndexB == 1)
+            {
+                m_vertexIndexA = 1;
+                m_vertexIndexB = 0;
+            }
+            else
+            {
+                m_vertexIndexA = 2;
+                m_vertexIndexB = 0;
+            }
+            break;
+        }
+        m_timeState = m_timeState - floor(m_timeState);
+    }
+    else
+    {
+        if (m_vertexIndexA == 1)
+        {
+            m_angularVelocity = m_angularVelocity * QQuaternion::fromAxisAndAngle(1.0f, 0.0f, 0.0f, 0.03f);
+        }
+        else if (m_vertexIndexA == 2)
+        {
+            m_angularVelocity = m_angularVelocity * QQuaternion::fromAxisAndAngle(1.0f, 0.0f, 0.0f, -0.03f);
+        }
+    }
 }

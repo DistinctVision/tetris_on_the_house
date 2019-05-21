@@ -1,11 +1,15 @@
 #include "finalscene.h"
 
+#include <random>
+#include <chrono>
+
 #include <cmath>
 #include <QtMath>
 
 #include "texturereceiver.h"
 
 using namespace std;
+using namespace std::chrono;
 
 FinalScene::FinalScene(int duration):
     AnimationScene(duration)
@@ -20,7 +24,7 @@ void FinalScene::init(GL_ViewRenderer * view)
     m_materialColor = view->createMaterial(MaterialType::Color);
     m_materialTunnel = view->createMaterial(MaterialType::Tunnel);
     _createTunnelGrid();
-    _createBirds(view, 10);
+    _createBirds(view, 7);
 }
 
 void FinalScene::destroy(GL_ViewRenderer * view)
@@ -75,7 +79,7 @@ void FinalScene::draw(GL_ViewRenderer * view)
     m_materialTunnel->setValue("matrixMVP", matrixVP);
     m_materialTunnel->setValue("colorA", QColor(255, 255, 255, 255));
     m_materialTunnel->setValue("colorB", QColor(0, 0, 0, 255));
-    m_materialTunnel->setValue("plane_z", 190.0f * (1.0f - time) - 30.0f);
+    m_materialTunnel->setValue("plane_z", 300.0f * (1.0f - time) - 150.0f);
     m_materialTunnel->setValue("plane_delta", 25.0f);
     m_materialTunnel->setValue("begin_z", 19.0f);
     m_meshTunnelGrid->draw(view, *m_materialTunnel);
@@ -248,12 +252,36 @@ void FinalScene::_createTunnelGrid()
 
 void FinalScene::_createBirds(GL_ViewRenderer * view, int number)
 {
+    const float k_floor = 2.7f;
+
+    const float z_begin = 150.0f;
+    const float z_end = - 150.0f;
+    const float y_begin = 9.0f *  k_floor;
+    const float y_end = 15.0f *  k_floor;
+    const float x_begin = - 14.0f;
+    const float x_end = 14.0f;
+
+    float x_center = (x_end + x_begin) * 0.5f;
+    float y_center = (y_end + y_begin) * 0.5f;
+
+    srand(duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count());
+
     BirdMeshPtr mesh = BirdMeshPtr::create();
     mesh->load(":/models/bird_1.obj",
                ":/models/bird_2.obj",
                ":/models/bird_3.obj");
-    m_birds.push_back(BirdObjectPtr::create(view, mesh, QVector3D(0.0f, 2.7f * 14.0f, 150.0f),
-                                            2.0f, QVector3D(0.0f, 2.7f * 14.0f,  -150.0f)));
+    for (int i = 0; i < number; ++i)
+    {
+        float x = x_begin + (x_end - x_begin) * (rand() % 1000) * 0.001f;
+        float y = y_begin + (y_end - y_begin) * (rand() % 1000) * 0.001f;
+        float ix = x_center - (x - x_center);
+        float iy = y_center - (y - y_center);
+
+        m_birds.push_back(BirdObjectPtr::create(view, mesh,
+                                                QVector3D(x, y, z_begin + i * (5.0f + 5.0f * (rand() % 100) * 0.01f)),
+                                                fabs(z_end - z_begin) / static_cast<float>(duration()),
+                                                QVector3D(ix, iy, z_end)));
+    }
 }
 
 void FinalScene::_drawBirds(GL_ViewRenderer * view, const QMatrix4x4 & viewMatrix)

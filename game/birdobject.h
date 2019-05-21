@@ -51,6 +51,7 @@ private:
     float m_timeSpeed;
 
     QQuaternion _getRotation(const QVector3D & targetPoint) const;
+    void _updateAnimation();
 };
 
 using BirdObjectPtr = QSharedPointer<BirdObject>;
