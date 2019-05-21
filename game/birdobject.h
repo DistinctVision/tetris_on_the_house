@@ -31,11 +31,14 @@ public:
     void draw(GL_ViewRenderer * view, const QMatrix4x4 & viewMatrix);
 
 private:
+    const float m_localScale = 2.5f;
+
     BirdMeshPtr m_mesh;
     GL_ShaderMaterialPtr m_material;
 
     QVector3D m_position;
     QQuaternion m_orientation;
+    QQuaternion m_angularVelocity;
 
     float m_velocity;
 
@@ -46,6 +49,8 @@ private:
     int m_vertexIndexB;
     float m_timeState;
     float m_timeSpeed;
+
+    QQuaternion _getRotation(const QVector3D & targetPoint) const;
 };
 
 using BirdObjectPtr = QSharedPointer<BirdObject>;

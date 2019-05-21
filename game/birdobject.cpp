@@ -23,14 +23,19 @@ BirdObject::BirdObject(GL_ViewRenderer * view,
     m_timeSpeed(0.1f)
 {
     m_material = view->createMaterial(MaterialType::Morph_fallOff);
-    QVector3D delta = targetPoint - position;
-    m_orientation = QQuaternion::fromAxisAndAngle(QVector3D(0.0f, 1.0f, 0.0), - atan2(delta.z(), delta.x()) * static_cast<float>(180.0 / M_PI));
+    //m_orientation = QQuaternion::fromAxisAndAngle(0.0f, 1.0f, 0.0f, -90.0f);
+    //m_orientation = _getRotation(targetPoint);
 }
 
 void BirdObject::updateStep()
 {
-    QVector3D dir = m_orientation.rotatedVector(QVector3D(0.0f, 0.0f, 1.0f));
+    QVector3D dir = m_orientation.rotatedVector(QVector3D(1.0f, 0.0f, 0.0f));
     m_position += dir * m_velocity;
+
+    //m_orientation = _getRotation(m_targetPoint) * m_orientation;
+    m_orientation = QQuaternion::slerp(m_orientation, _getRotation(m_targetPoint), 0.05f);
+    m_orientation.normalize();
+    //m_angularVelocity = QQuaternion::slerp(m_angularVelocity, _getRotation(m_targetPoint), 0.001f);
 
     if (m_vertexIndexA == m_vertexIndexB)
     {
@@ -76,17 +81,28 @@ void BirdObject::updateStep()
         }
         m_timeState = m_timeState - floor(m_timeState);
     }
+    else
+    {
+        /*if (m_vertexIndexA == 1)
+        {
+            m_angularVelocity = m_angularVelocity * QQuaternion::fromAxisAndAngle(1.0f, 0.0f, 0.0f, 0.2f);
+        }
+        else if (m_vertexIndexA == 2)
+        {
+            m_angularVelocity = m_angularVelocity * QQuaternion::fromAxisAndAngle(1.0f, 0.0f, 0.0f, -0.2f);
+        }*/
+    }
 }
 
 void BirdObject::draw(GL_ViewRenderer * view, const QMatrix4x4 & viewMatrix)
 {
-    QMatrix4x4 matrixWorld;
-    matrixWorld.rotate(m_orientation);
-    matrixWorld.translate(m_position);
+    QMatrix4x4 matrixRotation;
+    matrixRotation.rotate(m_orientation);
+    QMatrix4x4 matrixTranslation;
+    matrixTranslation.translate(m_position);
     QMatrix4x4 matrixScale;
-    //matrixScale.scale(2.5f);
-    matrixScale.scale(5.0f);
-    matrixWorld = matrixWorld * matrixScale;
+    matrixScale.scale(m_localScale);
+    QMatrix4x4 matrixWorld = matrixTranslation * matrixRotation * matrixScale;
 
     QMatrix4x4 matrixViewWorld = viewMatrix * matrixWorld;
     m_material->setValue("matrixMVP", view->projectionMatrix() * matrixViewWorld);
@@ -143,4 +159,24 @@ void BirdObject::draw(GL_ViewRenderer * view, const QMatrix4x4 & viewMatrix)
                                     { normals2, "vertex_morph_normal", GL_FLOAT, 0, 3, sizeof(QVector3D) } });
 }
 
+QQuaternion BirdObject::_getRotation(const QVector3D & targetPoint) const
+{
+    QVector3D localPoint = m_orientation.conjugated().rotatedVector(targetPoint - m_position);
 
+    float yAngle = atan2(localPoint.z(), localPoint.x()) * static_cast<float>(180.0 / M_PI);
+    QQuaternion dq1 = QQuaternion::fromAxisAndAngle(QVector3D(0.0f, 1.0f, 0.0f), - yAngle);
+    QQuaternion q1 = (dq1 * m_orientation).normalized();
+
+    localPoint = q1.conjugated().rotatedVector(targetPoint - m_position);
+
+    float yAngle1 = atan2(localPoint.z(), localPoint.x()) * static_cast<float>(180.0 / M_PI);
+
+    float zAngle = atan2(- localPoint.x(), - localPoint.y()) * static_cast<float>(180.0 / M_PI);
+    QQuaternion dq2 = QQuaternion::fromAxisAndAngle(QVector3D(0.0f, 0.0f, 1.0f), zAngle);
+
+    QQuaternion q2 = (dq2 * q1).normalized();
+    localPoint = q2.conjugated().rotatedVector(targetPoint - m_position);
+    float zAngle1 = atan2(- localPoint.x(), - localPoint.y()) * static_cast<float>(180.0 / M_PI);
+
+    return q1;
+}

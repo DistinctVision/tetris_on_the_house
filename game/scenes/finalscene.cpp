@@ -252,8 +252,8 @@ void FinalScene::_createBirds(GL_ViewRenderer * view, int number)
     mesh->load(":/models/bird_1.obj",
                ":/models/bird_2.obj",
                ":/models/bird_3.obj");
-    m_birds.push_back(BirdObjectPtr::create(view, mesh, QVector3D(0.0f, 2.7f * 14.0f, 0.0f),
-                                            1.0f, QVector3D(0.0f, 2.7f * 14.0f,  -30.0f)));
+    m_birds.push_back(BirdObjectPtr::create(view, mesh, QVector3D(0.0f, 2.7f * 14.0f, 100.0f),
+                                            1.0f, QVector3D(-10.0f, 2.7f * 0.0f,  -100.0f)));
 }
 
 void FinalScene::_drawBirds(GL_ViewRenderer * view, const QMatrix4x4 & viewMatrix)

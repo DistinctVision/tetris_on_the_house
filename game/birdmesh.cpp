@@ -98,6 +98,8 @@ bool BirdMesh::_loadObject(BirdMesh::_ModelData & data, const QString & path) co
 
     data = _ModelData();
 
+    QVector<QVector3D> vertices;
+
     for (const QString & str : strList)
     {
         QStringList l = str.split(" ");
@@ -106,15 +108,25 @@ bool BirdMesh::_loadObject(BirdMesh::_ModelData & data, const QString & path) co
         if (l[0] == "v")
         {
             QVector3D v(l[1].toFloat(), l[2].toFloat(), l[3].toFloat());
-            data.vertices.push_back(v);
+            vertices.push_back(v);
         }
-        else if (l[0] == "f")
+    }
+
+
+    for (const QString & str : strList)
+    {
+        QStringList l = str.split(" ");
+        if (l.size() < 4)
+            continue;
+        if (l[0] == "f")
         {
+            GLuint v_o = static_cast<GLuint>(data.vertices.size());
             QVector<GLuint> f(l.size() - 1);
             for (int i = 0; i < f.size(); ++i)
             {
                 QStringList fl = l[i+1].split("/");
-                f[i] = fl[0].toUInt() - 1;
+                data.vertices.push_back(vertices[fl[0].toUInt() - 1]);
+                f[i] = v_o + i;
             }
             while (f.size() >= 3)
             {
