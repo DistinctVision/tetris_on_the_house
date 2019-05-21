@@ -551,6 +551,18 @@ void GL_ViewRenderer::_loadShaders()
                                                               { "mainColor", QColor(255, 255, 255, 255) },
                                                               { "fallOffColor", QColor(0, 0, 0, 255) }
                                                           }));
+    programPtr = loadShader(":/shaders/table.vsh",
+                             ":/shaders/table.fsh");
+    m_shaderMaterials.insert(MaterialType::Table,
+                             GL_ShaderMaterialPtr::create(programPtr,
+                                                          QVariantMap {
+                                                              { "matrixMVP", QMatrix4x4() },
+                                                              { "tableColor", QColor(0, 255, 0, 255) },
+                                                              { "tableSize", 19 },
+                                                              { "tableEdgeColor", QColor(0, 255, 0, 0) },
+                                                              { "tableEdgeSize", 0.1f },
+                                                              { "level", 5.0f }
+                                                          }));
 }
 
 void GL_ViewRenderer::_beforeSlotDraw()

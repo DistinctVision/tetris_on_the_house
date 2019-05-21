@@ -70,9 +70,13 @@ void TetrisScene::init(GL_ViewRenderer * view)
                                      Vector3i(8, 19, 1),
                                      Vector3f(-11.0f, 0.0f, -4.0f),
                                      Vector3f(11.0f, 19.0f * k_floor, 4.0f));
+    m_house->materialTables()->setValue("tableSize", 19);
+    m_house->materialTables()->setValue("level", 0.0f);
 
     m_startScene->init(view);
     m_startScene->setHouse(m_house);
+
+    m_linesLevel = 0.0f;
 }
 
 void TetrisScene::destroy(GL_ViewRenderer * view)
@@ -116,8 +120,16 @@ void TetrisScene::draw(GL_ViewRenderer * view)
         m_numberRemovalLines = m_game->numberRemovedLines();
         m_house->setActivityLevel(1.0f);
     }
+    if (m_linesLevel > static_cast<float>(m_numberRemovalLines))
+    {
+        m_linesLevel = std::max(m_linesLevel - 0.1f, 0.0f);
+    }
+    else if (m_linesLevel < static_cast<float>(m_numberRemovalLines))
+    {
+        m_linesLevel = std::min(m_linesLevel + 0.1f, static_cast<float>(m_numberRemovalLines));
+    }
 
-    if (!m_startScene->animationIsFinished() && false)
+    if (!m_startScene->animationIsFinished())
     {
         m_startScene->setViewMatrix(viewMatrix);
         m_startScene->drawAndPlay(view);
@@ -150,6 +162,13 @@ void TetrisScene::draw(GL_ViewRenderer * view)
         view->glEnable(GL_BLEND);
         m_house->drawBlocks(view, m_game.get(), viewMatrix, 0.8f, 1.0f);
     }
+    view->glEnable(GL_BLEND);
+    {
+        GL_ShaderMaterialPtr materialTable = m_house->materialTables();
+        materialTable->setValue("matrixMVP", view->projectionMatrix() * viewMatrix);
+        materialTable->setValue("level", m_linesLevel);
+        m_house->meshTables()->draw(view, *materialTable);
+    }
 }
 
 bool TetrisScene::moveFigureLeft()
@@ -174,8 +193,6 @@ bool TetrisScene::rotateFigure()
 
 QSharedPointer<AnimationScene> TetrisScene::_createRandomScene() const
 {
-    return QSharedPointer<FinalScene>::create(300);
-
     m_rnd_gen.seed(duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count());
     int index = m_rnd(m_rnd_gen) % 6;
     //index = 3;

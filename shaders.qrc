@@ -21,5 +21,7 @@
         <file>shaders/tunnel.vsh</file>
         <file>shaders/morph_falloff.fsh</file>
         <file>shaders/morph_falloff.vsh</file>
+        <file>shaders/table.fsh</file>
+        <file>shaders/table.vsh</file>
     </qresource>
 </RCC>

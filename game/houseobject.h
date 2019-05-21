@@ -40,6 +40,9 @@ public:
     GL_MeshPtr meshBlock() const;
     GL_ShaderMaterialPtr materialBlock() const;
 
+    GL_MeshPtr meshTables() const;
+    GL_ShaderMaterialPtr materialTables() const;
+
     QMatrix4x4 matrixView2FrameUV(GL_ViewRenderer * view, const QSize & frameTextureSize) const;
 
     void drawBlocks(GL_ViewRenderer * view, const TetrisGame * game, const QMatrix4x4 & viewMatrix,
@@ -66,6 +69,8 @@ private:
     GL_ShaderMaterialPtr m_materialGrid;
     GL_MeshPtr m_meshBlock;
     GL_ShaderMaterialPtr m_materialBlock;
+    GL_MeshPtr m_meshTables;
+    GL_ShaderMaterialPtr m_materialTables;
 
     GL_ScreenObjectPtr m_screenTempObject;
 

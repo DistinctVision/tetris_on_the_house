@@ -23,7 +23,7 @@ BirdObject::BirdObject(GL_ViewRenderer * view,
     m_vertexIndexA(0),
     m_vertexIndexB(0),
     m_timeState(0.0f),
-    m_timeSpeed(0.1f)
+    m_timeSpeed(0.2f)
 {
     m_material = view->createMaterial(MaterialType::Morph_fallOff);
     m_orientation = _getRotation(targetPoint);

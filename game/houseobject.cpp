@@ -21,6 +21,7 @@ HouseObject::HouseObject(GL_ViewRenderer * view,
     m_meshBlock = GL_MeshPtr::create(GL_Mesh::createQuad(QVector2D(1.0f, 1.0f),
                                                          QVector2D(0.0f, 0.0f), true));
     m_materialBlock = view->createMaterial(MaterialType::ContourFallOff);
+    m_materialTables = view->createMaterial(MaterialType::Table);
 }
 
 Vector3i HouseObject::grid_n_size() const
@@ -86,6 +87,16 @@ GL_MeshPtr HouseObject::meshBlock() const
 GL_ShaderMaterialPtr HouseObject::materialBlock() const
 {
     return m_materialBlock;
+}
+
+GL_MeshPtr HouseObject::meshTables() const
+{
+    return m_meshTables;
+}
+
+GL_ShaderMaterialPtr HouseObject::materialTables() const
+{
+    return m_materialTables;
 }
 
 QMatrix4x4 HouseObject::matrixView2FrameUV(GL_ViewRenderer * view, const QSize & frameTextureSize) const
@@ -404,6 +415,21 @@ void HouseObject::_createMeshHouse()
     m_meshHouse = GL_MeshPtr::create(GL_Mesh::createMesh(std::get<0>(house),
                                                          std::get<1>(house),
                                                          std::get<2>(house)));
+
+    MeshData tables;
+    merge(tables,
+          createRect(QVector3D(- 22.5f, 0.0f * k_floor, - 1.0f),
+                     QVector3D(- 21.0f - (- 22.5f), 0.0f, 0.0f),
+                     QVector3D(0.0f, (20.25f) * k_floor, 0.0f),
+                     QSize(2, 1)));
+    merge(tables,
+          createRect(QVector3D(21.f, 0.0f * k_floor, - 1.0f),
+                     QVector3D(22.5f - (21.0f), 0.0f, 0.0f),
+                     QVector3D(0.0f, (20.25f) * k_floor, 0.0f),
+                     QSize(2, 1)));
+    m_meshTables = GL_MeshPtr::create(GL_Mesh::createMesh(std::get<0>(tables),
+                                                          std::get<1>(tables),
+                                                          std::get<2>(tables)));
 }
 
 void HouseObject::_createMeshGrid(float border)

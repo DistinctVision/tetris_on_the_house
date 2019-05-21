@@ -61,6 +61,7 @@ private:
 
     QSharedPointer<TetrisGame> m_game;
     int m_numberRemovalLines;
+    float m_linesLevel;
 
     QOpenGLFramebufferObject * m_glowBuffer;
     QOpenGLFramebufferObject * m_tempGlowBuffer;
