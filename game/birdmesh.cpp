@@ -68,22 +68,22 @@ GL_MeshPtr BirdMesh::mesh() const
     return m_mesh;
 }
 
-QOpenGLBuffer BirdMesh::bufferVertices1() const
+QOpenGLBuffer BirdMesh::verticesBuffer1() const
 {
     return m_bufferVertices1;
 }
 
-QOpenGLBuffer BirdMesh::bufferNormals1() const
+QOpenGLBuffer BirdMesh::normalsBuffer1() const
 {
     return m_bufferNormals1;
 }
 
-QOpenGLBuffer BirdMesh::bufferVertices2() const
+QOpenGLBuffer BirdMesh::verticesBuffer2() const
 {
     return m_bufferVertices2;
 }
 
-QOpenGLBuffer BirdMesh::bufferNormals2() const
+QOpenGLBuffer BirdMesh::normalsBuffer2() const
 {
     return m_bufferNormals2;
 }

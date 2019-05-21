@@ -22,11 +22,11 @@ public:
 
     GL_MeshPtr mesh() const;
 
-    QOpenGLBuffer bufferVertices1() const;
-    QOpenGLBuffer bufferNormals1() const;
+    QOpenGLBuffer verticesBuffer1() const;
+    QOpenGLBuffer normalsBuffer1() const;
 
-    QOpenGLBuffer bufferVertices2() const;
-    QOpenGLBuffer bufferNormals2() const;
+    QOpenGLBuffer verticesBuffer2() const;
+    QOpenGLBuffer normalsBuffer2() const;
 
 private:
     struct _ModelData

@@ -13,6 +13,8 @@ out highp vec3 normal;
 
 void main(void)
 {
+    //normal = normalize((matrixMV * vec4(vertex_normal, 0.0)).xyz);
+    //gl_Position = matrixMVP * vertex_position;
     normal = normalize((matrixMV * vec4(mix(vertex_normal, vertex_morph_normal, time), 0.0)).xyz);
     gl_Position = matrixMVP * mix(vertex_position, vertex_morph_position, time);
 }

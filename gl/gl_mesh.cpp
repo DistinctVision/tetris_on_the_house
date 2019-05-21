@@ -408,12 +408,13 @@ void GL_Mesh::draw(QOpenGLFunctions * gl, const GL_ShaderMaterial & shaderMateri
         shaderMaterial.setAttributeBuffer(normalLocation, GL_FLOAT, 0, 3, sizeof(QVector3D));
     }
 
-    for (const ExtraBuffer & it : extraBuffers)
+    for (ExtraBuffer it : extraBuffers)
     {
         int location = shaderMaterial.attributeLocation(it.name);
         assert(location >= 0);
-        shaderMaterial.enableAttribute(textureCoordLocation);
-        shaderMaterial.setAttributeBuffer(textureCoordLocation, it.type, it.offset, it.tupleSize, it.stride);
+        it.buffer.bind();
+        shaderMaterial.enableAttribute(location);
+        shaderMaterial.setAttributeBuffer(location, it.type, it.offset, it.tupleSize, it.stride);
     }
 
     gl->glDrawElements(GL_TRIANGLES, m_numberElements, GL_UNSIGNED_INT, nullptr);
@@ -422,7 +423,7 @@ void GL_Mesh::draw(QOpenGLFunctions * gl, const GL_ShaderMaterial & shaderMateri
     {
         int location = shaderMaterial.attributeLocation(it.name);
         assert(location >= 0);
-        shaderMaterial.disableAttribute(textureCoordLocation);
+        shaderMaterial.disableAttribute(location);
     }
 
     if (vertexLocation >= 0)

@@ -34,16 +34,18 @@ private:
     BirdMeshPtr m_mesh;
     GL_ShaderMaterialPtr m_material;
 
-    StateType m_state;
-    float m_timeState;
-    float m_timeSpeed;
-
     QVector3D m_position;
     QQuaternion m_orientation;
 
     float m_velocity;
 
     QVector3D m_targetPoint;
+
+    StateType m_state;
+    int m_vertexIndexA;
+    int m_vertexIndexB;
+    float m_timeState;
+    float m_timeSpeed;
 };
 
 using BirdObjectPtr = QSharedPointer<BirdObject>;

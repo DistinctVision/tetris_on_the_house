@@ -7,7 +7,7 @@ out highp vec4 color;
 
 void main(void)
 {
-    highp float v = max(dot(vec3(0.0, 0.0, 1.0), normalize(normal)), 0.0);
+    highp float v = dot(vec3(0.0, 0.0, 1.0), normalize(normal));
     v *= v;
     //v = 1.0 - (1.0 - v) * (1.0 - v);
     color = mix(mainColor, fallOffColor, v);
