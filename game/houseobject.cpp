@@ -345,7 +345,12 @@ void HouseObject::_createMeshHouse()
     // bottom
     merge(house,
           createRect(QVector3D(-30.0f, 0.0f * k_floor, 2.0f),
-                     QVector3D(- 14.0f - (- 30.0f), 0.0f, 0.0f),
+                     QVector3D(- 23.5f - (- 30.0f), 0.0f, 0.0f),
+                     QVector3D(0.0f, 8.0f * k_floor, 0.0f),
+                     QSize(5, 8)));
+    merge(house,
+          createRect(QVector3D(-20.0f, 0.0f * k_floor, 2.0f),
+                     QVector3D(- 14.0f - (- 20.0f), 0.0f, 0.0f),
                      QVector3D(0.0f, 8.0f * k_floor, 0.0f),
                      QSize(5, 8)));
     merge(house,
@@ -355,7 +360,12 @@ void HouseObject::_createMeshHouse()
                      QSize(4, 8)));
     merge(house,
           createRect(QVector3D(14.0f, 0.0f * k_floor, 2.0f),
-                     QVector3D(30.0f - 14.0f, 0.0f, 0.0f),
+                     QVector3D(20.0f - 14.0f, 0.0f, 0.0f),
+                     QVector3D(0.0f, 8.0f * k_floor, 0.0f),
+                     QSize(5, 8)));
+    merge(house,
+          createRect(QVector3D(23.5f, 0.0f * k_floor, 2.0f),
+                     QVector3D(30.0f - 23.5f, 0.0f, 0.0f),
                      QVector3D(0.0f, 8.0f * k_floor, 0.0f),
                      QSize(5, 8)));
 

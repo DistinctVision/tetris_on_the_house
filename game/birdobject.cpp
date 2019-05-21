@@ -23,8 +23,7 @@ BirdObject::BirdObject(GL_ViewRenderer * view,
     m_timeSpeed(0.1f)
 {
     m_material = view->createMaterial(MaterialType::Morph_fallOff);
-    //m_orientation = QQuaternion::fromAxisAndAngle(0.0f, 1.0f, 0.0f, -90.0f);
-    //m_orientation = _getRotation(targetPoint);
+    m_orientation = _getRotation(targetPoint);
 }
 
 void BirdObject::updateStep()
@@ -32,10 +31,8 @@ void BirdObject::updateStep()
     QVector3D dir = m_orientation.rotatedVector(QVector3D(1.0f, 0.0f, 0.0f));
     m_position += dir * m_velocity;
 
-    //m_orientation = _getRotation(m_targetPoint) * m_orientation;
-    m_orientation = QQuaternion::slerp(m_orientation, _getRotation(m_targetPoint), 0.05f);
-    m_orientation.normalize();
-    //m_angularVelocity = QQuaternion::slerp(m_angularVelocity, _getRotation(m_targetPoint), 0.001f);
+    m_orientation = (m_angularVelocity * m_orientation).normalized();
+    m_angularVelocity = QQuaternion::slerp(m_angularVelocity, _getRotation(m_targetPoint) * m_orientation.conjugated(), 0.001f);
 
     if (m_vertexIndexA == m_vertexIndexB)
     {
@@ -83,14 +80,14 @@ void BirdObject::updateStep()
     }
     else
     {
-        /*if (m_vertexIndexA == 1)
+        if (m_vertexIndexA == 1)
         {
-            m_angularVelocity = m_angularVelocity * QQuaternion::fromAxisAndAngle(1.0f, 0.0f, 0.0f, 0.2f);
+            m_angularVelocity = m_angularVelocity * QQuaternion::fromAxisAndAngle(1.0f, 0.0f, 0.0f, 0.07f);
         }
         else if (m_vertexIndexA == 2)
         {
-            m_angularVelocity = m_angularVelocity * QQuaternion::fromAxisAndAngle(1.0f, 0.0f, 0.0f, -0.2f);
-        }*/
+            m_angularVelocity = m_angularVelocity * QQuaternion::fromAxisAndAngle(1.0f, 0.0f, 0.0f, -0.07f);
+        }
     }
 }
 
@@ -161,22 +158,13 @@ void BirdObject::draw(GL_ViewRenderer * view, const QMatrix4x4 & viewMatrix)
 
 QQuaternion BirdObject::_getRotation(const QVector3D & targetPoint) const
 {
-    QVector3D localPoint = m_orientation.conjugated().rotatedVector(targetPoint - m_position);
-
+    QVector3D localPoint = targetPoint - m_position;
     float yAngle = atan2(localPoint.z(), localPoint.x()) * static_cast<float>(180.0 / M_PI);
-    QQuaternion dq1 = QQuaternion::fromAxisAndAngle(QVector3D(0.0f, 1.0f, 0.0f), - yAngle);
-    QQuaternion q1 = (dq1 * m_orientation).normalized();
+    QQuaternion q1 = QQuaternion::fromAxisAndAngle(0.0f, 1.0f, 0.0f, - yAngle);
 
-    localPoint = q1.conjugated().rotatedVector(targetPoint - m_position);
+    localPoint = q1.conjugated().rotatedVector(localPoint);
+    float xAngle = atan2(localPoint.y(), localPoint.x()) * static_cast<float>(180.0 / M_PI);
+    QQuaternion q2 = QQuaternion::fromAxisAndAngle(1.0f, 0.0f, 0.0f, xAngle) * q1;
 
-    float yAngle1 = atan2(localPoint.z(), localPoint.x()) * static_cast<float>(180.0 / M_PI);
-
-    float zAngle = atan2(- localPoint.x(), - localPoint.y()) * static_cast<float>(180.0 / M_PI);
-    QQuaternion dq2 = QQuaternion::fromAxisAndAngle(QVector3D(0.0f, 0.0f, 1.0f), zAngle);
-
-    QQuaternion q2 = (dq2 * q1).normalized();
-    localPoint = q2.conjugated().rotatedVector(targetPoint - m_position);
-    float zAngle1 = atan2(- localPoint.x(), - localPoint.y()) * static_cast<float>(180.0 / M_PI);
-
-    return q1;
+    return q2;
 }

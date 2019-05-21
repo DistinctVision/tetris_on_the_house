@@ -31,7 +31,7 @@ public:
     void draw(GL_ViewRenderer * view, const QMatrix4x4 & viewMatrix);
 
 private:
-    const float m_localScale = 2.5f;
+    const float m_localScale = 1.25f;
 
     BirdMeshPtr m_mesh;
     GL_ShaderMaterialPtr m_material;

@@ -174,7 +174,7 @@ bool TetrisScene::rotateFigure()
 
 QSharedPointer<AnimationScene> TetrisScene::_createRandomScene() const
 {
-    return QSharedPointer<FinalScene>::create(1000);
+    return QSharedPointer<FinalScene>::create(200);
 
     m_rnd_gen.seed(duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count());
     int index = m_rnd(m_rnd_gen) % 6;
