@@ -28,6 +28,7 @@ class TetrisScene:
                NOTIFY objectEdgesTrackerChanged)
     Q_PROPERTY(TextureReceiver* textureReceiver READ textureReceiver WRITE setTextureReceiver
                NOTIFY textureReceiverChanged)
+    Q_PROPERTY(bool started READ started NOTIFY startedChanged)
 public:
     TetrisScene();
 
@@ -46,11 +47,19 @@ public:
     Q_INVOKABLE bool moveFigureDown();
     Q_INVOKABLE bool rotateFigure();
 
+    Q_INVOKABLE void start();
+    Q_INVOKABLE void stop();
+
+    bool started() const;
+
 signals:
     void objectEdgesTrackerChanged();
     void textureReceiverChanged();
+    void startedChanged();
 
 private:
+    bool m_started;
+
     ObjectEdgesTracker * m_tracker;
     TextureReceiver * m_textureReceiver;
 

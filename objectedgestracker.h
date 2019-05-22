@@ -17,6 +17,19 @@
 #include "debugimageobject.h"
 #include "posefilter.h"
 
+struct TrackingQuality
+{
+    Q_GADGET
+public:
+    enum Enum
+    {
+        Good,
+        Bad,
+        Ugly
+    };
+    Q_ENUM(Enum)
+};
+
 class PerformanceMonitor;
 class PinholeCamera;
 
@@ -35,6 +48,7 @@ class ObjectEdgesTracker:
     Q_PROPERTY(QVector2D focalLength READ focalLength NOTIFY cameraChanged)
     Q_PROPERTY(QVector2D opticalCenter READ opticalCenter NOTIFY cameraChanged)
     Q_PROPERTY(QSize frameSize READ frameSize NOTIFY cameraChanged)
+    Q_PROPERTY(TrackingQuality::Enum trackingQuality READ trackingQuality NOTIFY trackingQualityChanged)
 public:
     using Pose = PoseFilter::Pose;
 
@@ -59,6 +73,8 @@ public:
     QVector2D opticalCenter() const;
     QSize frameSize() const;
 
+    TrackingQuality::Enum trackingQuality() const;
+
     QMatrix4x4 viewMatrix() const;
 
     void compute(cv::Mat image);
@@ -71,6 +87,7 @@ signals:
     void minBlobAreaChanged();
     void maxBlobCircularityChanged();
     void cameraChanged();
+    void trackingQualityChanged();
 
 private:
     QSharedPointer<PerformanceMonitor> m_monitor;
@@ -86,6 +103,8 @@ private:
 
     Pose m_resetCameraPose;
 
+    TrackingQuality::Enum m_trackingQuality;
+
     cv::Mat m_debugImage;
 
     Eigen::Matrix<double, 6, 1> _pose2x(const Pose & pose) const;
@@ -93,6 +112,9 @@ private:
 
     float _tracking1(const cv::Mat & edges);
     float _tracking2(const cv::Mat & edges);
+
+    TrackingQuality::Enum _error2quality(float error) const;
+    void _setTrackingQuality(TrackingQuality::Enum quality);
 };
 
 #endif // OBJECTEDGESTRACKER_H

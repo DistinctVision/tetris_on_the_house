@@ -24,6 +24,7 @@ void regsiterQmlTypes()
     qmlRegisterType<TestCubeScene>("mystuffs", 1, 0, "TestCubeScene");
     qmlRegisterType<TetrisScene>("mystuffs", 1, 0, "TetrisScene");
     qmlRegisterType<TextureReceiver>("mystuffs", 1, 0, "TextureReceiver");
+    qmlRegisterUncreatableType<TrackingQuality>("mystuffs", 1, 0, "TrackingQuality", "It's enum");
 }
 
 int main(int argc, char* argv[])

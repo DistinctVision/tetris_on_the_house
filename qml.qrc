@@ -1,5 +1,6 @@
 <RCC>
     <qresource prefix="/">
         <file>qml/MainView.qml</file>
+        <file>qml/ShineButton.qml</file>
     </qresource>
 </RCC>

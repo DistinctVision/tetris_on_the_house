@@ -30,7 +30,8 @@ ObjectEdgesTracker::ObjectEdgesTracker(const QSharedPointer<PerformanceMonitor> 
     m_binaryThreshold(50.0),
     m_minBlobArea(30.0),
     m_maxBlobCircularity(0.25),
-    m_model(ObjectModel::createHouse())
+    m_model(ObjectModel::createHouse()),
+    m_trackingQuality(TrackingQuality::Ugly)
 {
     m_resetCameraPose = Pose(Vector3d(0.0, 10.0, -120.0), Quaterniond(1.0, 0.0, 0.0, 0.0));
     m_poseFilter.reset(m_resetCameraPose);
@@ -115,6 +116,11 @@ QSize ObjectEdgesTracker::frameSize() const
 {
     return m_camera ? QSize(m_camera->imageSize().x(), m_camera->imageSize().y()) :
                       QSize(-1, -1);
+}
+
+TrackingQuality::Enum ObjectEdgesTracker::trackingQuality() const
+{
+    return m_trackingQuality;
 }
 
 QMatrix4x4 ObjectEdgesTracker::viewMatrix() const
@@ -302,7 +308,8 @@ float ObjectEdgesTracker::_tracking1(const cv::Mat & edges)
     float area = (bb_max.x() - bb_min.x()) * (bb_max.y() - bb_min.y());
     if (area < 100.0f)
         E = numeric_limits<float>::max();
-    if (E > 6.0f)
+    _setTrackingQuality(_error2quality(E));
+    if (m_trackingQuality == TrackingQuality::Ugly)
     {
         m_poseFilter.reset(m_resetCameraPose);
     }
@@ -407,7 +414,8 @@ float ObjectEdgesTracker::_tracking2(const cv::Mat & edges)
     float area = (bb_max.x() - bb_min.x()) * (bb_max.y() - bb_min.y());
     if (area < 100.0f)
         E = numeric_limits<float>::max();
-    if (E > 2.0f)
+    _setTrackingQuality(_error2quality(E));
+    if (m_trackingQuality == TrackingQuality::Ugly)
     {
         m_poseFilter.reset(m_resetCameraPose);
     }
@@ -417,4 +425,25 @@ float ObjectEdgesTracker::_tracking2(const cv::Mat & edges)
     }
 
     return E;
+}
+
+TrackingQuality::Enum ObjectEdgesTracker::_error2quality(float error) const
+{
+    if (error < 3.0f)
+    {
+        return TrackingQuality::Good;
+    }
+    else if (error < 7.0f)
+    {
+        return TrackingQuality::Bad;
+    }
+    return TrackingQuality::Ugly;
+}
+
+void ObjectEdgesTracker::_setTrackingQuality(TrackingQuality::Enum quality)
+{
+    if (m_trackingQuality == quality)
+        return;
+    m_trackingQuality = quality;
+    emit trackingQualityChanged();
 }

@@ -23,10 +23,6 @@ Item {
         State {
             name: "tetris_scene"
             PropertyChanges {
-                target: tetrisScene
-                enabled: true
-            }
-            PropertyChanges {
                 target: debugImageScene
                 enabled: false
             }
@@ -50,10 +46,6 @@ Item {
         },
         State {
             name: "settings"
-            PropertyChanges {
-                target: tetrisScene
-                enabled: false
-            }
             PropertyChanges {
                 target: debugImageScene
                 enabled: true
@@ -155,55 +147,9 @@ Item {
 
     TetrisScene {
         id: tetrisScene
+        enabled: (state == current_scene) && (frameHandler.objectEdgesTracker.trackingQuality != TrackingQuality.Ugly) && started
         objectEdgesTracker: frameHandler.objectEdgesTracker
         textureReceiver: frameTextureReceiver
-    }
-
-    MultiPointTouchArea {
-        anchors.fill: parent
-        onGestureStarted: {
-            var p = gesture.touchPoints[0]
-            var dX = p.x - p.startX
-            var dY = p.y - p.startY
-            if ((Math.abs(dX) + Math.abs(dY)) > 20) {
-                if (Math.abs(dX) > Math.abs(dY)) {
-                    if (dX > 0) {
-                        tetrisScene.moveFigureRight()
-                    } else {
-                        tetrisScene.moveFigureLeft()
-                    }
-                } else if (dY > 0) {
-                    tetrisScene.moveFigureDown()
-                }
-                gesture.grab()
-            }
-        }
-        onReleased: {
-            var p = touchPoints[0]
-            var dX = p.x - p.startX
-            var dY = p.y - p.startY
-            if ((Math.abs(dX) + Math.abs(dY)) <= 20) {
-                if (p.x < width * (1.0 / 3.0)) {
-                    tetrisScene.moveFigureLeft()
-                } else if (p.x > width * (2.0 / 3.0)) {
-                    tetrisScene.moveFigureRight()
-                } else {
-                    tetrisScene.rotateFigure()
-                }
-            }
-        }
-    }
-
-    Keys.onPressed: {
-        if (event.key === Qt.Key_Left) {
-            tetrisScene.moveFigureLeft()
-        } else if (event.key === Qt.Key_Right) {
-            tetrisScene.moveFigureRight()
-        } else if (event.key === Qt.Key_Down) {
-            tetrisScene.moveFigureDown()
-        } else if (event.key === Qt.Key_Up) {
-            tetrisScene.rotateFigure()
-        }
     }
 
     ToolButton {
@@ -307,5 +253,78 @@ Item {
                 }
             }
         }
+    }
+
+    Keys.onPressed: {
+        if (event.key === Qt.Key_Left) {
+            tetrisScene.moveFigureLeft()
+        } else if (event.key === Qt.Key_Right) {
+            tetrisScene.moveFigureRight()
+        } else if (event.key === Qt.Key_Down) {
+            tetrisScene.moveFigureDown()
+        } else if (event.key === Qt.Key_Up) {
+            tetrisScene.rotateFigure()
+        }
+    }
+
+    MultiPointTouchArea {
+        anchors.fill: parent
+        onGestureStarted: {
+            var p = gesture.touchPoints[0]
+            var dX = p.x - p.startX
+            var dY = p.y - p.startY
+            if ((Math.abs(dX) + Math.abs(dY)) > 20) {
+                if (Math.abs(dX) > Math.abs(dY)) {
+                    if (dX > 0) {
+                        tetrisScene.moveFigureRight()
+                    } else {
+                        tetrisScene.moveFigureLeft()
+                    }
+                } else if (dY > 0) {
+                    tetrisScene.moveFigureDown()
+                }
+                gesture.grab()
+            }
+        }
+        onReleased: {
+            var p = touchPoints[0]
+            var dX = p.x - p.startX
+            var dY = p.y - p.startY
+            if ((Math.abs(dX) + Math.abs(dY)) <= 20) {
+                if (p.x < width * (1.0 / 3.0)) {
+                    tetrisScene.moveFigureLeft()
+                } else if (p.x > width * (2.0 / 3.0)) {
+                    tetrisScene.moveFigureRight()
+                } else {
+                    tetrisScene.rotateFigure()
+                }
+            }
+        }
+    }
+
+    ShineButton {
+        enabled: (!tetrisScene.started) &&
+                 (frameHandler.objectEdgesTracker.trackingQuality == TrackingQuality.Good)
+        visible: enabled
+        text: qsTr("Start")
+        onClicked: {
+            tetrisScene.start()
+        }
+        anchors.centerIn: parent
+        width: 100
+        height: 50
+    }
+
+    ShineButton {
+        enabled: (tetrisScene.started) &&
+                 (frameHandler.objectEdgesTracker.trackingQuality == TrackingQuality.Ugly)
+        visible: enabled
+        text: qsTr("Reset")
+        onClicked: {
+            tetrisScene.start()
+        }
+        anchors.centerIn: parent
+        width: 100
+        height: 50
     }
 }
