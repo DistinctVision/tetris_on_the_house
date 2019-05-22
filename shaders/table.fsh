@@ -12,11 +12,11 @@ void main(void)
 {
     highp int level_i = int(level);
 
-    highp vec2 p = vec2(textureCoord.x, textureCoord.y * tableSize);
+    highp vec2 p = vec2(textureCoord.x, textureCoord.y * float(tableSize));
     mediump int l = int(floor(p.y));
     p.y -= float(l);
-    float t = min(min(min(p.x, 1.0 - p.x), min(p.y, 1.0 - p.y)) / tableEdgeSize, 1.0);
-    if (l > level)
+    highp float t = min(min(min(p.x, 1.0 - p.x), min(p.y, 1.0 - p.y)) / tableEdgeSize, 1.0);
+    if (l > level_i)
     {
         color = tableEdgeColor;
         return;

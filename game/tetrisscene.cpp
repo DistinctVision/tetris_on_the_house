@@ -137,7 +137,7 @@ void TetrisScene::draw(GL_ViewRenderer * view)
         m_startScene->resetTime();
         m_startScene->draw(view);
     }
-    else if (m_linesLevel >= static_cast<float>(m_game->fieldSize().y()) * 0.0f + 1.0f)
+    else if (m_linesLevel >= static_cast<float>(m_game->fieldSize().y()))
     {
         if (!m_currentScene && m_game->fieldIsEmpty())
         {

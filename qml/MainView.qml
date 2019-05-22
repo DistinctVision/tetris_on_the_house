@@ -9,7 +9,7 @@ Item {
     width: 9 * 60
     height: 16 * 60
 
-    property bool isDebug: true
+    property bool isDebug: false
     property string current_scene: "tetris_scene"
 
     Settings {
@@ -150,18 +150,6 @@ Item {
         enabled: (state == current_scene) && (frameHandler.objectEdgesTracker.trackingQuality != TrackingQuality.Ugly)
         objectEdgesTracker: frameHandler.objectEdgesTracker
         textureReceiver: frameTextureReceiver
-    }
-
-    ToolButton {
-        width: 60
-        height: 60
-        x: parent.width - width
-        y: 0
-        text: " "
-        background: null
-        onClicked: {
-            parent.state = (parent.state == "settings") ? current_scene : "settings"
-        }
     }
 
     Rectangle {
@@ -333,5 +321,17 @@ Item {
         anchors.centerIn: parent
         width: 100
         height: 50
+    }
+
+    ToolButton {
+        width: 60
+        height: 60
+        x: parent.width - width
+        y: 0
+        text: " "
+        background: null
+        onClicked: {
+            parent.state = (parent.state == "settings") ? current_scene : "settings"
+        }
     }
 }

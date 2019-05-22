@@ -429,11 +429,11 @@ float ObjectEdgesTracker::_tracking2(const cv::Mat & edges)
 
 TrackingQuality::Enum ObjectEdgesTracker::_error2quality(float error) const
 {
-    if (error < 3.0f)
+    if (error < 2.0f)
     {
         return TrackingQuality::Good;
     }
-    else if (error < 7.0f)
+    else if (error < 3.5f)
     {
         return TrackingQuality::Bad;
     }
