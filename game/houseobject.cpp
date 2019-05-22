@@ -112,7 +112,7 @@ QMatrix4x4 HouseObject::matrixView2FrameUV(GL_ViewRenderer * view, const QSize &
 }
 
 void HouseObject::drawBlocks(GL_ViewRenderer * view, const TetrisGame * game, const QMatrix4x4 & viewMatrix,
-                             float blockAlpha, float blockEdgeAlpha)
+                             float blockAlpha, float blockEdgeAlpha, bool drawFiguresFlag)
 {
     using Figure = TetrisGame::Figure;
 
@@ -136,6 +136,9 @@ void HouseObject::drawBlocks(GL_ViewRenderer * view, const TetrisGame * game, co
         m_materialBlock->setValue("matrixMVP", projViewMatrix * worldMatrix);
         m_meshBlock->draw(view, *m_materialBlock);
     });
+
+    if (!drawFiguresFlag)
+        return;
 
     if (game->currentFigureState() > 0.0f)
     {
@@ -418,12 +421,12 @@ void HouseObject::_createMeshHouse()
 
     MeshData tables;
     merge(tables,
-          createRect(QVector3D(- 22.5f, 0.0f * k_floor, - 1.0f),
+          createRect(QVector3D(- 22.5f, 0.0f * k_floor, - 2.0f),
                      QVector3D(- 21.0f - (- 22.5f), 0.0f, 0.0f),
                      QVector3D(0.0f, (20.25f) * k_floor, 0.0f),
                      QSize(2, 1)));
     merge(tables,
-          createRect(QVector3D(21.f, 0.0f * k_floor, - 1.0f),
+          createRect(QVector3D(21.f, 0.0f * k_floor, - 2.0f),
                      QVector3D(22.5f - (21.0f), 0.0f, 0.0f),
                      QVector3D(0.0f, (20.25f) * k_floor, 0.0f),
                      QSize(2, 1)));

@@ -23,6 +23,11 @@ Vector2i TetrisGame::fieldSize() const
     return m_fieldSize;
 }
 
+float TetrisGame::removingLineTimeState() const
+{
+    return 1.0f - (m_removalLinesTimer / static_cast<float>(removalLinesTime));
+}
+
 void TetrisGame::reset()
 {
     m_field.setZero();
@@ -74,6 +79,39 @@ void TetrisGame::for_each_blocks(const std::function<void (const Vector2i &)> & 
             }
         }
     }
+}
+
+bool TetrisGame::fieldIsEmpty() const
+{
+    for (int i = 0; i < m_fieldSize.y(); ++i)
+    {
+        for (int j = 0; j < m_fieldSize.x(); ++j)
+        {
+            if (m_field(i, j) > 0)
+            {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+void TetrisGame::clearAllLines()
+{
+    m_linesForRemoval.clear();
+    for (int i = 0; i < m_fieldSize.y(); ++i)
+    {
+        for (int j = 0; j < m_fieldSize.x(); ++j)
+        {
+            if (m_field(i, j) > 0)
+            {
+                m_linesForRemoval.push_back(i);
+                break;
+            }
+        }
+    }
+    if (!m_linesForRemoval.empty())
+        m_removalLinesTimer = removalLinesTime;
 }
 
 TetrisGame::EventType TetrisGame::step()

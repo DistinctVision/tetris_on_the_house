@@ -13,8 +13,8 @@ class TetrisGame
 {
 public:
     static const int removalLinesTime = 5;
-    static const int userActionTime = 2;
-    static const int stepTime = 3;
+    static const int userActionTime = 1;
+    static const int stepTime = 5;
     static const int newFigureTime = 10;
 
     using Figure = Eigen::Matrix<int, 5, 5>;
@@ -34,6 +34,8 @@ public:
 
     Eigen::Vector2i fieldSize() const;
 
+    float removingLineTimeState() const;
+
     Figure currentFigure() const;
     Figure nextFigure() const;
     Eigen::Vector2i figurePos() const;
@@ -41,6 +43,10 @@ public:
     float currentFigureState() const;
 
     void for_each_blocks(const std::function<void(const Eigen::Vector2i &)> & lambda) const;
+
+    bool fieldIsEmpty() const;
+
+    void clearAllLines();
 
     void reset();
 

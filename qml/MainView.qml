@@ -87,7 +87,7 @@ Item {
 
     MediaPlayer {
         id: player
-        source: "file:///E:/1/1_1.mp4"
+        source: "file:///D:/1/2.mp4"
         autoPlay: isDebug
         muted: true
         loops: MediaPlayer.Infinite
@@ -147,7 +147,7 @@ Item {
 
     TetrisScene {
         id: tetrisScene
-        enabled: (state == current_scene) && (frameHandler.objectEdgesTracker.trackingQuality != TrackingQuality.Ugly) && started
+        enabled: (state == current_scene) && (frameHandler.objectEdgesTracker.trackingQuality != TrackingQuality.Ugly)
         objectEdgesTracker: frameHandler.objectEdgesTracker
         textureReceiver: frameTextureReceiver
     }
@@ -291,6 +291,13 @@ Item {
             var dX = p.x - p.startX
             var dY = p.y - p.startY
             if ((Math.abs(dX) + Math.abs(dY)) <= 20) {
+                if ((!tetrisScene.started) &&
+                        (frameHandler.objectEdgesTracker.trackingQuality == TrackingQuality.Good))
+                {
+                    tetrisScene.start();
+                    return;
+                }
+
                 if (p.x < width * (1.0 / 3.0)) {
                     tetrisScene.moveFigureLeft()
                 } else if (p.x > width * (2.0 / 3.0)) {
@@ -302,7 +309,7 @@ Item {
         }
     }
 
-    ShineButton {
+    /*ShineButton {
         enabled: (!tetrisScene.started) &&
                  (frameHandler.objectEdgesTracker.trackingQuality == TrackingQuality.Good)
         visible: enabled
@@ -313,7 +320,7 @@ Item {
         anchors.centerIn: parent
         width: 100
         height: 50
-    }
+    }*/
 
     ShineButton {
         enabled: (tetrisScene.started) &&

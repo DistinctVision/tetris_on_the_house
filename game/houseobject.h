@@ -46,7 +46,7 @@ public:
     QMatrix4x4 matrixView2FrameUV(GL_ViewRenderer * view, const QSize & frameTextureSize) const;
 
     void drawBlocks(GL_ViewRenderer * view, const TetrisGame * game, const QMatrix4x4 & viewMatrix,
-                    float blockAlpha, float blockEdgeAlpha);
+                    float blockAlpha, float blockEdgeAlpha, bool drawFiguresFlag = true);
 
 private:
     struct _FloorInfo

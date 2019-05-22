@@ -137,22 +137,42 @@ void TetrisScene::draw(GL_ViewRenderer * view)
         m_startScene->resetTime();
         m_startScene->draw(view);
     }
-    else if (m_linesLevel >= static_cast<float>(m_game->fieldSize().y()))
+    else if (m_linesLevel >= static_cast<float>(m_game->fieldSize().y()) * 0.0f + 1.0f)
     {
-        if (!m_currentScene)
+        if (!m_currentScene && m_game->fieldIsEmpty())
         {
-            m_currentScene = QSharedPointer<FinalScene>::create(300);
+            m_currentScene = QSharedPointer<FinalScene>::create(200);
             m_currentScene->init(view);
             m_currentScene->setTextureReceiver(m_textureReceiver);
             m_currentScene->setHouse(m_house);
         }
-        m_currentScene->setViewMatrix(viewMatrix);
-        m_currentScene->drawAndPlay(view);
-        if (m_currentScene->animationIsFinished())
+        if (m_currentScene)
         {
-            m_currentScene->destroy(view);
-            m_currentScene.reset();
-            stop();
+            m_currentScene->setViewMatrix(viewMatrix);
+            m_currentScene->drawAndPlay(view);
+            if (m_currentScene->animationIsFinished())
+            {
+                m_currentScene->destroy(view);
+                if (qSharedPointerDynamicCast<FinalScene>(m_currentScene))
+                    stop();
+                m_currentScene.reset();
+            }
+        }
+        if (!m_game->fieldIsEmpty())
+        {
+            TetrisGame::EventType event = m_game->step();
+            float timeState = 1.0f - m_game->removingLineTimeState();
+            if (event == TetrisGame::EventType::Lose)
+            {
+                m_game->reset();
+            }
+            else if (event != TetrisGame::EventType::RemovingLines)
+            {
+                m_game->clearAllLines();
+                timeState = 1.0f;
+            }
+            view->glEnable(GL_BLEND);
+            m_house->drawBlocks(view, m_game.get(), viewMatrix, timeState * 0.8f, timeState);
         }
     }
     else
