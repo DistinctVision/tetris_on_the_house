@@ -2,6 +2,8 @@
 
 #include "tetrisgame.h"
 
+#include "texturereceiver.h"
+
 using namespace Eigen;
 
 HouseObject::HouseObject(GL_ViewRenderer * view,
@@ -99,15 +101,19 @@ GL_ShaderMaterialPtr HouseObject::materialTables() const
     return m_materialTables;
 }
 
-QMatrix4x4 HouseObject::matrixView2FrameUV(GL_ViewRenderer * view, const QSize & frameTextureSize) const
+QMatrix4x4 HouseObject::matrixView2FrameUV(GL_ViewRenderer * view, const QSize & frameTextureSize, int orientation) const
 {
+    QSize frameSize = ((orientation == 90) || (orientation == 270)) ? QSize(frameTextureSize.height(), frameTextureSize.width()) :
+                                                                      frameTextureSize;
+
     m_screenTempObject->setFillMode(view->parent()->fillFrameMode());
     m_screenTempObject->setOrigin(Vector2f(0.0f, 0.0f));
-    m_screenTempObject->setSize(Vector2f(frameTextureSize.width(), frameTextureSize.height()));
+    m_screenTempObject->setSize(Vector2f(frameSize.width(), frameSize.height()));
 
     //QMatrix4x4 scaleFrameTransform;
     //scaleFrameTransform.scale(1.0f / frameTextureSize.width(), 1.0f / frameTextureSize.height());
-    QMatrix4x4 invUvTransfrom = m_screenTempObject->getMatrixMVP(view->viewportSize()).inverted();
+    QMatrix4x4 invUvTransfrom = TextureReceiver::getRotationImageMatrix(orientation) *
+                                m_screenTempObject->getMatrixMVP(view->viewportSize()).inverted();
     return invUvTransfrom;
 }
 

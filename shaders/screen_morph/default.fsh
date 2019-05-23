@@ -42,5 +42,5 @@ highp vec3 changeColor(highp vec3 c)
 void main(void)
 {
     highp vec2 uv = v_project(matrixView2FrameUV * view_position).xy;
-    color = vec4(changeColor(texture(screen_texture, uv).bgr), 1.0);
+    color = vec4(changeColor(texture(screen_texture, uv).rgb), 1.0);
 }

@@ -198,10 +198,15 @@ QVideoFrame FrameHandlerRunnable::run(QVideoFrame * videoFrame,
             if (m_frameTextureId == 0)
                 glGenTextures(1, &m_frameTextureId);
             glBindTexture(GL_TEXTURE_2D, m_frameTextureId);
+#if defined(__ANDROID__)
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, frame.cols, frame.rows,
                          0, GL_RGBA, GL_UNSIGNED_BYTE, frame.data);
+#else
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_BGRA, frame.cols, frame.rows,
+                         0, GL_BGRA, GL_UNSIGNED_BYTE, frame.data);
+#endif
             glGenerateMipmap(GL_TEXTURE_2D);
-            textureReceiver->setTextureId(m_frameTextureId, QSize(frame.cols, frame.rows));
+            textureReceiver->setTextureId(m_frameTextureId, QSize(frame.cols, frame.rows), 0);
         }
         cv::cvtColor(frame, frame, cv::COLOR_BGRA2GRAY);
         QSize maxSize = m_parent->maxFrameSize();
@@ -213,9 +218,10 @@ QVideoFrame FrameHandlerRunnable::run(QVideoFrame * videoFrame,
     }
     else if (surfaceFormat.handleType() == QAbstractVideoBuffer::GLTextureHandle)
     {
+        int orientation = m_parent->orientation();
         if (textureReceiver != nullptr)
         {
-            textureReceiver->setTextureId(videoFrame->handle().toUInt(), videoFrame->size());
+            textureReceiver->setTextureId(videoFrame->handle().toUInt(), videoFrame->size(), orientation);
         }
 
         if (!m_texture2GrayImageConverter)
@@ -232,7 +238,7 @@ QVideoFrame FrameHandlerRunnable::run(QVideoFrame * videoFrame,
                                                                videoFrame->handle().toUInt(),
                                                                videoFrame->size(), m_parent->maxFrameSize(),
                                                                viewportSize.width() / static_cast<float>(viewportSize.height()),
-                                                               m_parent->orientation(),
+                                                               orientation,
                                                                m_parent->flipHorizontally());
         }
         else
@@ -240,7 +246,7 @@ QVideoFrame FrameHandlerRunnable::run(QVideoFrame * videoFrame,
             frame = m_texture2GrayImageConverter->read(this,
                                                        videoFrame->handle().toUInt(),
                                                        videoFrame->size(), m_parent->maxFrameSize(),
-                                                       m_parent->orientation(),
+                                                       orientation,
                                                        m_parent->flipHorizontally());
         }
 

@@ -124,11 +124,11 @@ void TetrisScene::draw(GL_ViewRenderer * view)
     }
     if (m_linesLevel > static_cast<float>(m_numberRemovalLines))
     {
-        m_linesLevel = std::max(m_linesLevel - 0.1f, 0.0f);
+        m_linesLevel = std::max(m_linesLevel - 0.2f, 0.0f);
     }
     else if (m_linesLevel < static_cast<float>(m_numberRemovalLines))
     {
-        m_linesLevel = std::min(m_linesLevel + 0.1f, static_cast<float>(m_numberRemovalLines));
+        m_linesLevel = std::min(m_linesLevel + 0.2f, static_cast<float>(m_numberRemovalLines));
     }
 
     if (!m_started)

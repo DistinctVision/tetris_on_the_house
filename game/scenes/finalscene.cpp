@@ -54,7 +54,9 @@ void FinalScene::draw(GL_ViewRenderer * view)
     {
         m_materialHouse->setValue("matrixMVP", matrixVP);
         m_materialHouse->setValue("matrixView2FrameUV",
-                                  house->matrixView2FrameUV(view, textureReceiver()->textureSize()));
+                                  house->matrixView2FrameUV(view,
+                                                            textureReceiver()->textureSize(),
+                                                            textureReceiver()->orientation()));
         m_materialHouse->setTexture("screen_texture", textureReceiver()->textureId());
         m_materialHouse->setValue("color_a", color_a);
         m_materialHouse->setValue("color_b", color_b);
@@ -115,7 +117,9 @@ void FinalScene::draw(GL_ViewRenderer * view)
         }
         m_materialForDoors->setValue("edges_size", 0.125f);
         m_materialForDoors->setValue("matrixView2FrameUV",
-                                     house->matrixView2FrameUV(view, textureReceiver()->textureSize()));
+                                     house->matrixView2FrameUV(view,
+                                                               textureReceiver()->textureSize(),
+                                                               textureReceiver()->orientation()));
         m_materialForDoors->setTexture("screen_texture", textureReceiver()->textureId());
         m_materialForDoors->setValue("color_a", color_a);
         m_materialForDoors->setValue("color_b", color_b);

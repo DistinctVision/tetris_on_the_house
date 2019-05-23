@@ -9,7 +9,7 @@ Item {
     width: 9 * 60
     height: 16 * 60
 
-    property bool isDebug: false
+    property bool isDebug: true
     property string current_scene: "tetris_scene"
 
     Settings {
@@ -28,7 +28,7 @@ Item {
             }
             PropertyChanges {
                 target: settings_panel
-                enabled: false
+                //enabled: false
                 visible: false
             }
             PropertyChanges {
@@ -52,7 +52,7 @@ Item {
             }
             PropertyChanges {
                 target: settings_panel
-                enabled: true
+                //enabled: true
                 visible: true
             }
             PropertyChanges {
@@ -87,7 +87,7 @@ Item {
 
     MediaPlayer {
         id: player
-        source: "file:///D:/1/2.mp4"
+        source: "file:///D:/1/5.mp4"
         autoPlay: isDebug
         muted: true
         loops: MediaPlayer.Infinite
@@ -118,8 +118,8 @@ Item {
         fillMode: VideoOutput.PreserveAspectCrop
         source: isDebug ? player : camera
         anchors.fill: parent
-        orientation: 270
         autoOrientation: !isDebug
+        orientation: 270
         filters: [ frameHandler ]
     }
 
@@ -251,11 +251,16 @@ Item {
         } else if (event.key === Qt.Key_Down) {
             tetrisScene.moveFigureDown()
         } else if (event.key === Qt.Key_Up) {
-            tetrisScene.rotateFigure()
+            if (!tetrisScene.started) {
+                tetrisScene.start()
+            } else {
+                tetrisScene.rotateFigure()
+            }
         }
     }
 
     MultiPointTouchArea {
+        visible: parent.state != "settings"
         anchors.fill: parent
         onGestureStarted: {
             var p = gesture.touchPoints[0]

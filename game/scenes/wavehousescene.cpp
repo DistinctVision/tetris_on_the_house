@@ -49,7 +49,9 @@ void WaveHouseScene::draw(GL_ViewRenderer * view)
         m_material->setValue("wave_distanceStep", m_wave_distanceStep);
         m_material->setValue("wave_distanceStepScale", m_wave_distanceStepScale);
         m_material->setValue("wave_scale", m_wave_scale * sin(time * static_cast<float>(M_PI)));
-        m_material->setValue("matrixView2FrameUV", house->matrixView2FrameUV(view, textureReceiver()->textureSize()));
+        m_material->setValue("matrixView2FrameUV", house->matrixView2FrameUV(view,
+                                                                             textureReceiver()->textureSize(),
+                                                                             textureReceiver()->orientation()));
         m_material->setTexture("screen_texture", textureReceiver()->textureId());
         m_material->setValue("color_a", color_a);
         m_material->setValue("color_b", color_b);

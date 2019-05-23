@@ -60,5 +60,5 @@ void main(void)
     tEdge *= clamp(1.0 - abs(dot(plane, position)) / plane_edge_distance, 0.0, 1.0);
 
     tEdge = pow(tEdge, edges_power);
-    color = vec4(mix(changeColor(texture(screen_texture, uv).bgr), edges_color.xyz, tEdge), 1.0);
+    color = vec4(mix(changeColor(texture(screen_texture, uv).rgb), edges_color.xyz, tEdge), 1.0);
 }
