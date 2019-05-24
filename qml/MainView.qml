@@ -9,7 +9,7 @@ Item {
     width: 9 * 60
     height: 16 * 60
 
-    property bool isDebug: true
+    property bool isDebug: false
     property string current_scene: "tetris_scene"
 
     Settings {
@@ -17,6 +17,11 @@ Item {
         property double binaryThreshold: 100.0
         property double minBlobArea: 30.0
         property double maxBlobCircularity: 0.25
+        property bool useLaplacian: false
+        property bool useAdaptiveBinarization: false
+        property int adaptiveBinarizationWinSize: 31
+        property bool useDilate: false
+        property bool useErode: false
     }
 
     states: [
@@ -105,6 +110,11 @@ Item {
         focalLength: Qt.vector2d(1.5, 1.5)
         opticalCenter: Qt.vector2d(0.5, 0.5)
         objectEdgesTracker {
+            useLaplacian: settings.useLaplacian
+            useAdaptiveBinarization: settings.useAdaptiveBinarization
+            adaptiveBinarizationWinSize: settings.adaptiveBinarizationWinSize
+            useDilate: settings.useDilate
+            useErode: settings.useErode
             binaryThreshold: settings.binaryThreshold
             minBlobArea: settings.minBlobArea
             maxBlobCircularity: settings.maxBlobCircularity
@@ -237,6 +247,85 @@ Item {
                     value: settings.maxBlobCircularity
                     onValueChanged: {
                         settings.maxBlobCircularity = value
+                    }
+                }
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 10
+
+                CheckBox {
+                    text: "Use laplacian"
+                    Layout.fillWidth: true
+                    checkState: settings.useLaplacian ? Qt.Checked : Qt.Unchecked
+                    onCheckStateChanged: {
+                        settings.useLaplacian = (checkState === Qt.Checked)
+                    }
+                }
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 10
+
+                CheckBox {
+                    text: "Use adaptive binarization"
+                    Layout.fillWidth: true
+                    checkState: settings.useAdaptiveBinarization ? Qt.Checked : Qt.Unchecked
+                    onCheckStateChanged: {
+                        settings.useAdaptiveBinarization = (checkState === Qt.Checked)
+                    }
+                }
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 10
+
+                Text {
+                    Layout.fillWidth: true
+                    text: "Adaptive binarization win size"
+                    font.pointSize: 12
+                    color: "white"
+                }
+
+                Slider {
+                    Layout.fillWidth: true
+                    from: 5
+                    to: 51
+                    stepSize: 2
+                    value: settings.adaptiveBinarizationWinSize
+                    onValueChanged: {
+                        settings.adaptiveBinarizationWinSize = Math.floor(value)
+                    }
+                }
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 10
+
+                CheckBox {
+                    text: "Use dilate"
+                    Layout.fillWidth: true
+                    checkState: settings.useDilate ? Qt.Checked : Qt.Unchecked
+                    onCheckStateChanged: {
+                        settings.useDilate = (checkState === Qt.Checked)
+                    }
+                }
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 10
+
+                CheckBox {
+                    text: "Use erode"
+                    Layout.fillWidth: true
+                    checkState: settings.useErode ? Qt.Checked : Qt.Unchecked
+                    onCheckStateChanged: {
+                        settings.useErode = (checkState === Qt.Checked)
                     }
                 }
             }

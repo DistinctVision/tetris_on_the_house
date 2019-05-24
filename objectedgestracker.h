@@ -38,6 +38,14 @@ class ObjectEdgesTracker:
 {
     Q_OBJECT
 
+    Q_PROPERTY(bool useLaplacian READ useLaplacian WRITE setUseLaplacian NOTIFY useLaplacianChanged)
+    Q_PROPERTY(bool useAdaptiveBinarization READ useAdaptiveBinarization
+               WRITE setUseAdaptiveBinarization NOTIFY useAdaptiveBinarizationChanged)
+    Q_PROPERTY(int adaptiveBinarizationWinSize READ adaptiveBinarizationWinSize
+               WRITE setAdaptiveBinarizationWinSize NOTIFY adaptiveBinarizationWinSizeChanged)
+    Q_PROPERTY(bool useDilate READ useDilate WRITE setUseDilate NOTIFY useDilateChanged)
+    Q_PROPERTY(bool useErode READ useErode WRITE setUseErode NOTIFY useErodeChanged)
+
     Q_PROPERTY(float controlPixelDistance READ controlPixelDistance WRITE setControlPixelDistance
                NOTIFY controlPixelDistanceChanged)
     Q_PROPERTY(double binaryThreshold READ binaryThreshold WRITE setBinaryThreshold
@@ -53,6 +61,21 @@ public:
     using Pose = PoseFilter::Pose;
 
     ObjectEdgesTracker(const QSharedPointer<PerformanceMonitor> & monitor);
+
+    bool useLaplacian() const;
+    void setUseLaplacian(bool useLaplacian);
+
+    bool useAdaptiveBinarization() const;
+    void setUseAdaptiveBinarization(bool useAdaptiveBinarization);
+
+    int adaptiveBinarizationWinSize() const;
+    void setAdaptiveBinarizationWinSize(int adaptiveBinarizationWinSize);
+
+    bool useDilate() const;
+    void setUseDilate(bool useDilate);
+
+    bool useErode() const;
+    void setUseErode(bool useErode);
 
     float controlPixelDistance() const;
     void setControlPixelDistance(float controlPixelDistance);
@@ -88,8 +111,19 @@ signals:
     void maxBlobCircularityChanged();
     void cameraChanged();
     void trackingQualityChanged();
+    void useLaplacianChanged();
+    void useAdaptiveBinarizationChanged();
+    void adaptiveBinarizationWinSizeChanged();
+    void useDilateChanged();
+    void useErodeChanged();
 
 private:
+    bool m_useLaplacian;
+    bool m_useAdaptiveBinarization;
+    int m_adaptiveBinarizationWinSize;
+    bool m_useDilate;
+    bool m_useErode;
+
     QSharedPointer<PerformanceMonitor> m_monitor;
     PoseFilter m_poseFilter;
 

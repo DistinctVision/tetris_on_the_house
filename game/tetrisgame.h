@@ -14,7 +14,7 @@ class TetrisGame
 public:
     static const int removalLinesTime = 5;
     static const int userActionTime = 1;
-    static const int stepTime = 5;
+    static const int stepTime = 9;
     static const int newFigureTime = 10;
 
     using Figure = Eigen::Matrix<int, 5, 5>;

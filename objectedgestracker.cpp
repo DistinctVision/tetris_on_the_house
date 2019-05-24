@@ -33,8 +33,79 @@ ObjectEdgesTracker::ObjectEdgesTracker(const QSharedPointer<PerformanceMonitor> 
     m_model(ObjectModel::createHouse()),
     m_trackingQuality(TrackingQuality::Ugly)
 {
+    m_useLaplacian = false;
+    m_useAdaptiveBinarization = false;
+    m_adaptiveBinarizationWinSize = 31;
+    m_useDilate = false;
+    m_useErode = false;
+
     m_resetCameraPose = Pose(Vector3d(0.0, 10.0, -120.0), Quaterniond(1.0, 0.0, 0.0, 0.0));
     m_poseFilter.reset(m_resetCameraPose);
+}
+
+bool ObjectEdgesTracker::useLaplacian() const
+{
+    return m_useLaplacian;
+}
+
+void ObjectEdgesTracker::setUseLaplacian(bool useLaplacian)
+{
+    if (m_useLaplacian == useLaplacian)
+        return;
+    m_useLaplacian = useLaplacian;
+    emit useLaplacianChanged();
+}
+
+bool ObjectEdgesTracker::useAdaptiveBinarization() const
+{
+    return m_useAdaptiveBinarization;
+}
+
+void ObjectEdgesTracker::setUseAdaptiveBinarization(bool useAdaptiveBinarization)
+{
+    if (m_useAdaptiveBinarization == useAdaptiveBinarization)
+        return;
+    m_useAdaptiveBinarization = useAdaptiveBinarization;
+}
+
+int ObjectEdgesTracker::adaptiveBinarizationWinSize() const
+{
+    return m_adaptiveBinarizationWinSize;
+}
+
+void ObjectEdgesTracker::setAdaptiveBinarizationWinSize(int adaptiveBinarizationWinSize)
+{
+    int winSize = (adaptiveBinarizationWinSize / 2) * 2 + 1;
+    if (winSize == m_adaptiveBinarizationWinSize)
+        return;
+    m_adaptiveBinarizationWinSize = winSize;
+    emit adaptiveBinarizationWinSizeChanged();
+}
+
+bool ObjectEdgesTracker::useDilate() const
+{
+    return m_useDilate;
+}
+
+void ObjectEdgesTracker::setUseDilate(bool useDilate)
+{
+    if (m_useDilate == useDilate)
+        return;
+    m_useDilate = useDilate;
+    emit useDilateChanged();
+}
+
+bool ObjectEdgesTracker::useErode() const
+{
+    return m_useErode;
+}
+
+void ObjectEdgesTracker::setUseErode(bool useErode)
+{
+    if (m_useErode == useErode)
+        return;
+    m_useErode = useErode;
+    emit useErodeChanged();
 }
 
 float ObjectEdgesTracker::controlPixelDistance() const
@@ -142,23 +213,39 @@ void ObjectEdgesTracker::compute(cv::Mat image)
 {
     assert(image.channels() == 1);
     assert(m_camera);
-    /*cv::Mat kernel = (cv::Mat_<float>(3,3) <<
-                      1,  1, 1,
-                      1, -8, 1,
-                      1,  1, 1);
-    cv::Mat imgLaplacian;
-    cv::filter2D(image, imgLaplacian, CV_32F, kernel);
-    imgLaplacian.convertTo(imgLaplacian, CV_8UC1);*/
+
+    if (m_useLaplacian)
+    {
+        cv::Mat kernel = (cv::Mat_<float>(3,3) <<
+                          1,  1, 1,
+                          1, -8, 1,
+                          1,  1, 1);
+        cv::filter2D(image, image, CV_32F, kernel);
+        image.convertTo(image, CV_8UC1);
+    }
 
     cv::Mat binImage;
     m_monitor->startTimer("Threshold");
-    //cv::adaptiveThreshold(image, binImage, 255.0, cv::ADAPTIVE_THRESH_MEAN_C, cv::THRESH_BINARY, 33, m_binaryThreshold - 128.0);
-    cv::threshold(image, binImage, m_binaryThreshold, 255.0, cv::THRESH_BINARY);
+    if (m_useAdaptiveBinarization)
+    {
+        cv::adaptiveThreshold(image, binImage, 255.0,
+                              cv::ADAPTIVE_THRESH_MEAN_C, cv::THRESH_BINARY,
+                              m_adaptiveBinarizationWinSize, m_binaryThreshold - 128.0);
+    }
+    else
+    {
+        cv::threshold(image, binImage, m_binaryThreshold, 255.0, cv::THRESH_BINARY);
+    }
     m_monitor->endTimer("Threshold");
 
-    /*m_monitor->startTimer("Dilate");
-    cv::dilate(binImage, binImage, cv::getStructuringElement(cv::MORPH_DILATE, cv::Size(3, 3), cv::Point(1, 1)), cv::Point(1, 1), 1);
-    m_monitor->startTimer("Dilate");*/
+    if (m_useDilate)
+    {
+        m_monitor->startTimer("Dilate");
+        cv::dilate(binImage, binImage, cv::getStructuringElement(cv::MORPH_DILATE,
+                                                                 cv::Size(3, 3), cv::Point(1, 1)),
+                   cv::Point(1, 1), 1);
+        m_monitor->startTimer("Dilate");
+    }
 
     m_monitor->startTimer("Find contours");
     std::vector<std::vector<cv::Point>> contours;
@@ -193,9 +280,14 @@ void ObjectEdgesTracker::compute(cv::Mat image)
     }
     m_monitor->endTimer("Filter contours");
 
-    /*m_monitor->startTimer("Erode");
-    cv::erode(binImage, binImage, cv::getStructuringElement(cv::MORPH_ERODE, cv::Size(3, 3), cv::Point(1, 1)), cv::Point(1, 1), 1);
-    m_monitor->endTimer("Erode");*/
+    if (m_useErode)
+    {
+        m_monitor->startTimer("Erode");
+        cv::erode(binImage, binImage, cv::getStructuringElement(cv::MORPH_ERODE,
+                                                                cv::Size(3, 3), cv::Point(1, 1)),
+                  cv::Point(1, 1), 1);
+        m_monitor->endTimer("Erode");
+    }
 
     m_monitor->startTimer("Inverting");
     cv::bitwise_not(binImage, binImage);
