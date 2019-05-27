@@ -79,6 +79,7 @@ void TetrisScene::init(GL_ViewRenderer * view)
 
     m_linesLevel = 0.0f;
     m_numberRemovalLines = 0;
+    m_sceneCounter = 0;
 }
 
 void TetrisScene::destroy(GL_ViewRenderer * view)
@@ -265,11 +266,18 @@ bool TetrisScene::started() const
     return m_started;
 }
 
-QSharedPointer<AnimationScene> TetrisScene::_createRandomScene() const
+QSharedPointer<AnimationScene> TetrisScene::_createRandomScene()
 {
     m_rnd_gen.seed(duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count());
     int index = m_rnd(m_rnd_gen) % 6;
-    //index = 3;
+    if (m_sceneCounter == 0)
+    {
+        index = 3;
+    }
+    else if (m_sceneCounter < 6)
+    {
+        index = m_sceneCounter - 1;
+    }
     QSharedPointer<AnimationScene> scene;
     switch (index) {
     case 0: {
@@ -309,6 +317,7 @@ QSharedPointer<AnimationScene> TetrisScene::_createRandomScene() const
     default:
         assert(false);
     }
+    ++m_sceneCounter;
     return scene;
 }
 

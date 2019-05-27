@@ -65,6 +65,7 @@ private:
 
     QSharedPointer<AnimationScene> m_startScene;
     QSharedPointer<AnimationScene> m_currentScene;
+    int m_sceneCounter;
 
     HouseObjectPtr m_house;
 
@@ -78,7 +79,7 @@ private:
     mutable std::mt19937 m_rnd_gen;
     mutable std::uniform_int_distribution<int> m_rnd;
 
-    QSharedPointer<AnimationScene> _createRandomScene() const;
+    QSharedPointer<AnimationScene> _createRandomScene();
 
     void _drawGlow(GL_ViewRenderer * view);
 };
