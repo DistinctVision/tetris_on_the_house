@@ -9,7 +9,7 @@ Item {
     width: 9 * 60
     height: 16 * 60
 
-    property bool isDebug: false
+    property bool isDebug: true
     property string current_scene: "tetris_scene"
 
     Settings {
@@ -92,7 +92,7 @@ Item {
 
     MediaPlayer {
         id: player
-        source: "file:///D:/1/5.mp4"
+        source: "file:///E:/1/2_1.mp4"
         autoPlay: isDebug
         muted: true
         loops: MediaPlayer.Infinite
@@ -104,7 +104,7 @@ Item {
 
     FrameHandler {
         id: frameHandler
-        maxFrameSize: "600x600"
+        maxFrameSize: "100x100"
         orientation: isDebug ? 270 : camera.orientation
         flipHorizontally: isDebug ? false : (camera.position != Camera.FrontFace)
         focalLength: Qt.vector2d(1.5, 1.5)

@@ -4,7 +4,7 @@ uniform int offsets[4];
 
 highp float toGray(highp vec3 color)
 {
-    return (color.x + color.y + color.z) / 3.0;
+    return (color.x);
 }
 
 out highp vec4 color;

@@ -214,6 +214,9 @@ void ObjectEdgesTracker::compute(cv::Mat image)
     assert(image.channels() == 1);
     assert(m_camera);
 
+    m_debugImage = image;
+    return;
+
     if (m_useLaplacian)
     {
         cv::Mat kernel = (cv::Mat_<float>(3,3) <<

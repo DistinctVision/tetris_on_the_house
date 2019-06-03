@@ -177,6 +177,8 @@ QVideoFrame FrameHandlerRunnable::run(QVideoFrame * videoFrame,
 
     monitor->start();
     monitor->startTimer("Getting frame");
+    GLuint textureId = 0;
+    QSize frameSize;
     if (surfaceFormat.handleType() == QAbstractVideoBuffer::NoHandle)
     {
         Vector2i imageSize(videoFrame->width(), videoFrame->height());
@@ -205,8 +207,9 @@ QVideoFrame FrameHandlerRunnable::run(QVideoFrame * videoFrame,
             glTexImage2D(GL_TEXTURE_2D, 0, GL_BGRA, frame.cols, frame.rows,
                          0, GL_BGRA, GL_UNSIGNED_BYTE, frame.data);
 #endif
+            frameSize = QSize(frame.cols, frame.rows);
             glGenerateMipmap(GL_TEXTURE_2D);
-            textureReceiver->setTextureId(m_frameTextureId, QSize(frame.cols, frame.rows), 0);
+            textureReceiver->setTextureId(m_frameTextureId, frameSize, 0);
         }
         cv::cvtColor(frame, frame, cv::COLOR_BGRA2GRAY);
         QSize maxSize = m_parent->maxFrameSize();
@@ -215,13 +218,17 @@ QVideoFrame FrameHandlerRunnable::run(QVideoFrame * videoFrame,
         double scale = std::min(scale1, scale2);
         if (scale < 1.0)
             cv::resize(frame, frame, cv::Size(), scale, scale);
+        textureId = m_frameTextureId;
     }
     else if (surfaceFormat.handleType() == QAbstractVideoBuffer::GLTextureHandle)
     {
-        int orientation = m_parent->orientation();
+        textureId = videoFrame->handle().toUInt();
+    }
+    {
+        int orientation = m_parent->orientation()*0+180;
         if (textureReceiver != nullptr)
         {
-            textureReceiver->setTextureId(videoFrame->handle().toUInt(), videoFrame->size(), orientation);
+            textureReceiver->setTextureId(textureId, frameSize, orientation);
         }
 
         if (!m_texture2GrayImageConverter)
@@ -232,22 +239,22 @@ QVideoFrame FrameHandlerRunnable::run(QVideoFrame * videoFrame,
                                 (gl_view->fillFrameMode() == FillMode::PreserveAspectCrop)) ?
                               gl_view->viewportSize() : QSize(-1, -1);
 
-        if ((viewportSize.width() > 0) && (viewportSize.height() > 0))
+        /*if ((viewportSize.width() > 0) && (viewportSize.height() > 0))
         {
             std::tie(frame, viewScale) = m_texture2GrayImageConverter->read_cropped(this,
-                                                               videoFrame->handle().toUInt(),
-                                                               videoFrame->size(), m_parent->maxFrameSize(),
+                                                               textureId,
+                                                               frameSize, m_parent->maxFrameSize(),
                                                                viewportSize.width() / static_cast<float>(viewportSize.height()),
                                                                orientation,
                                                                m_parent->flipHorizontally());
         }
-        else
+        else*/
         {
             frame = m_texture2GrayImageConverter->read(this,
-                                                       videoFrame->handle().toUInt(),
-                                                       videoFrame->size(), m_parent->maxFrameSize(),
+                                                       textureId,
+                                                       frameSize, m_parent->maxFrameSize(),
                                                        orientation,
-                                                       m_parent->flipHorizontally());
+                                                       false);
         }
 
     }

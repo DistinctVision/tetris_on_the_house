@@ -61,10 +61,10 @@ cv::Mat Texture2GrayImageConvertor::read(QOpenGLFunctions * gl,
     gl->glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     gl->glClear(GL_COLOR_BUFFER_BIT);
     m_materialPackedGray->setTexture("main_texture", m_fboColor->texture());
-    m_materialPackedGray->setValue("offsets[0]", 0);
-    m_materialPackedGray->setValue("offsets[1]", 1);
+    m_materialPackedGray->setValue("offsets[3]", 30);
     m_materialPackedGray->setValue("offsets[2]", 2);
-    m_materialPackedGray->setValue("offsets[3]", 3);
+    m_materialPackedGray->setValue("offsets[1]", 1);
+    m_materialPackedGray->setValue("offsets[0]", 0);
     m_quad->draw(gl, *m_materialPackedGray);
     cv::Mat image(imageSize.height(), imageSize.width(), CV_8UC1);
     gl->glReadPixels(0, 0, imageSize.width() / 4, imageSize.height(), GL_RGBA, GL_UNSIGNED_BYTE, image.data);
