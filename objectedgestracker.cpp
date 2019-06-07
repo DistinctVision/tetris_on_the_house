@@ -39,7 +39,7 @@ ObjectEdgesTracker::ObjectEdgesTracker(const QSharedPointer<PerformanceMonitor> 
     m_useDilate = false;
     m_useErode = false;
 
-    m_resetCameraPose = Pose(Vector3d(0.0, 10.0, -120.0), Quaterniond(1.0, 0.0, 0.0, 0.0));
+    m_resetCameraPose = Pose(Vector3d(0.0, 10.0, -100.0), Quaterniond(1.0, 0.0, 0.0, 0.0));
     m_poseFilter.reset(m_resetCameraPose);
 }
 
@@ -213,9 +213,6 @@ void ObjectEdgesTracker::compute(cv::Mat image)
 {
     assert(image.channels() == 1);
     assert(m_camera);
-
-    m_debugImage = image;
-    return;
 
     if (m_useLaplacian)
     {
@@ -524,11 +521,11 @@ float ObjectEdgesTracker::_tracking2(const cv::Mat & edges)
 
 TrackingQuality::Enum ObjectEdgesTracker::_error2quality(float error) const
 {
-    if (error < 2.0f)
+    if (error < 3.0f)
     {
         return TrackingQuality::Good;
     }
-    else if (error < 3.5f)
+    else if (error < 4.5f)
     {
         return TrackingQuality::Bad;
     }

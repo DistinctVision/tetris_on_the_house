@@ -54,7 +54,7 @@ cv::Mat Texture2GrayImageConvertor::read(QOpenGLFunctions * gl,
     gl->glDisable(GL_DEPTH_TEST);
     gl->glDepthMask(GL_FALSE);
     m_quad->draw(gl, *m_materialColor);
-    m_fboPackedGray->bind();
+    /*m_fboPackedGray->bind();
     gl->glViewport(0, 0, imageSize.width() / 4, imageSize.height());
     gl->glEnable(GL_BLEND);
     gl->glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -67,10 +67,10 @@ cv::Mat Texture2GrayImageConvertor::read(QOpenGLFunctions * gl,
     m_materialPackedGray->setValue("offsets[0]", 0);
     m_quad->draw(gl, *m_materialPackedGray);
     cv::Mat image(imageSize.height(), imageSize.width(), CV_8UC1);
-    gl->glReadPixels(0, 0, imageSize.width() / 4, imageSize.height(), GL_RGBA, GL_UNSIGNED_BYTE, image.data);
-    //cv::Mat image(imageSize.height(), imageSize.width(), CV_8UC4);
-    //gl->glReadPixels(0, 0, imageSize.width(), imageSize.height(), GL_RGBA, GL_UNSIGNED_BYTE, image.data);
-    //cv::cvtColor(image, image, cv::COLOR_RGBA2GRAY);
+    gl->glReadPixels(0, 0, imageSize.width() / 4, imageSize.height(), GL_RGBA, GL_UNSIGNED_BYTE, image.data);*/
+    cv::Mat image(imageSize.height(), imageSize.width(), CV_8UC4);
+    gl->glReadPixels(0, 0, imageSize.width(), imageSize.height(), GL_RGBA, GL_UNSIGNED_BYTE, image.data);
+    cv::cvtColor(image, image, cv::COLOR_RGBA2GRAY);
     gl->glDisable(GL_BLEND);
     m_fboPackedGray->release();
     return image;
@@ -126,7 +126,7 @@ std::tuple<cv::Mat, QVector2D> Texture2GrayImageConvertor::read_cropped(QOpenGLF
     gl->glDisable(GL_CULL_FACE);
     gl->glDepthMask(GL_FALSE);
     m_quad->draw(gl, *m_materialColor);
-    m_fboPackedGray->bind();
+    /*m_fboPackedGray->bind();
     gl->glViewport(0, 0, imageSize.width() / 4, imageSize.height());
     gl->glEnable(GL_BLEND);
     gl->glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -139,10 +139,10 @@ std::tuple<cv::Mat, QVector2D> Texture2GrayImageConvertor::read_cropped(QOpenGLF
     m_materialPackedGray->setValue("offsets[3]", 3);
     m_quad->draw(gl, *m_materialPackedGray);
     cv::Mat image(imageSize.height(), imageSize.width(), CV_8UC1);
-    gl->glReadPixels(0, 0, imageSize.width() / 4, imageSize.height(), GL_RGBA, GL_UNSIGNED_BYTE, image.data);
-    //cv::Mat image(imageSize.height(), imageSize.width(), CV_8UC4);
-    //gl->glReadPixels(0, 0, imageSize.width(), imageSize.height(), GL_RGBA, GL_UNSIGNED_BYTE, image.data);
-    //cv::cvtColor(image, image, cv::COLOR_RGBA2GRAY);
+    gl->glReadPixels(0, 0, imageSize.width() / 4, imageSize.height(), GL_RGBA, GL_UNSIGNED_BYTE, image.data);*/
+    cv::Mat image(imageSize.height(), imageSize.width(), CV_8UC4);
+    gl->glReadPixels(0, 0, imageSize.width(), imageSize.height(), GL_RGBA, GL_UNSIGNED_BYTE, image.data);
+    cv::cvtColor(image, image, cv::COLOR_RGBA2GRAY);
     gl->glDisable(GL_BLEND);
     gl->glEnable(GL_CULL_FACE);
     m_fboPackedGray->release();

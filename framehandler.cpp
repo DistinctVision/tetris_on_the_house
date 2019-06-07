@@ -223,9 +223,11 @@ QVideoFrame FrameHandlerRunnable::run(QVideoFrame * videoFrame,
     else if (surfaceFormat.handleType() == QAbstractVideoBuffer::GLTextureHandle)
     {
         textureId = videoFrame->handle().toUInt();
-    }
-    {
-        int orientation = m_parent->orientation()*0+180;
+        frameSize = videoFrame->size();
+        int orientation = m_parent->orientation();
+        bool flipHorizontally = m_parent->flipHorizontally();
+        //orientation = 180;
+        //flipHorizontally = true;
         if (textureReceiver != nullptr)
         {
             textureReceiver->setTextureId(textureId, frameSize, orientation);
@@ -239,24 +241,23 @@ QVideoFrame FrameHandlerRunnable::run(QVideoFrame * videoFrame,
                                 (gl_view->fillFrameMode() == FillMode::PreserveAspectCrop)) ?
                               gl_view->viewportSize() : QSize(-1, -1);
 
-        /*if ((viewportSize.width() > 0) && (viewportSize.height() > 0))
+        if ((viewportSize.width() > 0) && (viewportSize.height() > 0))
         {
             std::tie(frame, viewScale) = m_texture2GrayImageConverter->read_cropped(this,
                                                                textureId,
                                                                frameSize, m_parent->maxFrameSize(),
                                                                viewportSize.width() / static_cast<float>(viewportSize.height()),
                                                                orientation,
-                                                               m_parent->flipHorizontally());
+                                                               flipHorizontally);
         }
-        else*/
+        else
         {
             frame = m_texture2GrayImageConverter->read(this,
                                                        textureId,
                                                        frameSize, m_parent->maxFrameSize(),
                                                        orientation,
-                                                       false);
+                                                       flipHorizontally);
         }
-
     }
     monitor->endTimer("Getting frame");
 
