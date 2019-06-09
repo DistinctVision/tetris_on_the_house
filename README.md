@@ -1,8 +1,7 @@
 Augmented reality demo - Tetris
 --------
 
-
-[![Watch the video](https://youtu.be/eGaokauVQ2o)]
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=eGaokauVQ2o" target="_blank"><img src="http://img.youtube.com/vi/eGaokauVQ2o/0.jpg"  width="360" height="360" border="10" /></a>
 
 Dependencies
 --------
