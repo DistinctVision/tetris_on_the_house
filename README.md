@@ -1,10 +1,8 @@
 Augmented reality demo - Tetris
 --------
 
-https://youtu.be/eGaokauVQ2o
 
-
-<img src="Tetris.gif"/>
+[![Watch the video](https://youtu.be/eGaokauVQ2o)]
 
 Dependencies
 --------
