@@ -1,6 +1,11 @@
 Augmented reality demo - Tetris
 --------
 
+https://youtu.be/eGaokauVQ2o
+
+
+<img src="Tetris.gif"/>
+
 Dependencies
 --------
 - Eigen3
